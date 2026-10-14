@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* ============================================================
+   🎨 THEME CONFIGURATION — Ubah warna primary di sini saja
+   ============================================================
+   Cukup ganti nilai --primary-h, --primary-s, --primary-l
+   (format HSL) untuk mengubah seluruh warna primary aplikasi.
+
+   Contoh preset:
+     Biru  (default) : --primary-h: 217; --primary-s: 91%;  --primary-l: 60%;
+     Hijau           : --primary-h: 142; --primary-s: 71%;  --primary-l: 45%;
+     Ungu            : --primary-h: 262; --primary-s: 83%;  --primary-l: 58%;
+     Merah           : --primary-h: 0;   --primary-s: 84%;  --primary-l: 60%;
+     Oranye          : --primary-h: 25;  --primary-s: 95%;  --primary-l: 53%;
+   ============================================================ */
+:root {
+  /* ── SATU-SATUNYA TEMPAT UNTUK UBAH WARNA PRIMARY ── */
+  --primary-h: 217;   /* Hue        : 0–360  */
+  --primary-s: 91%;   /* Saturation : 0–100% */
+  --primary-l: 60%;   /* Lightness  : 0–100% */
+
+  /* Turunan otomatis — tidak perlu diubah manual */
+  --primary:        hsl(var(--primary-h) var(--primary-s) var(--primary-l));
+  --primary-dark:   hsl(var(--primary-h) var(--primary-s) calc(var(--primary-l) - 8%));
+  --primary-darker: hsl(var(--primary-h) var(--primary-s) calc(var(--primary-l) - 15%));
+  --primary-light:  hsl(var(--primary-h) var(--primary-s) calc(var(--primary-l) + 15%));
+  --primary-muted:  hsl(var(--primary-h) calc(var(--primary-s) - 20%) 96%);
+  --primary-ring:   hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 30%);
+
+  /* Legacy aliases — agar kode lama tetap berfungsi */
+  --brand:      var(--primary);
+  --brand-dark: var(--primary-dark);
+
+  /* ── WARNA LAIN ── */
+  --background: #f4f6f8;
+  --foreground:  #101828;
+  --dark-navy:   #0f172a;
+}
+
+@theme inline {
+  /* Primary scale */
+  --color-primary:        var(--primary);
+  --color-primary-dark:   var(--primary-dark);
+  --color-primary-darker: var(--primary-darker);
+  --color-primary-light:  var(--primary-light);
+  --color-primary-muted:  var(--primary-muted);
+
+  /* Legacy brand aliases */
+  --color-brand:      var(--primary);
+  --color-brand-dark: var(--primary-dark);
+
+  /* Other tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-dark-navy:  var(--dark-navy);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+input,
+select,
+textarea {
+  font-size: 16px;
+}
