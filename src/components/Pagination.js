@@ -6,6 +6,8 @@ export default function Pagination({ page, total, pageSize, basePath }) {
   const totalPages = Math.max(1, Math.ceil((total ?? 0) / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
+  // basePath boleh sudah membawa query (mis. "/dashboard?filter=pending")
+  const sep = basePath.includes("?") ? "&" : "?";
 
   if (!canPrev && !canNext) return null;
 
@@ -17,7 +19,7 @@ export default function Pagination({ page, total, pageSize, basePath }) {
   return (
     <div className="flex items-center justify-between pt-1">
       {canPrev ? (
-        <Link href={`${basePath}?page=${page - 1}`} className={linkCls}>
+        <Link href={`${basePath}${sep}page=${page - 1}`} className={linkCls}>
           Sebelumnya
         </Link>
       ) : (
@@ -29,7 +31,7 @@ export default function Pagination({ page, total, pageSize, basePath }) {
       </span>
 
       {canNext ? (
-        <Link href={`${basePath}?page=${page + 1}`} className={linkCls}>
+        <Link href={`${basePath}${sep}page=${page + 1}`} className={linkCls}>
           Berikutnya
         </Link>
       ) : (

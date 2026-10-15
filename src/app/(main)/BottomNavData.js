@@ -1,10 +1,15 @@
 import { getUserProfile } from "@/lib/supabase/server";
+import { getDashboardStats } from "@/lib/stats";
 import ConditionalBottomNav from "@/components/ConditionalBottomNav";
 
-// Dipisah dari layout & dibungkus <Suspense> sendiri (lihat HeaderData.js) --
-// getUserProfile() sudah di-cache per-request, jadi ini tidak menambah
-// query, cuma resolve dari hasil yang sama dengan HeaderData.
+// Dipisah & dibungkus <Suspense> sendiri (lihat layout.js). getUserProfile()
+// dan getDashboardStats() sama-sama di-cache per-request, jadi tidak
+// menambah query dibanding SidebarData / halaman Beranda.
 export default async function BottomNavData() {
   const { profile } = await getUserProfile();
-  return <ConditionalBottomNav role={profile?.role} />;
+  const pendingCount =
+    profile?.role === "operational"
+      ? (await getDashboardStats()).pendingCount
+      : 0;
+  return <ConditionalBottomNav role={profile?.role} pendingCount={pendingCount} />;
 }

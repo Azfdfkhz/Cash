@@ -16,18 +16,88 @@ export function formatDate(value) {
   }).format(new Date(value));
 }
 
+const TZ = "Asia/Jakarta";
+
+// "9 Oktober 2026"
+export function formatDateLong(value = new Date()) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: TZ,
+  }).format(new Date(value));
+}
+
+// "6 Okt 2026"
+export function formatDateShort(value) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: TZ,
+  }).format(new Date(value));
+}
+
+// "10 Okt, 09:12"
+export function formatDateTimeShort(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  const date = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    timeZone: TZ,
+  }).format(d);
+  const time = new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: TZ,
+  })
+    .format(d)
+    .replace(".", ":");
+  return `${date}, ${time}`;
+}
+
+// 15000000 -> "15.000.000" (tanpa simbol, untuk kolom "Nominal (Rp)")
+export function formatNumber(value) {
+  return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(
+    Number(value ?? 0)
+  );
+}
+
+// 1850000 -> "Rp 1,85 jt"; di bawah 1 juta pakai format biasa
+export function formatCompactIdr(value) {
+  const n = Number(value ?? 0);
+  if (Math.abs(n) < 1_000_000) return formatCurrency(n);
+  const jt = (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
+  return `Rp ${jt} jt`;
+}
+
+// "Rina Wulandari" -> "RW"; "Rina Wulandari" -> "Rina W"
+export function getInitials(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+}
+export function shortName(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] ?? "";
+  return `${parts[0]} ${parts[parts.length - 1][0]}`;
+}
+
 export const STATUS_LABEL = {
-  pending: "Menunggu Persetujuan",
+  pending: "Menunggu",
   approved: "Disetujui",
   rejected: "Ditolak",
   closed: "Selesai",
 };
 
 export const STATUS_STYLE = {
-  pending: "bg-amber-100 text-amber-800 border-amber-200",
-  approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  rejected: "bg-rose-100 text-rose-800 border-rose-200",
-  closed: "bg-slate-100 text-slate-700 border-slate-200",
+  pending: "bg-[#fff6e5] text-[#c27803] border-[#fde7b5]",
+  approved: "bg-[#ebf9f0] text-[#1fa653] border-[#c9eed8]",
+  rejected: "bg-[#fff0f2] text-[#e11d48] border-[#fccdd5]",
+  closed: "bg-[#eef2f6] text-[#64748b] border-[#e2e8f0]",
 };
 
 export const FUNDING_SOURCE_LABEL = {

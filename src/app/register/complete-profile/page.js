@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import Logo from "@/components/Logo";
+import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell";
+import AuthField, { AuthLabel } from "@/components/auth/AuthField";
+import PrimaryButton from "@/components/auth/PrimaryButton";
 import BankSelectModal from "@/components/BankSelectModal";
-import { User, Building2, CreditCard, TriangleAlert, ChevronRight } from "lucide-react";
+import { User, Building2, CreditCard, Send, ChevronRight, Info } from "lucide-react";
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -33,6 +34,17 @@ export default function CompleteProfilePage() {
         return;
       }
 
+      // Sudah pernah menyelesaikan langkah 2 -> tidak perlu di sini lagi.
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("profile_completed_at")
+        .eq("id", user.id)
+        .single();
+      if (existing?.profile_completed_at) {
+        router.replace("/dashboard");
+        return;
+      }
+
       setProfileId(user.id);
     }
     loadUser();
@@ -41,28 +53,71 @@ export default function CompleteProfilePage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    setSaving(true);
 
+    const uname = username.trim().toLowerCase();
+    if (!/^[a-z0-9._]{3,30}$/.test(uname)) {
+      setError(
+        "Username 3–30 karakter: huruf kecil, angka, titik, atau garis bawah."
+      );
+      return;
+    }
+    if (!bankName || !bankHolderName) {
+      setError("Pilih bank tujuan dan isi nama pemilik rekening.");
+      return;
+    }
+    if (bankAccountNumber.trim().length < 6) {
+      setError("Nomor rekening belum lengkap.");
+      return;
+    }
+
+    setSaving(true);
     const supabase = createClient();
-    const displayName = bankHolderName || username;
-    const { error: updateError } = await supabase
+    const base = {
+      full_name: bankHolderName || uname,
+      bank_name: `${bankName} a.n. ${bankHolderName}`,
+      bank_account_number: bankAccountNumber.trim(),
+      telegram_chat_id: telegramChatId.trim() || null,
+    };
+
+    let { error: updateError } = await supabase
       .from("profiles")
       .update({
-        full_name: displayName || username,
-        bank_name: bankName ? `${bankName}${bankHolderName ? ` a.n. ${bankHolderName}` : ""}` : null,
-        bank_account_number: bankAccountNumber.trim() || null,
-        telegram_chat_id: telegramChatId.trim() || null,
+        ...base,
+        username: uname,
+        profile_completed_at: new Date().toISOString(),
       })
       .eq("id", profileId);
+
+    // 42703 = kolom belum ada (migrasi 0016 belum dijalankan): simpan data
+    // inti saja supaya pendaftaran tetap berhasil.
+    if (updateError?.code === "42703") {
+      ({ error: updateError } = await supabase
+        .from("profiles")
+        .update(base)
+        .eq("id", profileId));
+    }
 
     setSaving(false);
 
     if (updateError) {
-      setError("Gagal menyimpan data. Coba lagi.");
+      setError(
+        updateError.code === "23505"
+          ? "Username sudah dipakai. Coba yang lain."
+          : "Gagal menyimpan data. Coba lagi."
+      );
       return;
     }
 
     router.push("/dashboard");
+    router.refresh();
+  }
+
+  // "Salah email?" -> keluar dulu, karena /register mengalihkan user yang
+  // sudah login ke dashboard.
+  async function handleBack() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/register");
     router.refresh();
   }
 
@@ -76,200 +131,192 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <main className="min-h-dvh flex flex-col bg-white">
-      {/* Dark Navy Header */}
-      <div className="bg-dark-navy px-6 pt-12 pb-28">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-            <Logo className="text-white" size={20} />
-          </div>
-          <span className="text-white font-semibold text-base">
-            CashAdvance
-          </span>
+    <AuthShell
+      compact
+      wide
+      side={
+        <>
+          <SideHeadline>
+            Satu langkah
+            <br />
+            lagi untuk
+            <br />
+            mulai.
+          </SideHeadline>
+          <SideSteps current={2} />
+        </>
+      }
+      step={{ current: 2, total: 2, label: "Data rekening dan notifikasi" }}
+    >
+      <p className="hidden lg:block text-[13px] font-semibold uppercase tracking-wider text-brand mb-2">
+        Langkah 2 dari 2
+      </p>
+      <h2 className="text-2xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2 lg:mb-3">
+        Lengkapi data Anda
+      </h2>
+      <p className="text-[15px] leading-relaxed text-slate-500 mb-6 lg:mb-8">
+        <span className="lg:hidden">
+          Dipakai untuk pencairan dana dan notifikasi persetujuan.
+        </span>
+        <span className="hidden lg:inline">
+          Data ini dipakai untuk pencairan dana ke rekening Anda dan notifikasi
+          persetujuan lewat Telegram.
+        </span>
+      </p>
+
+      {error && (
+        <div
+          role="alert"
+          className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
+        >
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthField
+          id="username"
+          label="Username"
+          icon={User}
+          type="text"
+          autoComplete="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="contoh: rina.w"
+          required
+          minLength={3}
+          maxLength={30}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+
+        {/* Bank + account */}
+        <div className="space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-5">
+        <div>
+          <AuthLabel>Bank tujuan transfer</AuthLabel>
+          <button
+            type="button"
+            onClick={() => setBankModalOpen(true)}
+            className="w-full h-13 flex items-center gap-3 rounded-full border border-slate-300 bg-white pl-4.5 pr-4 text-left text-base lg:text-sm text-slate-800 hover:border-brand transition-colors focus:outline-none focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15"
+          >
+            <Building2
+              size={20}
+              strokeWidth={1.75}
+              className="text-slate-500 shrink-0"
+            />
+            <span className="flex-1 truncate">
+              {bankName
+                ? `${bankName}${bankHolderName ? ` - ${bankHolderName}` : ""}`
+                : "Pilih bank"}
+            </span>
+            <ChevronRight size={18} className="text-slate-500 shrink-0" />
+          </button>
         </div>
 
-        {/* Step indicator */}
-        <div className="mb-4">
-          <p className="text-slate-400 text-xs mb-2">
-            Langkah 2 dari 2 · Data rekening dan notifikasi
-          </p>
-          <div className="flex gap-1.5">
-            <div className="h-1 flex-1 rounded-full bg-brand" />
-            <div className="h-1 flex-1 rounded-full bg-brand" />
-          </div>
+        <AuthField
+          id="account"
+          label="No. rekening"
+          icon={CreditCard}
+          type="text"
+          inputMode="numeric"
+          value={bankAccountNumber}
+          onChange={(e) =>
+            setBankAccountNumber(e.target.value.replace(/\D/g, ""))
+          }
+          placeholder="Nomor rekening"
+        />
         </div>
-      </div>
 
-      {/* White Form Card */}
-      <div className="flex-1 bg-white rounded-t-3xl -mt-16 px-6 pt-8 pb-8">
-        <div className="max-w-sm mx-auto">
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">
-            Lengkapi data Anda
-          </h2>
-          <p className="text-sm text-slate-500 mb-6">
-            Dipakai untuk pencairan dana dan notifikasi persetujuan.
-          </p>
-
-          {error && (
-            <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 mb-4">
-              {error}
+        {/* Telegram Chat ID */}
+        <div>
+          <AuthLabel htmlFor="telegram">Telegram Chat ID</AuthLabel>
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Send
+                size={20}
+                strokeWidth={1.75}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+              />
+              <input
+                id="telegram"
+                type="text"
+                inputMode="numeric"
+                value={telegramChatId}
+                onChange={(e) =>
+                  setTelegramChatId(e.target.value.replace(/\D/g, ""))
+                }
+                className="w-full h-13 rounded-full border border-slate-300 bg-white pl-11.5 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+                placeholder="Contoh: 123456789"
+              />
             </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Username
-              </label>
-              <div className="relative">
-                <User
-                  size={18}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 pl-10 pr-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-white placeholder:text-slate-400"
-                  placeholder="contoh: rina.w"
-                />
-              </div>
-            </div>
-
-            {/* Bank selection */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Bank tujuan transfer
-              </label>
-              <button
-                type="button"
-                onClick={() => setBankModalOpen(true)}
-                className="w-full flex items-center gap-3 rounded-xl border border-slate-200 px-3.5 py-3 text-sm text-left hover:border-brand hover:bg-slate-50 transition-colors"
-              >
-                <Building2 size={18} className="text-slate-400 flex-shrink-0" />
-                <span
-                  className={`flex-1 ${bankName ? "text-slate-800 font-medium" : "text-slate-400"}`}
-                >
-                  {bankName
-                    ? `${bankName}${bankHolderName ? ` - ${bankHolderName}` : ""}`
-                    : "Pilih bank"}
-                </span>
-                <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
-              </button>
-            </div>
-
-            {/* Account number */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                No. rekening
-              </label>
-              <div className="relative">
-                <CreditCard
-                  size={18}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={bankAccountNumber}
-                  onChange={(e) =>
-                    setBankAccountNumber(e.target.value.replace(/\D/g, ""))
-                  }
-                  className="w-full rounded-xl border border-slate-200 pl-10 pr-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-white placeholder:text-slate-400"
-                  placeholder="Nomor rekening penerima"
-                />
-              </div>
-            </div>
-
-            {/* Telegram Chat ID */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Telegram Chat ID
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <TriangleAlert
-                    size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={telegramChatId}
-                    onChange={(e) =>
-                      setTelegramChatId(e.target.value.replace(/\D/g, ""))
-                    }
-                    className="w-full rounded-xl border border-slate-200 pl-10 pr-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-white placeholder:text-slate-400"
-                    placeholder="Contoh: 123456789"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={openTelegram}
-                  className="px-4 py-3 rounded-xl border border-brand text-brand text-sm font-semibold hover:bg-brand/5 transition-colors flex-shrink-0"
-                >
-                  Open Telegram
-                </button>
-              </div>
-
-              {/* Info box */}
-              <div className="mt-2.5 flex gap-2.5 bg-blue-50 border border-blue-100 rounded-xl p-3">
-                <div className="mt-0.5 flex-shrink-0">
-                  <div className="h-4 w-4 rounded-full bg-brand/20 flex items-center justify-center">
-                    <span className="text-brand text-xs font-bold">i</span>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Cari{" "}
-                  <span className="font-semibold text-slate-800">
-                    @userinfobot
-                  </span>{" "}
-                  di Telegram untuk tahu Chat ID Anda. Lalu buka bot notifikasi
-                  perusahaan dan tekan{" "}
-                  <span className="font-semibold text-slate-800">/start</span>{" "}
-                  (wajib, jika tidak notifikasi tidak terkirim).
-                </p>
-              </div>
-            </div>
-
-            {/* Submit */}
             <button
-              type="submit"
-              disabled={saving || !profileId}
-              className="w-full bg-dark-navy hover:bg-slate-800 disabled:opacity-60 text-white font-semibold rounded-full py-3.5 transition-colors mt-2"
+              type="button"
+              onClick={openTelegram}
+              className="h-13 shrink-0 rounded-full border border-slate-300 bg-white px-4 text-[13px] font-semibold text-brand hover:bg-slate-50 transition-colors"
             >
-              {saving ? "Menyimpan..." : "Selesaikan pendaftaran"}
+              Open Telegram
             </button>
-          </form>
+          </div>
 
-          {/* Back link */}
-          <p className="text-center text-sm text-slate-500 mt-5">
-            Salah email?{" "}
-            <Link href="/register" className="text-brand font-semibold">
-              Kembali
-            </Link>
-          </p>
+          {/* Info box */}
+          <div className="mt-3 flex gap-3 rounded-2xl bg-[#f0f4f9] p-4">
+            <Info
+              size={18}
+              strokeWidth={1.75}
+              className="mt-0.5 shrink-0 text-brand"
+            />
+            <p className="text-[13px] leading-relaxed text-slate-600">
+              Cari{" "}
+              <span className="font-semibold text-slate-900">@userinfobot</span>{" "}
+              di Telegram untuk tahu Chat ID Anda. Lalu buka bot notifikasi
+              perusahaan dan tekan{" "}
+              <span className="font-semibold text-slate-900">/start</span>{" "}
+              (wajib, jika tidak notifikasi tidak terkirim).
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Bank Select Modal */}
+        <div className="mt-4 flex gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="hidden lg:flex h-14 items-center justify-center rounded-full border border-slate-200 bg-white px-8 text-[15px] font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+          >
+            Kembali
+          </button>
+          <PrimaryButton
+            type="submit"
+            disabled={saving || !profileId}
+            className="lg:w-auto lg:flex-1"
+          >
+            {saving ? "Menyimpan..." : "Selesaikan pendaftaran"}
+          </PrimaryButton>
+        </div>
+      </form>
+
+      <p className="text-center text-sm text-slate-600 mt-6 lg:hidden">
+        Salah email?{" "}
+        <button
+          type="button"
+          onClick={handleBack}
+          className="font-semibold text-brand"
+        >
+          Kembali
+        </button>
+      </p>
+
       <BankSelectModal
         isOpen={bankModalOpen}
         onClose={() => setBankModalOpen(false)}
         onSave={handleBankSave}
         initialBank={
           bankName
-            ? bankName
-                .toLowerCase()
-                .split(" ")[0]
-                .replace("niaga", "")
-                .trim()
+            ? bankName.toLowerCase().split(" ")[0].replace("niaga", "").trim()
             : ""
         }
         initialHolderName={bankHolderName}
       />
-    </main>
+    </AuthShell>
   );
 }

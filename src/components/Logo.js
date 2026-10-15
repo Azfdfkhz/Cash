@@ -1,7 +1,29 @@
-// Brand mark for the Cash Advance app: a wallet glyph drawn in `currentColor`
-// with the clasp punched out via the even-odd fill rule, so it sits cleanly
-// inside a colored badge (e.g. `bg-brand text-white`).
-export default function Logo({ size = 24, className = "" }) {
+// Brand mark for the Cash Advance app: a wallet glyph.
+// - default ("solid"): drawn in `currentColor`, clasp punched out via even-odd
+//   fill, sits inside a colored badge (e.g. `bg-brand text-white`).
+// - variant="outline": stroke-only version used on the auth screens' dark header.
+export default function Logo({ size = 24, className = "", variant = "solid" }) {
+  if (variant === "outline") {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        <rect x="2.5" y="7" width="19" height="13" rx="4" />
+        <path d="M7 7V6.5A2.5 2.5 0 0 1 9.5 4h5A2.5 2.5 0 0 1 17 6.5V7" />
+        <circle cx="16.5" cy="13.5" r="0.9" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+
   return (
     <svg
       width={size}

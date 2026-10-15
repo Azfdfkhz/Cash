@@ -2,51 +2,43 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PlusCircle, ClipboardCheck, Table2 } from "lucide-react";
+import { navFor, isActive } from "@/components/nav-items";
 
-const REQUESTER_ITEMS = [
-  { href: "/dashboard", label: "Beranda", icon: LayoutDashboard },
-  { href: "/cash-advances/new", label: "Ajukan", icon: PlusCircle },
-];
-
-const OPERATIONAL_ITEMS = [
-  { href: "/dashboard", label: "Beranda", icon: LayoutDashboard },
-  { href: "/approvals", label: "Persetujuan", icon: ClipboardCheck },
-  { href: "/cash-advances/new", label: "Ajukan", icon: PlusCircle },
-  { href: "/reports", label: "Laporan", icon: Table2 },
-];
-
-export default function BottomNav({ role }) {
+// Navigasi bawah mobile (disembunyikan ≥lg, diganti Sidebar).
+// Item aktif: garis gelap 3px di tepi atas + ikon/label gelap.
+export default function BottomNav({ role, pendingCount = 0 }) {
   const pathname = usePathname();
-  const items = role === "operational" ? OPERATIONAL_ITEMS : REQUESTER_ITEMS;
+  const items = navFor(role);
 
   return (
-    <nav className="sticky bottom-0 z-20 bg-white/95 backdrop-blur border-t border-slate-200 safe-bottom">
-      <ul className="flex justify-around px-2 pt-1.5">
-        {items.map(({ href, label, icon: Icon }) => {
-          const active =
-            pathname === href || pathname.startsWith(`${href}/`);
+    <nav className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom">
+      <ul className="flex px-4 pt-2 pb-3">
+        {items.map(({ href, label, icon: Icon, badge }) => {
+          const active = isActive(pathname, href);
           return (
             <li key={href} className="flex-1">
               <Link
                 href={href}
-                className="group flex flex-col items-center gap-1 py-1 text-xs transition-colors"
+                aria-current={active ? "page" : undefined}
+                className="relative flex flex-col items-center gap-1 px-2 py-1.5"
               >
-                <span
-                  className={`flex items-center justify-center h-9 w-14 rounded-full transition-colors ${
-                    active
-                      ? "bg-brand/10 text-brand"
-                      : "text-slate-400 group-hover:text-slate-600"
-                  }`}
-                >
-                  <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                {active && (
+                  <span className="absolute -top-2 left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-b-[4px] bg-[#0f172a]" />
+                )}
+                <span className="relative">
+                  <Icon
+                    size={20}
+                    strokeWidth={1.75}
+                    className={active ? "text-[#0f172a]" : "text-slate-500"}
+                  />
+                  {badge && pendingCount > 0 && (
+                    <span className="absolute -right-1.5 -top-0.5 h-2 w-2 rounded-full bg-orange-500" />
+                  )}
                 </span>
                 <span
-                  className={
-                    active
-                      ? "font-semibold text-brand"
-                      : "font-medium text-slate-500"
-                  }
+                  className={`text-[11px] font-semibold ${
+                    active ? "text-[#0f172a]" : "text-slate-500"
+                  }`}
                 >
                   {label}
                 </span>

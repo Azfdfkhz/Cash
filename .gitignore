@@ -44,3 +44,5 @@ next-env.d.ts
 # Google OAuth local credentials - NEVER commit these
 credentials.json
 token.json
+google-service-account.json
+google-service-account1.json
