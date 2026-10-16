@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell";
 import AuthField, { AuthLabel } from "@/components/auth/AuthField";
@@ -34,17 +35,6 @@ export default function CompleteProfilePage() {
         return;
       }
 
-      // Sudah pernah menyelesaikan langkah 2 -> tidak perlu di sini lagi.
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("profile_completed_at")
-        .eq("id", user.id)
-        .single();
-      if (existing?.profile_completed_at) {
-        router.replace("/dashboard");
-        return;
-      }
-
       setProfileId(user.id);
     }
     loadUser();
@@ -53,71 +43,28 @@ export default function CompleteProfilePage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-
-    const uname = username.trim().toLowerCase();
-    if (!/^[a-z0-9._]{3,30}$/.test(uname)) {
-      setError(
-        "Username 3–30 karakter: huruf kecil, angka, titik, atau garis bawah."
-      );
-      return;
-    }
-    if (!bankName || !bankHolderName) {
-      setError("Pilih bank tujuan dan isi nama pemilik rekening.");
-      return;
-    }
-    if (bankAccountNumber.trim().length < 6) {
-      setError("Nomor rekening belum lengkap.");
-      return;
-    }
-
     setSaving(true);
-    const supabase = createClient();
-    const base = {
-      full_name: bankHolderName || uname,
-      bank_name: `${bankName} a.n. ${bankHolderName}`,
-      bank_account_number: bankAccountNumber.trim(),
-      telegram_chat_id: telegramChatId.trim() || null,
-    };
 
-    let { error: updateError } = await supabase
+    const supabase = createClient();
+    const displayName = bankHolderName || username;
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
-        ...base,
-        username: uname,
-        profile_completed_at: new Date().toISOString(),
+        full_name: displayName || username,
+        bank_name: bankName ? `${bankName}${bankHolderName ? ` a.n. ${bankHolderName}` : ""}` : null,
+        bank_account_number: bankAccountNumber.trim() || null,
+        telegram_chat_id: telegramChatId.trim() || null,
       })
       .eq("id", profileId);
-
-    // 42703 = kolom belum ada (migrasi 0016 belum dijalankan): simpan data
-    // inti saja supaya pendaftaran tetap berhasil.
-    if (updateError?.code === "42703") {
-      ({ error: updateError } = await supabase
-        .from("profiles")
-        .update(base)
-        .eq("id", profileId));
-    }
 
     setSaving(false);
 
     if (updateError) {
-      setError(
-        updateError.code === "23505"
-          ? "Username sudah dipakai. Coba yang lain."
-          : "Gagal menyimpan data. Coba lagi."
-      );
+      setError("Gagal menyimpan data. Coba lagi.");
       return;
     }
 
     router.push("/dashboard");
-    router.refresh();
-  }
-
-  // "Salah email?" -> keluar dulu, karena /register mengalihkan user yang
-  // sudah login ke dashboard.
-  async function handleBack() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/register");
     router.refresh();
   }
 
@@ -151,7 +98,7 @@ export default function CompleteProfilePage() {
       <p className="hidden lg:block text-[13px] font-semibold uppercase tracking-wider text-brand mb-2">
         Langkah 2 dari 2
       </p>
-      <h2 className="text-2xl lg:text-[28px] font-bold tracking-tight text-slate-900 mb-2 lg:mb-3">
+      <h2 className="text-2xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2 lg:mb-3">
         Lengkapi data Anda
       </h2>
       <p className="text-[15px] leading-relaxed text-slate-500 mb-6 lg:mb-8">
@@ -183,12 +130,6 @@ export default function CompleteProfilePage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="contoh: rina.w"
-          required
-          minLength={3}
-          maxLength={30}
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
         />
 
         {/* Bank + account */}
@@ -198,7 +139,7 @@ export default function CompleteProfilePage() {
           <button
             type="button"
             onClick={() => setBankModalOpen(true)}
-            className="w-full h-13 flex items-center gap-3 rounded-full border border-slate-300 bg-white pl-4.5 pr-4 text-left text-base lg:text-sm text-slate-800 hover:border-brand transition-colors focus:outline-none focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15"
+            className="w-full h-13 flex items-center gap-3 rounded-full border border-slate-300 bg-white pl-4.5 pr-4 text-left text-base text-slate-800 hover:border-brand transition-colors focus:outline-none focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15"
           >
             <Building2
               size={20}
@@ -278,13 +219,12 @@ export default function CompleteProfilePage() {
         </div>
 
         <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="hidden lg:flex h-14 items-center justify-center rounded-full border border-slate-200 bg-white px-8 text-[15px] font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+          <Link
+            href="/register"
+            className="hidden lg:flex h-14 items-center justify-center rounded-full border border-slate-200 bg-white px-8 text-base font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
           >
             Kembali
-          </button>
+          </Link>
           <PrimaryButton
             type="submit"
             disabled={saving || !profileId}
@@ -297,13 +237,9 @@ export default function CompleteProfilePage() {
 
       <p className="text-center text-sm text-slate-600 mt-6 lg:hidden">
         Salah email?{" "}
-        <button
-          type="button"
-          onClick={handleBack}
-          className="font-semibold text-brand"
-        >
+        <Link href="/register" className="font-semibold text-brand">
           Kembali
-        </button>
+        </Link>
       </p>
 
       <BankSelectModal

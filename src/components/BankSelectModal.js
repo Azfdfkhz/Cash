@@ -28,7 +28,7 @@ function BankLogo({ bank, large = false }) {
       } lg:border-[color-mix(in_srgb,var(--c)_25%,white)] lg:bg-[color-mix(in_srgb,var(--c)_6%,white)] lg:shadow-none`}
     >
       <span
-        className={`leading-none ${bank.style} ${large ? "text-sm" : "text-[13px] lg:text-[11px]"}`}
+        className={`leading-none ${bank.style} ${large ? "text-base" : "text-[13px] lg:text-[11px]"}`}
         style={{ color: bank.color }}
       >
         {bank.label}
@@ -93,7 +93,7 @@ function BankSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Pilih bank"
-        className="animate-sheet-up flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[40px] bg-white px-5 pt-3 shadow-2xl lg:h-[497px] lg:max-w-[740px] lg:rounded-[32px] lg:px-0 lg:pt-0"
+        className="animate-sheet-up flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[40px] bg-white px-5 pt-3 shadow-2xl lg:h-[520px] lg:max-w-[780px] lg:rounded-[32px] lg:px-0 lg:pt-0"
       >
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pb-4 lg:hidden">
@@ -153,7 +153,7 @@ function BankSheet({
                     >
                       <BankLogo bank={bank} />
                       <span
-                        className={`flex-1 text-base lg:text-[13px] text-slate-900 ${
+                        className={`flex-1 text-base text-slate-900 ${
                           isSelected ? "font-semibold" : "font-semibold lg:font-medium lg:text-slate-700"
                         }`}
                       >
@@ -204,7 +204,7 @@ function BankSheet({
 
           {/* ── Right (desktop): selected bank detail ── */}
           <div className="hidden lg:flex flex-1 flex-col p-8">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">
+            <p className="text-[13px] font-semibold uppercase tracking-wider text-brand">
               Bank dipilih
             </p>
 
@@ -212,13 +212,13 @@ function BankSheet({
               <>
                 <div className="mt-4 flex items-center gap-5">
                   <BankLogo bank={selected} large />
-                  <span className="text-2xl font-bold tracking-tight text-slate-900">
+                  <span className="text-3xl font-bold tracking-tight text-slate-900">
                     {selected.name}
                   </span>
                 </div>
                 <label
                   htmlFor="holder-name-desktop"
-                  className="mt-7 block text-sm font-semibold text-slate-900 mb-2"
+                  className="mt-8 block text-base font-semibold text-slate-900 mb-2.5"
                 >
                   Atas nama
                 </label>
@@ -230,7 +230,7 @@ function BankSheet({
                   placeholder="Nama pemilik rekening"
                   className="w-full h-12 rounded-2xl border border-brand bg-white px-5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-brand/15"
                 />
-                <p className="text-xs text-slate-500 mt-3">
+                <p className="text-sm text-slate-500 mt-3">
                   Harus sama dengan nama pemilik rekening.
                 </p>
               </>
@@ -244,7 +244,7 @@ function BankSheet({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-11 rounded-full border border-slate-200 bg-white px-7 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+                className="h-12 rounded-full border border-slate-200 bg-white px-8 text-base font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
               >
                 Batal
               </button>
@@ -252,7 +252,7 @@ function BankSheet({
                 type="button"
                 onClick={handleSave}
                 disabled={!selectedBank}
-                className="h-11 rounded-full bg-[#0f172a] px-7 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-40 transition"
+                className="h-12 rounded-full bg-[#0f172a] px-8 text-base font-semibold text-white hover:bg-slate-800 disabled:opacity-40 transition"
               >
                 Simpan
               </button>

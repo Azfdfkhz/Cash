@@ -92,6 +92,10 @@ textarea {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -101,6 +105,7 @@ textarea {
   to   { opacity: 1; transform: scale(1); }
 }
 .animate-sheet-up { animation: sheet-up 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+.animate-slide-in-right { animation: slide-in-right 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
 .animate-fade-in  { animation: fade-in 0.2s ease-out; }
 .animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 
@@ -125,4 +130,8 @@ textarea {
 .auth-checkbox:focus-visible {
   outline: 2px solid var(--primary-ring);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-right, .animate-sheet-up, .animate-fade-in { animation: none; }
 }

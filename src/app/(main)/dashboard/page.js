@@ -57,7 +57,7 @@ export default async function DashboardPage({ searchParams }) {
     getDashboardStats(),
     supabase
       .from("cash_advances")
-      .select("id, purpose, amount_requested, status, created_at", { count: "exact" })
+      .select("*, profiles:requester_id(full_name, email, bank_name, bank_account_number)", { count: "exact" })
       .eq("requester_id", profile.id)
       .order("created_at", { ascending: false })
       .range(from, to),
@@ -70,6 +70,7 @@ export default async function DashboardPage({ searchParams }) {
       list={list ?? []}
       count={count}
       page={page}
+      currentUserId={profile.id}
     />
   );
 }

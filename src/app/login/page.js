@@ -78,7 +78,7 @@ function LoginForm() {
             <br />
             dalam satu sistem.
           </SideHeadline>
-          <p className="mt-6 text-base leading-relaxed text-slate-300 max-w-md">
+          <p className="mt-8 text-lg leading-relaxed text-slate-300 max-w-md">
             Dari pengajuan hingga pertanggungjawaban, semua tercatat dan dapat
             ditelusuri.
           </p>
@@ -99,7 +99,7 @@ function LoginForm() {
         </>
       }
     >
-      <h2 className="text-[28px] lg:text-[28px] font-bold tracking-tight text-slate-900 mb-6 lg:mb-3">
+      <h2 className="text-[28px] lg:text-4xl font-bold tracking-tight text-slate-900 mb-6 lg:mb-3">
         Masuk
       </h2>
       <p className="hidden lg:block text-[15px] leading-relaxed text-slate-500 mb-8">

@@ -47,11 +47,7 @@ export default function RegisterPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: email.split("@")[0] },
-        // Setelah klik tautan konfirmasi, lanjut ke langkah 2.
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/register/complete-profile`,
-      },
+      options: { data: { full_name: email.split("@")[0] } },
     });
 
     setLoading(false);
@@ -79,7 +75,7 @@ export default function RegisterPage() {
             <br />
             CashAdvance.
           </SideHeadline>
-          <p className="mt-5 text-base text-slate-300">
+          <p className="mt-6 text-lg text-slate-300">
             Daftar dengan email perusahaan Anda.
           </p>
           <SideSteps current={1} />
@@ -99,7 +95,7 @@ export default function RegisterPage() {
         <p className="text-[13px] font-semibold uppercase tracking-wider text-brand">
           Langkah 1 dari 2
         </p>
-        <h2 className="mt-2 text-[28px] font-bold tracking-tight text-slate-900">
+        <h2 className="mt-2 text-4xl font-bold tracking-tight text-slate-900">
           Buat akun
         </h2>
         <p className="mt-3 text-[15px] text-slate-500">
@@ -116,8 +112,8 @@ export default function RegisterPage() {
             Cek email Anda
           </p>
           <p className="text-sm text-slate-500">
-            Kami mengirim tautan konfirmasi ke {email}. Klik tautan itu untuk
-            lanjut ke langkah 2 (melengkapi data rekening dan notifikasi).
+            Pendaftaran berhasil. Silakan cek email Anda untuk konfirmasi akun
+            sebelum masuk.
           </p>
           <Link
             href="/login"

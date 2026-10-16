@@ -66,34 +66,27 @@ export default function OperationalDashboard({
   // State untuk pop up review pengajuan
   const [reviewCaId, setReviewCaId] = useState(null);
 
-  const pendingItems = list.filter((ca) => ca.status === "pending");
-  const currentReviewIndex = pendingItems.findIndex((ca) => ca.id === reviewCaId);
-  const reviewCa =
-    pendingItems[currentReviewIndex] ||
-    list.find((ca) => ca.id === reviewCaId) ||
-    null;
+  // Prev/next menelusuri seluruh daftar yang tampil (bukan hanya yang menunggu)
+  const currentReviewIndex = list.findIndex((ca) => ca.id === reviewCaId);
+  const reviewCa = currentReviewIndex >= 0 ? list[currentReviewIndex] : null;
 
   function handlePrevReview() {
-    if (currentReviewIndex > 0) {
-      setReviewCaId(pendingItems[currentReviewIndex - 1].id);
-    }
+    if (currentReviewIndex > 0) setReviewCaId(list[currentReviewIndex - 1].id);
   }
 
   function handleNextReview() {
-    if (currentReviewIndex < pendingItems.length - 1) {
-      setReviewCaId(pendingItems[currentReviewIndex + 1].id);
+    if (currentReviewIndex >= 0 && currentReviewIndex < list.length - 1) {
+      setReviewCaId(list[currentReviewIndex + 1].id);
     }
   }
 
+  // Setelah setuju/tolak: lanjut ke pengajuan menunggu berikutnya, atau tutup.
   function handleDecisionComplete(decidedId) {
     router.refresh();
-    const remaining = pendingItems.filter((item) => item.id !== decidedId);
-    if (remaining.length > 0) {
-      const nextIndex = Math.min(currentReviewIndex, remaining.length - 1);
-      setReviewCaId(remaining[nextIndex].id);
-    } else {
-      setReviewCaId(null);
-    }
+    const others = list.filter((ca) => ca.status === "pending" && ca.id !== decidedId);
+    const next =
+      others.find((ca) => list.indexOf(ca) > currentReviewIndex) ?? others[0];
+    setReviewCaId(next ? next.id : null);
   }
 
   return (
@@ -178,22 +171,17 @@ export default function OperationalDashboard({
                     </p>
                   </div>
 
-                  {ca.status === "pending" ? (
-                    <button
-                      type="button"
-                      onClick={() => setReviewCaId(ca.id)}
-                      className="mt-3 ml-auto flex w-fit items-center rounded-full bg-[#0f172a] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
-                    >
-                      {action.label}
-                    </button>
-                  ) : (
-                    <Link
-                      href={`/cash-advances/${ca.id}`}
-                      className="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-                    >
-                      {action.label}
-                    </Link>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setReviewCaId(ca.id)}
+                    className={
+                      action.primary
+                        ? "mt-3 ml-auto flex w-fit items-center rounded-full bg-[#0f172a] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
+                        : "mt-3 flex w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                    }
+                  >
+                    {action.label}
+                  </button>
                 </article>
               );
             })}
@@ -266,36 +254,20 @@ export default function OperationalDashboard({
                 return (
                   <tr
                     key={ca.id}
-                    onClick={() => {
-                      if (isPending) {
-                        setReviewCaId(ca.id);
-                      } else {
-                        router.push(`/cash-advances/${ca.id}`);
-                      }
-                    }}
+                    onClick={() => setReviewCaId(ca.id)}
                     className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
                     <td className="px-5 py-4 whitespace-nowrap text-[13px] font-semibold text-slate-900">
-                      {isPending ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReviewCaId(ca.id);
-                          }}
-                          className="hover:text-brand transition-colors text-left font-semibold"
-                        >
-                          {ca.profiles?.full_name ?? "-"}
-                        </button>
-                      ) : (
-                        <Link
-                          href={`/cash-advances/${ca.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="hover:text-brand transition-colors"
-                        >
-                          {ca.profiles?.full_name ?? "-"}
-                        </Link>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReviewCaId(ca.id);
+                        }}
+                        className="hover:text-brand transition-colors text-left font-semibold"
+                      >
+                        {ca.profiles?.full_name ?? "-"}
+                      </button>
                     </td>
                     <td className="px-5 py-4 text-[13px] text-slate-600">{ca.purpose}</td>
                     <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-700">
@@ -308,26 +280,20 @@ export default function OperationalDashboard({
                       <StatusBadge status={ca.status} />
                     </td>
                     <td className="px-5 py-4 text-center">
-                      {isPending ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReviewCaId(ca.id);
-                          }}
-                          className="inline-block whitespace-nowrap rounded-xl bg-[#0f172a] px-4 py-2.5 text-[11px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
-                        >
-                          Tinjau Pengajuan
-                        </button>
-                      ) : (
-                        <Link
-                          href={`/cash-advances/${ca.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-block rounded-lg bg-slate-100 px-5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
-                        >
-                          Lihat
-                        </Link>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReviewCaId(ca.id);
+                        }}
+                        className={
+                          isPending
+                            ? "inline-block whitespace-nowrap rounded-xl bg-[#0f172a] px-4 py-2.5 text-[11px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
+                            : "inline-block rounded-lg bg-slate-100 px-5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                        }
+                      >
+                        {isPending ? "Tinjau Pengajuan" : "Lihat"}
+                      </button>
                     </td>
                   </tr>
                 );
@@ -348,8 +314,9 @@ export default function OperationalDashboard({
         onPrev={handlePrevReview}
         onNext={handleNextReview}
         hasPrev={currentReviewIndex > 0}
-        hasNext={currentReviewIndex >= 0 && currentReviewIndex < pendingItems.length - 1}
+        hasNext={currentReviewIndex >= 0 && currentReviewIndex < list.length - 1}
         currentUserId={currentUserId}
+        canReview
         onDecisionComplete={handleDecisionComplete}
       />
     </div>

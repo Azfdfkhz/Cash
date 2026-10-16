@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
+import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
 import { PAGE_SIZE } from "@/lib/pagination";
 import {
   formatCurrency,
@@ -28,7 +32,11 @@ function Metric({ value, label }) {
   );
 }
 
-export default function RequesterDashboard({ name, stats, list, count, page }) {
+export default function RequesterDashboard({ name, stats, list, count, page, currentUserId }) {
+  const [viewCaId, setViewCaId] = useState(null);
+  const viewIndex = list.findIndex((ca) => ca.id === viewCaId);
+  const viewCa = viewIndex >= 0 ? list[viewIndex] : null;
+
   const hasMore = (count ?? 0) > PAGE_SIZE;
   const viewAll = hasMore ? (
     <Link
@@ -93,10 +101,11 @@ export default function RequesterDashboard({ name, stats, list, count, page }) {
               const tile = STATUS_TILE[ca.status] ?? STATUS_TILE.closed;
               const Icon = tile.icon;
               return (
-                <Link
+                <button
                   key={ca.id}
-                  href={`/cash-advances/${ca.id}`}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.03)] transition-colors hover:border-slate-300"
+                  type="button"
+                  onClick={() => setViewCaId(ca.id)}
+                  className="flex w-full items-center justify-between gap-3 text-left rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.03)] transition-colors hover:border-slate-300"
                 >
                   <div className="flex min-w-0 items-center gap-3.5">
                     <div
@@ -119,7 +128,7 @@ export default function RequesterDashboard({ name, stats, list, count, page }) {
                     </p>
                     <StatusBadge status={ca.status} />
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -183,15 +192,16 @@ export default function RequesterDashboard({ name, stats, list, count, page }) {
               {list.map((ca) => (
                 <tr
                   key={ca.id}
-                  className="relative border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
+                  className="relative cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
                 >
                   <td className="px-5 py-4 whitespace-nowrap text-[13px] font-semibold text-slate-900">
-                    <Link
-                      href={`/cash-advances/${ca.id}`}
-                      className="after:absolute after:inset-0"
+                    <button
+                      type="button"
+                      onClick={() => setViewCaId(ca.id)}
+                      className="text-left after:absolute after:inset-0"
                     >
                       {ca.purpose}
-                    </Link>
+                    </button>
                   </td>
                   <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-600">
                     {formatDateLong(ca.created_at)}
@@ -216,6 +226,17 @@ export default function RequesterDashboard({ name, stats, list, count, page }) {
           </div>
         </section>
       </div>
+
+      <CashAdvanceReviewModal
+        isOpen={!!viewCa}
+        onClose={() => setViewCaId(null)}
+        ca={viewCa}
+        onPrev={() => viewIndex > 0 && setViewCaId(list[viewIndex - 1].id)}
+        onNext={() => viewIndex < list.length - 1 && setViewCaId(list[viewIndex + 1].id)}
+        hasPrev={viewIndex > 0}
+        hasNext={viewIndex >= 0 && viewIndex < list.length - 1}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }
