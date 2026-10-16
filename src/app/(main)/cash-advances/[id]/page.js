@@ -69,7 +69,7 @@ export default async function CashAdvanceDetailPage({ params }) {
   const netBalance = balance - totalReturned + totalReimbursed;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:max-w-4xl">
       <BackButton />
 
       <div className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -205,6 +205,8 @@ export default async function CashAdvanceDetailPage({ params }) {
         returns={returns}
         totalReimbursed={totalReimbursed}
         reimbursements={reimbursements}
+        amountRequested={ca.amount_requested}
+        totalSpent={totalSpent}
       />
 
       <div>

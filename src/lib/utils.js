@@ -59,6 +59,53 @@ export function formatDateTimeShort(value) {
   return `${date}, ${time}`;
 }
 
+// "Senin, 6 Okt 2026 pukul 09:12 WIB"
+export function formatDateTimeFull(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  const weekday = new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    timeZone: TZ,
+  }).format(d);
+  const date = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: TZ,
+  }).format(d);
+  const time = new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: TZ,
+  })
+    .format(d)
+    .replace(".", ":");
+  return `${weekday}, ${date} pukul ${time} WIB`;
+}
+
+// Generate code like #CA-2026-0142
+export function formatCaCode(ca) {
+  if (!ca) return "";
+  const year = ca.created_at ? new Date(ca.created_at).getFullYear() : new Date().getFullYear();
+  const hex = (ca.id || "").replace(/[^a-zA-Z0-9]/g, "");
+  const seq = hex.slice(0, 4).toUpperCase() || "0142";
+  return `#CA-${year}-${seq}`;
+}
+
+// Tenggat LPJ: fund_usage_date or +14 days from created_at
+export function formatLpjDeadline(ca) {
+  if (ca?.fund_usage_date) {
+    return formatDateShort(ca.fund_usage_date);
+  }
+  if (ca?.created_at) {
+    const d = new Date(ca.created_at);
+    d.setDate(d.getDate() + 14);
+    return formatDateShort(d);
+  }
+  return "-";
+}
+
 // 15000000 -> "15.000.000" (tanpa simbol, untuk kolom "Nominal (Rp)")
 export function formatNumber(value) {
   return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(

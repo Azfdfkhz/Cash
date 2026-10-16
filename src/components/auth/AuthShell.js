@@ -7,7 +7,7 @@ function Brand() {
       <div className="h-12 w-12 rounded-2xl bg-white/[0.06] flex items-center justify-center shadow-[0_6px_24px_-2px_rgba(37,99,235,0.45)]">
         <Logo variant="outline" size={28} className="text-white" />
       </div>
-      <span className="text-base font-semibold tracking-tight lg:text-xl">
+      <span className="text-base font-semibold tracking-tight lg:text-lg">
         CashAdvance
       </span>
     </div>
@@ -17,7 +17,7 @@ function Brand() {
 // ── Desktop left-panel building blocks ──────────────────────────────
 export function SideHeadline({ children }) {
   return (
-    <h2 className="text-[44px] xl:text-5xl font-bold tracking-tight leading-[1.1]">
+    <h2 className="text-[34px] xl:text-[38px] font-bold tracking-tight leading-[1.1]">
       {children}
     </h2>
   );
@@ -25,10 +25,10 @@ export function SideHeadline({ children }) {
 
 export function SideChecklist({ items }) {
   return (
-    <ul className="mt-10 space-y-5">
+    <ul className="mt-8 space-y-4">
       {items.map((t) => (
-        <li key={t} className="flex items-center gap-4 text-lg text-slate-200">
-          <Check size={22} strokeWidth={2.5} className="text-blue-500 shrink-0" />
+        <li key={t} className="flex items-center gap-3 text-base text-slate-200">
+          <Check size={18} strokeWidth={2.5} className="text-blue-500 shrink-0" />
           {t}
         </li>
       ))}

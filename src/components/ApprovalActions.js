@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function ApprovalActions({ cashAdvanceId }) {
+export default function ApprovalActions({ cashAdvanceId, variant = "card" }) {
   const router = useRouter();
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,6 +13,10 @@ export default function ApprovalActions({ cashAdvanceId }) {
 
   async function decide(status) {
     setError("");
+    if (variant === "panel" && status === "rejected" && !note.trim()) {
+      setError("Catatan wajib diisi jika menolak pengajuan.");
+      return;
+    }
     setLoading(true);
 
     const supabase = createClient();
@@ -44,6 +48,47 @@ export default function ApprovalActions({ cashAdvanceId }) {
     }
 
     router.refresh();
+  }
+
+  if (variant === "panel") {
+    return (
+      <>
+        <div className="px-6 pt-5">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Catatan <span className="text-rose-500">(wajib diisi jika menolak)</span>
+            </label>
+            <span className="text-[11px] text-slate-400">
+              Opsional untuk persetujuan
+            </span>
+          </div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            placeholder="Tulis catatan verifikasi atau alasan jika pengajuan ini ditolak..."
+            className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+          />
+          {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
+        </div>
+        <div className="mt-5 flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+          <button
+            onClick={() => decide("rejected")}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-full border border-rose-300 px-6 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+          >
+            <X size={16} /> Tolak
+          </button>
+          <button
+            onClick={() => decide("approved")}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-full bg-dark-navy px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+          >
+            <Check size={16} /> Setujui Pengajuan
+          </button>
+        </div>
+      </>
+    );
   }
 
   return (

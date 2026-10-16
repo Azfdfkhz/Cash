@@ -28,7 +28,7 @@ export default async function DashboardPage({ searchParams }) {
     const filter = params?.filter === "pending" ? "pending" : "all";
     let query = supabase
       .from("cash_advances")
-      .select("id, purpose, amount_requested, status, created_at, profiles:requester_id(full_name)", {
+      .select("*, profiles:requester_id(full_name, email, bank_name, bank_account_number)", {
         count: "exact",
       })
       .order("created_at", { ascending: false })
@@ -48,6 +48,7 @@ export default async function DashboardPage({ searchParams }) {
         count={count}
         page={page}
         filter={filter}
+        currentUserId={profile.id}
       />
     );
   }

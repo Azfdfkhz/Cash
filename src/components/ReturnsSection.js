@@ -118,6 +118,8 @@ export default function ReturnsSection({
   returns,
   totalReimbursed,
   reimbursements,
+  amountRequested = 0,
+  totalSpent = 0,
 }) {
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -471,63 +473,138 @@ export default function ReturnsSection({
       )}
 
       {showReturnForm && (
-        <form
-          onSubmit={handleSubmitReturn}
-          className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3"
-        >
-          <p className="text-sm font-semibold text-slate-700">
-            Ajukan Pengembalian
-          </p>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Nominal Dikembalikan (Rp)
-            </label>
-            <CurrencyInput
-              required
-              value={amount}
-              onValueChange={setAmount}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Catatan (opsional)
-            </label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Bukti Transfer
-            </label>
+        <div className="space-y-3 lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-5 lg:space-y-0">
+          <form
+            id="return-form"
+            onSubmit={handleSubmitReturn}
+            className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 lg:rounded-3xl lg:p-6 lg:space-y-5"
+          >
+            <p className="text-sm font-semibold text-slate-700 lg:text-base lg:text-slate-900">
+              Ajukan Pengembalian
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Nominal Dikembalikan (Rp)
+              </label>
+              <div className="relative">
+                <CurrencyInput
+                  required
+                  value={amount}
+                  onValueChange={setAmount}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand lg:pr-20 lg:font-semibold"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAmount(String(Math.max(remaining, 0)))}
+                  className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 lg:block"
+                >
+                  Semua
+                </button>
+              </div>
+              <p className="mt-1.5 hidden text-xs text-slate-400 lg:block">
+                Sisa saldo yang perlu dikembalikan:{" "}
+                {formatCurrency(Math.max(remaining, 0))}.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Bukti Transfer
+              </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-slate-500 text-sm lg:flex-col lg:gap-1.5 lg:rounded-2xl lg:bg-slate-50 lg:py-10"
+              >
+                <Upload size={16} />
+                {file ? (
+                  file.name
+                ) : (
+                  <>
+                    <span className="lg:hidden">Unggah foto bukti transfer</span>
+                    <span className="hidden lg:inline">
+                      Seret file ke sini, atau{" "}
+                      <span className="font-semibold text-brand">pilih dokumen</span>
+                    </span>
+                    <span className="hidden text-xs text-slate-400 lg:inline">
+                      JPG atau PNG
+                    </span>
+                  </>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Catatan (opsional)
+              </label>
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:hidden"
+            >
+              {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
+            </button>
+          </form>
+
+          <aside className="hidden space-y-3 lg:block">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5">
+              <p className="text-xs text-slate-500">Sisa dana yang perlu dikembalikan</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+                {formatCurrency(Math.max(remaining, 0))}
+              </p>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-dark-navy"
+                  style={{
+                    width: `${
+                      amountRequested > 0
+                        ? Math.min(100, Math.max(0, (totalSpent / amountRequested) * 100))
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
+              <dl className="mt-4 space-y-2 text-xs">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Total Plafon Diajukan</dt>
+                  <dd className="font-bold text-slate-900">{formatCurrency(amountRequested)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Total Realisasi Terpakai</dt>
+                  <dd className="font-bold text-slate-900">{formatCurrency(totalSpent)}</dd>
+                </div>
+              </dl>
+            </div>
+            <button
+              type="submit"
+              form="return-form"
+              disabled={submitting}
+              className="w-full rounded-full bg-dark-navy py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+            >
+              {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
+            </button>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-slate-500 text-sm"
+              onClick={() => router.back()}
+              className="w-full rounded-full border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              <Upload size={16} />
-              {file ? file.name : "Unggah foto bukti transfer"}
+              Batal
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="hidden"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors"
-          >
-            {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
-          </button>
-        </form>
+          </aside>
+        </div>
       )}
 
       {showReimburseForm && (

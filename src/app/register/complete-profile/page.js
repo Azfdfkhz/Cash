@@ -151,7 +151,7 @@ export default function CompleteProfilePage() {
       <p className="hidden lg:block text-[13px] font-semibold uppercase tracking-wider text-brand mb-2">
         Langkah 2 dari 2
       </p>
-      <h2 className="text-2xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2 lg:mb-3">
+      <h2 className="text-2xl lg:text-[28px] font-bold tracking-tight text-slate-900 mb-2 lg:mb-3">
         Lengkapi data Anda
       </h2>
       <p className="text-[15px] leading-relaxed text-slate-500 mb-6 lg:mb-8">

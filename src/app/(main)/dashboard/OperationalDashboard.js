@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Clock, CreditCard, TrendingUp, TriangleAlert } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
+import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
 import { PAGE_SIZE } from "@/lib/pagination";
 import {
   formatCurrency,
@@ -46,8 +51,50 @@ function QuickTile({ href, icon: Icon, tone, title, caption }) {
   );
 }
 
-export default function OperationalDashboard({ name, stats, list, count, page, filter }) {
+export default function OperationalDashboard({
+  name,
+  stats,
+  list,
+  count,
+  page,
+  filter,
+  currentUserId,
+}) {
+  const router = useRouter();
   const basePath = filter === "pending" ? "/dashboard?filter=pending" : "/dashboard";
+
+  // State untuk pop up review pengajuan
+  const [reviewCaId, setReviewCaId] = useState(null);
+
+  const pendingItems = list.filter((ca) => ca.status === "pending");
+  const currentReviewIndex = pendingItems.findIndex((ca) => ca.id === reviewCaId);
+  const reviewCa =
+    pendingItems[currentReviewIndex] ||
+    list.find((ca) => ca.id === reviewCaId) ||
+    null;
+
+  function handlePrevReview() {
+    if (currentReviewIndex > 0) {
+      setReviewCaId(pendingItems[currentReviewIndex - 1].id);
+    }
+  }
+
+  function handleNextReview() {
+    if (currentReviewIndex < pendingItems.length - 1) {
+      setReviewCaId(pendingItems[currentReviewIndex + 1].id);
+    }
+  }
+
+  function handleDecisionComplete(decidedId) {
+    router.refresh();
+    const remaining = pendingItems.filter((item) => item.id !== decidedId);
+    if (remaining.length > 0) {
+      const nextIndex = Math.min(currentReviewIndex, remaining.length - 1);
+      setReviewCaId(remaining[nextIndex].id);
+    } else {
+      setReviewCaId(null);
+    }
+  }
 
   return (
     <div>
@@ -131,16 +178,22 @@ export default function OperationalDashboard({ name, stats, list, count, page, f
                     </p>
                   </div>
 
-                  <Link
-                    href={`/cash-advances/${ca.id}`}
-                    className={
-                      action.primary
-                        ? "mt-3 ml-auto flex w-fit items-center rounded-full bg-[#0f172a] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800 transition-colors"
-                        : "mt-3 flex w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-                    }
-                  >
-                    {action.label}
-                  </Link>
+                  {ca.status === "pending" ? (
+                    <button
+                      type="button"
+                      onClick={() => setReviewCaId(ca.id)}
+                      className="mt-3 ml-auto flex w-fit items-center rounded-full bg-[#0f172a] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
+                    >
+                      {action.label}
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/cash-advances/${ca.id}`}
+                      className="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                    >
+                      {action.label}
+                    </Link>
+                  )}
                 </article>
               );
             })}
@@ -154,7 +207,7 @@ export default function OperationalDashboard({ name, stats, list, count, page, f
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[19px] text-slate-600">Selamat Datang</p>
-            <h1 className="mt-1 text-[34px] leading-tight font-extrabold tracking-tight text-slate-900">{name}</h1>
+            <h1 className="mt-1 text-[28px] leading-tight font-extrabold tracking-tight text-slate-900">{name}</h1>
           </div>
           <div className="flex items-center gap-3 pt-3">
             <RoleBadge dot dark>Operasional</RoleBadge>
@@ -170,7 +223,7 @@ export default function OperationalDashboard({ name, stats, list, count, page, f
             label="Saldo berjalan"
             value={formatCompactIdr(stats.totalOutstanding).replace("Rp ", "")}
             caption="Total sisa saldo CA berjalan"
-            valueClass="text-[28px] mt-6"
+            valueClass="text-2xl mt-6"
             icon={TrendingUp}
             iconClass="text-emerald-500"
           />
@@ -181,7 +234,7 @@ export default function OperationalDashboard({ name, stats, list, count, page, f
         <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between px-5 py-5">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Pengajuan terbaru</h2>
+              <h2 className="text-base font-semibold text-slate-900">Pengajuan terbaru</h2>
               <p className="mt-0.5 text-xs text-slate-400">
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
@@ -208,37 +261,77 @@ export default function OperationalDashboard({ name, stats, list, count, page, f
                   </td>
                 </tr>
               )}
-              {list.map((ca) => (
-                <tr
-                  key={ca.id}
-                  className="relative border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
-                >
-                  <td className="px-5 py-4 whitespace-nowrap text-[13px] font-semibold text-slate-900">
-                    <Link href={`/cash-advances/${ca.id}`} className="after:absolute after:inset-0">
-                      {ca.profiles?.full_name ?? "-"}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-4 text-[13px] text-slate-600">{ca.purpose}</td>
-                  <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-700">{formatDateLong(ca.created_at)}</td>
-                  <td className="px-5 py-4 text-right text-[13px] font-bold text-slate-900">
-                    {formatNumber(ca.amount_requested)}
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    <StatusBadge status={ca.status} />
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    {ca.status === "pending" ? (
-                      <span className="inline-block whitespace-nowrap rounded-xl bg-[#0f172a] px-4 py-2.5 text-[11px] font-semibold text-white">
-                        Tinjau Pengajuan
-                      </span>
-                    ) : (
-                      <span className="inline-block rounded-lg bg-slate-100 px-5 py-1.5 text-xs font-medium text-slate-700">
-                        Lihat
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {list.map((ca) => {
+                const isPending = ca.status === "pending";
+                return (
+                  <tr
+                    key={ca.id}
+                    onClick={() => {
+                      if (isPending) {
+                        setReviewCaId(ca.id);
+                      } else {
+                        router.push(`/cash-advances/${ca.id}`);
+                      }
+                    }}
+                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                  >
+                    <td className="px-5 py-4 whitespace-nowrap text-[13px] font-semibold text-slate-900">
+                      {isPending ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReviewCaId(ca.id);
+                          }}
+                          className="hover:text-brand transition-colors text-left font-semibold"
+                        >
+                          {ca.profiles?.full_name ?? "-"}
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/cash-advances/${ca.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:text-brand transition-colors"
+                        >
+                          {ca.profiles?.full_name ?? "-"}
+                        </Link>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-[13px] text-slate-600">{ca.purpose}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-700">
+                      {formatDateLong(ca.created_at)}
+                    </td>
+                    <td className="px-5 py-4 text-right text-[13px] font-bold text-slate-900">
+                      {formatNumber(ca.amount_requested)}
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <StatusBadge status={ca.status} />
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      {isPending ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReviewCaId(ca.id);
+                          }}
+                          className="inline-block whitespace-nowrap rounded-xl bg-[#0f172a] px-4 py-2.5 text-[11px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
+                        >
+                          Tinjau Pengajuan
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/cash-advances/${ca.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-block rounded-lg bg-slate-100 px-5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                        >
+                          Lihat
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <div className="px-6 pb-4 empty:hidden">
@@ -246,6 +339,19 @@ export default function OperationalDashboard({ name, stats, list, count, page, f
           </div>
         </section>
       </div>
+
+      {/* ───────── Pop Up Modal Tinjau Pengajuan ───────── */}
+      <CashAdvanceReviewModal
+        isOpen={!!reviewCa}
+        onClose={() => setReviewCaId(null)}
+        ca={reviewCa}
+        onPrev={handlePrevReview}
+        onNext={handleNextReview}
+        hasPrev={currentReviewIndex > 0}
+        hasNext={currentReviewIndex >= 0 && currentReviewIndex < pendingItems.length - 1}
+        currentUserId={currentUserId}
+        onDecisionComplete={handleDecisionComplete}
+      />
     </div>
   );
 }

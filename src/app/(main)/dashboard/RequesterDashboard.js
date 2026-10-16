@@ -132,7 +132,7 @@ export default function RequesterDashboard({ name, stats, list, count, page }) {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[19px] text-slate-500">Selamat Datang</p>
-            <h1 className="mt-1 text-[34px] leading-tight font-extrabold tracking-tight text-slate-900">
+            <h1 className="mt-1 text-[28px] leading-tight font-extrabold tracking-tight text-slate-900">
               {name}
             </h1>
           </div>
@@ -145,16 +145,16 @@ export default function RequesterDashboard({ name, stats, list, count, page }) {
         </div>
 
         <div className="mt-8 grid grid-cols-4 gap-5">
-          <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-[23px] mt-8 whitespace-nowrap" />
+          <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
           <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
           <StatCard label="Menunggu" value={stats.pendingCount} caption="Menunggu persetujuan" icon={Info} />
-          <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-[28px] mt-6" />
+          <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
         </div>
 
         <section className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white">
           <div className="flex items-end justify-between px-6 pb-4 pt-8">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Pengajuan Terbaru</h2>
+              <h2 className="text-base font-bold text-slate-900">Pengajuan Terbaru</h2>
               <p className="mt-0.5 text-xs text-slate-400">
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>

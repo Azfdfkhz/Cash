@@ -14,7 +14,7 @@ export function RoleBadge({ children, dot = false, dark = false }) {
 }
 
 // Kartu ringkasan desktop. `dark` = kartu utama bernuansa navy.
-export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-4xl mt-5" }) {
+export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-3xl mt-5" }) {
   return (
     <div
       className={`rounded-3xl border p-6 ${

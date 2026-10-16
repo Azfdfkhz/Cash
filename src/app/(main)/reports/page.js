@@ -43,7 +43,7 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">Laporan</h1>
+        <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">Laporan</h1>
         <p className="text-sm text-slate-500 mt-0.5">
           Rekap seluruh kwitansi realisasi Cash Advance.
         </p>
