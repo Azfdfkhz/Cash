@@ -175,3 +175,39 @@ export function downloadCsv(filename, lines) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// Rekening perusahaan tujuan pengembalian sisa dana CA dari requester.
+export const COMPANY_RETURN_ACCOUNTS = [
+  { bank: "Bank Muamalat Indonesia", number: "1080011218", holder: "Yayasan Berbagi Bahagia" },
+  { bank: "Bank Mandiri", number: "1300017459507", holder: "Yayasan Berbagi Bahagia" },
+];
+
+// "BCA · 1234567890 a.n. Budi". Data lama (sebelum atas nama dipisah) hanya
+// punya bank_name yang mungkin sudah memuat atas nama -- ditampilkan apa adanya.
+export function formatBankAccount({ bankName, bankAccountNumber, bankAccountHolder }) {
+  const main = [bankName, bankAccountNumber].filter(Boolean).join(" · ");
+  return bankAccountHolder ? `${main} a.n. ${bankAccountHolder}` : main;
+}
+
+// Jenis pengajuan (cash_advances.kind).
+export const KIND_LABEL = {
+  cash_advance: "Cash Advance",
+  reimbursement: "Reimbursement",
+};
+
+// Penanda di nama file/folder Drive & laporan.
+export const KIND_PREFIX = {
+  cash_advance: "CA",
+  reimbursement: "RB",
+};
+
+// Kategori kwitansi reimbursement (tidak pakai RAB).
+export const REIMBURSEMENT_CATEGORIES = [
+  "Transport",
+  "Konsumsi",
+  "Akomodasi",
+  "Perlengkapan & ATK",
+  "Komunikasi & Internet",
+  "Cetak & Dokumentasi",
+  "Lainnya",
+];

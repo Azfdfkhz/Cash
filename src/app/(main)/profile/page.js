@@ -3,10 +3,12 @@ import { Users } from "lucide-react";
 import { getUserProfile } from "@/lib/supabase/server";
 import ProfileForm from "@/components/ProfileForm";
 import ProfileSummaryCard from "@/components/ProfileSummaryCard";
+import { getBotUsername } from "@/lib/telegram/send";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
+  const botUsername = await getBotUsername();
   const { profile } = await getUserProfile();
 
   return (
@@ -33,6 +35,8 @@ export default async function ProfilePage() {
             initialChatId={profile.telegram_chat_id}
             initialBankName={profile.bank_name}
             initialBankAccountNumber={profile.bank_account_number}
+            initialBankAccountHolder={profile.bank_account_holder}
+            botUsername={botUsername}
           />
           {profile?.role === "operational" && (
             <Link

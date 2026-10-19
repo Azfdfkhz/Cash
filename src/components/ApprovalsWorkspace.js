@@ -6,6 +6,7 @@ import Link from "next/link";
 import CashAdvanceCard from "@/components/CashAdvanceCard";
 import StatusBadge from "@/components/StatusBadge";
 import ApprovalActions from "@/components/ApprovalActions";
+import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import {
   formatCompactIdr,
   formatCurrency,
@@ -13,6 +14,7 @@ import {
   formatDateTimeShort,
   FUNDING_SOURCE_LABEL,
   OBJECTIVE_LABEL,
+  KIND_LABEL,
 } from "@/lib/utils";
 
 function Info({ label, children }) {
@@ -26,7 +28,7 @@ function Info({ label, children }) {
 
 // Mobile: daftar kartu yang membuka halaman detail.
 // Desktop (≥lg): daftar di kiri + panel detail & aksi di kanan.
-export default function ApprovalsWorkspace({ items, count, pagination }) {
+export default function ApprovalsWorkspace({ items, toDisburse = [], kind = null, count, pagination }) {
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? null);
   const index = Math.max(0, items.findIndex((i) => i.id === selectedId));
   const selected = items[index] ?? null;
@@ -36,7 +38,13 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
     if (next) setSelectedId(next.id);
   }
 
+  const isReimbursement = selected?.kind === "reimbursement";
+  const holder = selected
+    ? selected.bank_account_holder || selected.profiles?.bank_account_holder || selected.profiles?.full_name
+    : "";
+
   return (
+    <KindFilterProvider basePath="/approvals" active={kind}>
     <div className="space-y-4 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <section className="space-y-3">
         <div>
@@ -49,12 +57,29 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
             </span>
           </div>
           <p className="mt-0.5 text-sm text-slate-500 lg:hidden">
-            {count ?? 0} pengajuan Cash Advance menunggu persetujuan Anda.
+            {count ?? 0} pengajuan menunggu persetujuan Anda.
           </p>
           <p className="mt-0.5 hidden text-xs text-slate-500 lg:block">
             Pilih pengajuan untuk meninjau rincian biaya.
           </p>
         </div>
+
+        <KindFilter />
+
+        <KindFilterContent skeletons={4}>
+        {toDisburse.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-slate-700">
+              Menunggu Pencairan ({toDisburse.length})
+            </h2>
+            {toDisburse.map((ca) => (
+              <CashAdvanceCard key={ca.id} ca={ca} showRequester />
+            ))}
+            <h2 className="pt-2 text-sm font-semibold text-slate-700">
+              Menunggu Persetujuan
+            </h2>
+          </div>
+        )}
 
         {items.length === 0 && (
           <p className="text-sm text-slate-500">
@@ -93,6 +118,9 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
                     </span>
                   )}
                 </div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
+                  {KIND_LABEL[ca.kind] ?? "Cash Advance"}
+                </p>
                 <p className="mt-0.5 truncate text-xs text-slate-500">
                   {ca.purpose} · {formatCompactIdr(ca.amount_requested).replace("Rp ", "")}
                 </p>
@@ -108,6 +136,7 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
         </div>
 
         {pagination}
+        </KindFilterContent>
       </section>
 
       <aside className="hidden lg:block lg:sticky lg:top-8">
@@ -115,7 +144,12 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
           <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
               <div className="min-w-0">
-                <StatusBadge status={selected.status} />
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={selected.status} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+                    {KIND_LABEL[selected.kind] ?? "Cash Advance"}
+                  </span>
+                </div>
                 <h2 className="mt-2 truncate text-xl font-bold text-slate-900">
                   {selected.purpose}
                 </h2>
@@ -144,7 +178,7 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
 
             <div className="space-y-5 px-6 pt-5">
               <div className="rounded-2xl border border-slate-200 p-5">
-                <p className="text-xs text-slate-500">Plafon diajukan</p>
+                <p className="text-xs text-slate-500">{isReimbursement ? "Nominal diajukan" : "Plafon diajukan"}</p>
                 <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
                   {formatCurrency(selected.amount_requested)}
                 </p>
@@ -160,14 +194,14 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <Info label="Nama Pemohon">{selected.profiles?.full_name ?? "-"}</Info>
-                <Info label="Rekening Pencairan">
+                <Info label={isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}>
                   {selected.bank_name || selected.bank_account_number ? (
                     <>
                       {[selected.bank_name, selected.bank_account_number]
                         .filter(Boolean)
                         .join(" ")}
                       <span className="block text-xs font-normal text-slate-500">
-                        a.n {selected.profiles?.full_name}
+                        a.n {holder}
                       </span>
                     </>
                   ) : (
@@ -186,7 +220,7 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
                 )}
               </div>
 
-              {selected.rab_url && (
+              {!isReimbursement && selected.rab_url && (
                 <a
                   href={selected.rab_url}
                   target="_blank"
@@ -229,5 +263,6 @@ export default function ApprovalsWorkspace({ items, count, pagination }) {
         )}
       </aside>
     </div>
+    </KindFilterProvider>
   );
 }

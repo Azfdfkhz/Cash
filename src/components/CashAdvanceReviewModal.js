@@ -21,6 +21,7 @@ import {
   formatCaCode,
   formatLpjDeadline,
   FUNDING_SOURCE_LABEL,
+  KIND_LABEL,
 } from "@/lib/utils";
 
 export default function CashAdvanceReviewModal(props) {
@@ -67,6 +68,10 @@ function CashAdvanceReviewModalContent({
   const isPending = ca.status === "pending";
   // Hanya operasional yang boleh memutuskan, dan bukan pengajuan miliknya sendiri.
   const canDecide = canReview && isPending && !isOwner;
+
+  const isReimbursement = ca.kind === "reimbursement";
+  const awaitingTransfer = ca.status === "approved" && !ca.disbursed_at;
+  const holderName = ca.bank_account_holder || ca.profiles?.bank_account_holder || ca.profiles?.full_name || "-";
 
   const categoryLabel =
     (ca.funding_source && FUNDING_SOURCE_LABEL[ca.funding_source]) ||
@@ -142,6 +147,9 @@ function CashAdvanceReviewModalContent({
               <span className="shrink-0 rounded bg-[#eff6ff] px-1.5 py-0.5 text-[10px] font-bold text-[#2563eb]">
                 {formatCaCode(ca)}
               </span>
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                {KIND_LABEL[ca.kind] ?? "Cash Advance"}
+              </span>
               {isPending ? (
                 <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-[10px] font-semibold text-[#b45309]">
                   <span className="h-1 w-1 rounded-full bg-[#f59e0b]" />
@@ -194,15 +202,18 @@ function CashAdvanceReviewModalContent({
           <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3">
             <div className="min-w-0">
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                PLAFON DIAJUKAN
+                {isReimbursement ? "NOMINAL DIAJUKAN" : "PLAFON DIAJUKAN"}
               </p>
               <p className="mt-0.5 text-lg font-extrabold leading-tight tracking-tight text-slate-900">
                 {formatCurrency(ca.amount_requested)}
               </p>
-              <p className="mt-0.5 truncate text-[10px] font-medium text-slate-500">
-                Kategori: {categoryFull}
-              </p>
+              {!isReimbursement && (
+                <p className="mt-0.5 truncate text-[10px] font-medium text-slate-500">
+                  Kategori: {categoryFull}
+                </p>
+              )}
             </div>
+            {!isReimbursement && (
             <div className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
               <Calendar size={13} strokeWidth={2} className="text-[#2563eb]" />
               <div>
@@ -214,6 +225,7 @@ function CashAdvanceReviewModalContent({
                 </p>
               </div>
             </div>
+            )}
           </div>
 
           {/* Pemohon & rekening berdampingan */}
@@ -226,7 +238,7 @@ function CashAdvanceReviewModalContent({
             </div>
             <div className="min-w-0 rounded-xl border border-slate-200/90 bg-white p-2.5">
               <div className="flex items-start justify-between gap-1">
-                <p className="text-[10px] font-medium text-slate-400">Rekening Pencairan</p>
+                <p className="text-[10px] font-medium text-slate-400">{isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}</p>
                 {(ca.bank_name || ca.bank_account_number) && (
                   <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-[9px] font-semibold text-[#1fa653]">
                     <Check size={9} strokeWidth={3} />
@@ -237,7 +249,7 @@ function CashAdvanceReviewModalContent({
               <p className="mt-0.5 break-words text-xs font-bold text-slate-900">
                 {[ca.bank_name, ca.bank_account_number].filter(Boolean).join(" ") || "-"}
               </p>
-              <p className="text-[10px] text-slate-500">a.n {ca.profiles?.full_name || "-"}</p>
+              <p className="text-[10px] text-slate-500">a.n {holderName}</p>
             </div>
           </div>
 
@@ -248,6 +260,7 @@ function CashAdvanceReviewModalContent({
             </div>
           </div>
 
+          {!isReimbursement ? (
           <div>
             <p className={lbl}>LAMPIRAN RAB & NOTA ESTIMASI</p>
             {ca.rab_url ? (
@@ -270,10 +283,15 @@ function CashAdvanceReviewModalContent({
               </a>
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center text-[11px] text-slate-400">
-                Tidak ada lampiran RAB
+                Tidak ada link spreadsheet. Rincian RAB ada di detail pengajuan.
               </div>
             )}
           </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center text-[11px] text-slate-500">
+              Kwitansi reimbursement dilihat di detail pengajuan.
+            </div>
+          )}
 
           {canDecide ? (
             <div>
@@ -363,7 +381,11 @@ function CashAdvanceReviewModalContent({
                 href={`/cash-advances/${ca.id}`}
                 className="flex items-center justify-center rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
               >
-                Buka Detail Lengkap
+                {canReview && awaitingTransfer
+                  ? isReimbursement
+                    ? "Transfer Penggantian"
+                    : "Cairkan Dana"
+                  : "Buka Detail Lengkap"}
               </Link>
             </div>
           )}

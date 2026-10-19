@@ -13,8 +13,8 @@ export default function BottomNav({ role, pendingCount = 0 }) {
   return (
     <nav className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom">
       <ul className="flex px-4 pt-2 pb-3">
-        {items.map(({ href, label, icon: Icon, badge }) => {
-          const active = isActive(pathname, href);
+        {items.map(({ href, label, icon: Icon, badge, also }) => {
+          const active = isActive(pathname, href, also);
           return (
             <li key={href} className="flex-1">
               <Link

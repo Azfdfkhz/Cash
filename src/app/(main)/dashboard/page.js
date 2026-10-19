@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { getDashboardStats } from "@/lib/stats";
-import { getPage, pageRange } from "@/lib/pagination";
+import { getKindFilter, getPage, pageRange } from "@/lib/pagination";
 import RequesterDashboard from "./RequesterDashboard";
 import OperationalDashboard from "./OperationalDashboard";
 
@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage({ searchParams }) {
   const params = await searchParams;
   const page = getPage(params);
+  const kind = getKindFilter(params);
   const { from, to } = pageRange(page);
   const { user, profile } = await getUserProfile();
   // Akun baru yang belum menyelesaikan langkah 2 diarahkan ke sana.
@@ -28,12 +29,13 @@ export default async function DashboardPage({ searchParams }) {
     const filter = params?.filter === "pending" ? "pending" : "all";
     let query = supabase
       .from("cash_advances")
-      .select("*, profiles:requester_id(full_name, email, bank_name, bank_account_number)", {
+      .select("*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder)", {
         count: "exact",
       })
       .order("created_at", { ascending: false })
       .range(from, to);
     if (filter === "pending") query = query.eq("status", "pending");
+    if (kind) query = query.eq("kind", kind);
 
     const [stats, { data: list, count }] = await Promise.all([
       getDashboardStats(),
@@ -48,19 +50,26 @@ export default async function DashboardPage({ searchParams }) {
         count={count}
         page={page}
         filter={filter}
+        kind={kind}
         currentUserId={profile.id}
       />
     );
   }
 
+  let requesterQuery = supabase
+    .from("cash_advances")
+    .select(
+      "*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder)",
+      { count: "exact" }
+    )
+    .eq("requester_id", profile.id)
+    .order("created_at", { ascending: false })
+    .range(from, to);
+  if (kind) requesterQuery = requesterQuery.eq("kind", kind);
+
   const [stats, { data: list, count }] = await Promise.all([
     getDashboardStats(),
-    supabase
-      .from("cash_advances")
-      .select("*, profiles:requester_id(full_name, email, bank_name, bank_account_number)", { count: "exact" })
-      .eq("requester_id", profile.id)
-      .order("created_at", { ascending: false })
-      .range(from, to),
+    requesterQuery,
   ]);
 
   return (
@@ -70,6 +79,7 @@ export default async function DashboardPage({ searchParams }) {
       list={list ?? []}
       count={count}
       page={page}
+      kind={kind}
       currentUserId={profile.id}
     />
   );

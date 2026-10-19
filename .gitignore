@@ -41,8 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Google OAuth local credentials - NEVER commit these
-credentials.json
-token.json
-google-service-account.json
-google-service-account1.json
+# pdf.js worker, disalin otomatis saat dev/build (scripts/copy-pdf-worker.mjs)
+/public/pdfjs/
+
+# service account (jangan di-commit)
+google-service-account*.json

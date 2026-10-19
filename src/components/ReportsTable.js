@@ -31,19 +31,24 @@ export default function ReportsTable({ rows }) {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  // Filter jenis: "" = semua, atau label jenis ("Cash Advance"/"Reimbursement").
+  const [kind, setKind] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
+      if (kind && r.kind !== kind) return false;
       if (date && r.receiptDate?.slice(0, 10) !== date) return false;
       if (!q) return true;
       return (
         r.requesterName?.toLowerCase().includes(q) ||
         r.vendor?.toLowerCase().includes(q) ||
-        r.purpose?.toLowerCase().includes(q)
+        r.purpose?.toLowerCase().includes(q) ||
+        r.kind?.toLowerCase().includes(q) ||
+        r.category?.toLowerCase().includes(q)
       );
     });
-  }, [rows, query, date]);
+  }, [rows, query, date, kind]);
 
   const selected = filtered.find((r) => r.id === selectedId) ?? null;
   const ids = driveIds(selected?.driveUrl);
@@ -52,7 +57,9 @@ export default function ReportsTable({ rows }) {
     const header = [
       "Tanggal Kwitansi",
       "Requester",
-      "Keperluan CA",
+      "Jenis",
+      "Keperluan",
+      "Pos RAB / Kategori",
       "Vendor",
       "Nominal",
       "Catatan",
@@ -62,7 +69,9 @@ export default function ReportsTable({ rows }) {
       [
         r.receiptDate ? formatDate(r.receiptDate) : "-",
         r.requesterName,
+        r.kind,
         r.purpose,
+        r.category,
         r.vendor,
         r.amount,
         r.notes,
@@ -71,7 +80,8 @@ export default function ReportsTable({ rows }) {
         .map(toCsvValue)
         .join(",")
     );
-    downloadCsv(`laporan-cash-advance-${new Date().toISOString().slice(0, 10)}.csv`, [
+    const kindSlug = kind ? `${kind.toLowerCase().replace(/\s+/g, "-")}-` : "";
+    downloadCsv(`laporan-kwitansi-${kindSlug}${new Date().toISOString().slice(0, 10)}.csv`, [
       header.join(","),
       ...lines,
     ]);
@@ -99,11 +109,33 @@ export default function ReportsTable({ rows }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari requester, vendor, keperluan..."
+            placeholder="Cari requester, vendor, keperluan, jenis..."
             className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
           />
         </div>
 
+        <div className="flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Filter jenis pengajuan">
+          {[
+            ["", "Semua"],
+            ["Cash Advance", "Cash Advance"],
+            ["Reimbursement", "Reimbursement"],
+          ].map(([value, label]) => (
+            <button
+              key={label}
+              type="button"
+              role="tab"
+              aria-selected={kind === value}
+              onClick={() => setKind(value)}
+              className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                kind === value
+                  ? "border-brand bg-brand text-white"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-brand hover:text-brand"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
           <span className="text-sm text-slate-500">{filtered.length} kwitansi</span>
           <div className="flex items-center gap-3">
@@ -150,6 +182,10 @@ export default function ReportsTable({ rows }) {
                         {r.vendor || "-"}
                       </p>
                       <p className="truncate text-xs text-slate-500">{r.purpose}</p>
+                      <p className="truncate text-[11px] text-slate-400">
+                        {r.kind}
+                        {r.category ? ` · ${r.category}` : ""}
+                      </p>
                     </div>
                   </div>
                   <p className="shrink-0 text-sm font-bold text-slate-900">

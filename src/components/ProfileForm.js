@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import BankInput from "@/components/BankInput";
 
 export default function ProfileForm({
   profileId,
@@ -10,12 +11,17 @@ export default function ProfileForm({
   initialChatId,
   initialBankName,
   initialBankAccountNumber,
+  initialBankAccountHolder,
+  botUsername,
 }) {
   const router = useRouter();
   const [chatId, setChatId] = useState(initialChatId || "");
   const [bankName, setBankName] = useState(initialBankName || "");
   const [bankAccountNumber, setBankAccountNumber] = useState(
     initialBankAccountNumber || ""
+  );
+  const [bankAccountHolder, setBankAccountHolder] = useState(
+    initialBankAccountHolder || ""
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -34,6 +40,7 @@ export default function ProfileForm({
         telegram_chat_id: chatId || null,
         bank_name: bankName.trim() || null,
         bank_account_number: bankAccountNumber.trim() || null,
+        bank_account_holder: bankAccountHolder.trim() || null,
       })
       .eq("id", profileId);
 
@@ -89,14 +96,12 @@ export default function ProfileForm({
 
           <div>
             <label className={labelCls}>
-              Bank Tujuan Transfer (dengan atas nama)
+              Bank Tujuan Transfer
             </label>
-            <input
-              type="text"
+            <BankInput
               value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
+              onChange={setBankName}
               className={inputCls}
-              placeholder="Contoh: BCA, Mandiri, BRI"
             />
           </div>
 
@@ -112,9 +117,21 @@ export default function ProfileForm({
               className={inputCls}
               placeholder="Nomor rekening penerima"
             />
+          </div>
+
+          <div>
+            <label className={labelCls}>Atas Nama Rekening</label>
+            <input
+              type="text"
+              value={bankAccountHolder}
+              onChange={(e) => setBankAccountHolder(e.target.value)}
+              className={inputCls}
+              placeholder="Nama pemilik rekening sesuai buku tabungan"
+            />
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Rekening ini otomatis terisi saat mengajukan Cash Advance, jadi
-              tidak perlu diketik ulang. Tetap bisa diubah per pengajuan.
+              Rekening ini otomatis terisi saat mengajukan Cash Advance atau
+              Reimbursement, jadi tidak perlu diketik ulang. Tetap bisa diubah
+              per pengajuan.
             </p>
           </div>
         </div>
@@ -145,17 +162,29 @@ export default function ProfileForm({
             />
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Diisi supaya Anda dapat notifikasi Telegram saat pengajuan Cash
-            Advance disetujui atau ditolak. Caranya:
+            Diisi supaya Anda dapat notifikasi Telegram saat pengajuan
+            disetujui, ditolak, atau dananya ditransfer. Caranya:
             <br />
             1. Chat bot <span className="font-medium">@userinfobot</span> di
             Telegram untuk tahu Chat ID Anda (angka).
             <br />
-            2. Cari bot notifikasi perusahaan dan tekan{" "}
-            <span className="font-medium">/start</span> (wajib, kalau tidak
-            notifikasi tidak akan terkirim).
+            2. Masukkan Chat ID dari langkah 1 di sini.
             <br />
-            3. Masukkan Chat ID dari langkah 1 di sini.
+            3. Terakhir, buka bot notifikasi{" "}
+            {botUsername ? (
+              <a
+                href={`https://t.me/${botUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-brand underline"
+              >
+                @{botUsername}
+              </a>
+            ) : (
+              <span className="font-medium">perusahaan</span>
+            )}{" "}
+            di Telegram dan tekan <span className="font-medium">Start</span>{" "}
+            (wajib, kalau tidak notifikasi tidak akan terkirim).
           </p>
         </div>
       </div>

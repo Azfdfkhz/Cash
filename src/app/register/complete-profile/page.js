@@ -51,8 +51,13 @@ export default function CompleteProfilePage() {
       .from("profiles")
       .update({
         full_name: displayName || username,
-        bank_name: bankName ? `${bankName}${bankHolderName ? ` a.n. ${bankHolderName}` : ""}` : null,
+        username: username.trim().toLowerCase() || null,
+        // Menandai langkah 2 selesai; tanpa ini dashboard terus mengarahkan
+        // kembali ke halaman ini.
+        profile_completed_at: new Date().toISOString(),
+        bank_name: bankName || null,
         bank_account_number: bankAccountNumber.trim() || null,
+        bank_account_holder: bankHolderName.trim() || null,
         telegram_chat_id: telegramChatId.trim() || null,
       })
       .eq("id", profileId);
@@ -60,7 +65,11 @@ export default function CompleteProfilePage() {
     setSaving(false);
 
     if (updateError) {
-      setError("Gagal menyimpan data. Coba lagi.");
+      setError(
+        updateError.code === "23505"
+          ? "Nama pengguna sudah dipakai. Coba yang lain."
+          : "Gagal menyimpan data. Coba lagi."
+      );
       return;
     }
 

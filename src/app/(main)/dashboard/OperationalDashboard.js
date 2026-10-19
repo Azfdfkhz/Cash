@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Clock, CreditCard, TrendingUp, TriangleAlert } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
+import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
 import { PAGE_SIZE } from "@/lib/pagination";
 import {
@@ -14,6 +15,7 @@ import {
   formatDateLong,
   formatDateTimeShort,
   formatNumber,
+  KIND_LABEL,
 } from "@/lib/utils";
 import { RoleBadge, StatCard, FilterTabs, TH } from "./parts";
 
@@ -24,6 +26,20 @@ const MOBILE_ACTION = {
   rejected: { label: "Lihat Catatan" },
   closed: { label: "Lihat Detail" },
 };
+
+function KindTag({ kind }) {
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
+      {KIND_LABEL[kind] ?? "Cash Advance"}
+    </p>
+  );
+}
+
+// Disetujui tapi dana belum dicairkan/ditransfer = tugas tim operasional.
+function pendingTransferLabel(ca) {
+  if (ca.status !== "approved" || ca.disbursed_at) return null;
+  return ca.kind === "reimbursement" ? "Belum ditransfer" : "Belum dicairkan";
+}
 
 function Metric({ value, label, divider }) {
   return (
@@ -58,10 +74,12 @@ export default function OperationalDashboard({
   count,
   page,
   filter,
+  kind,
   currentUserId,
 }) {
   const router = useRouter();
   const basePath = filter === "pending" ? "/dashboard?filter=pending" : "/dashboard";
+  const filterParams = { jenis: kind };
 
   // State untuk pop up review pengajuan
   const [reviewCaId, setReviewCaId] = useState(null);
@@ -90,6 +108,7 @@ export default function OperationalDashboard({
   }
 
   return (
+    <KindFilterProvider basePath={basePath} active={kind}>
     <div>
       {/* ───────── Mobile ───────── */}
       <div className="lg:hidden space-y-5">
@@ -135,9 +154,11 @@ export default function OperationalDashboard({
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="whitespace-nowrap text-[15px] font-bold tracking-tight text-slate-900">Pengajuan Terbaru</h2>
-            <FilterTabs filter={filter} pendingCount={stats.pendingCount} size="sm" />
+            <FilterTabs filter={filter} pendingCount={stats.pendingCount} kind={kind} size="sm" />
           </div>
+          <KindFilter />
 
+          <KindFilterContent>
           {list.length === 0 && (
             <p className="text-sm text-slate-500">Belum ada pengajuan.</p>
           )}
@@ -151,6 +172,7 @@ export default function OperationalDashboard({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
+                      <KindTag kind={ca.kind} />
                       <p className="truncate text-[15px] font-bold text-slate-900">
                         {ca.profiles?.full_name ?? "-"}
                       </p>
@@ -158,7 +180,14 @@ export default function OperationalDashboard({
                         {formatDateTimeShort(ca.created_at)}
                       </p>
                     </div>
-                    <StatusBadge status={ca.status} />
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusBadge status={ca.status} />
+                      {pendingTransferLabel(ca) && (
+                        <span className="text-[11px] font-medium text-amber-700">
+                          {pendingTransferLabel(ca)}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-3 flex items-end justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
@@ -186,7 +215,8 @@ export default function OperationalDashboard({
               );
             })}
           </div>
-          <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath={basePath} />
+          </KindFilterContent>
+          <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath={basePath} params={filterParams} />
         </section>
       </div>
 
@@ -227,7 +257,10 @@ export default function OperationalDashboard({
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
             </div>
-            <FilterTabs filter={filter} pendingCount={stats.pendingCount} />
+            <FilterTabs filter={filter} pendingCount={stats.pendingCount} kind={kind} />
+          </div>
+          <div className="px-5 pb-4">
+            <KindFilter />
           </div>
 
           <table className="w-full border-t border-slate-200 text-left">
@@ -269,7 +302,10 @@ export default function OperationalDashboard({
                         {ca.profiles?.full_name ?? "-"}
                       </button>
                     </td>
-                    <td className="px-5 py-4 text-[13px] text-slate-600">{ca.purpose}</td>
+                    <td className="px-5 py-4 text-[13px] text-slate-600">
+                      <KindTag kind={ca.kind} />
+                      {ca.purpose}
+                    </td>
                     <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-700">
                       {formatDateLong(ca.created_at)}
                     </td>
@@ -278,6 +314,11 @@ export default function OperationalDashboard({
                     </td>
                     <td className="px-5 py-4 text-center">
                       <StatusBadge status={ca.status} />
+                      {pendingTransferLabel(ca) && (
+                        <p className="mt-1 text-[11px] font-medium text-amber-700">
+                          {pendingTransferLabel(ca)}
+                        </p>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-center">
                       <button
@@ -301,7 +342,7 @@ export default function OperationalDashboard({
             </tbody>
           </table>
           <div className="px-6 pb-4 empty:hidden">
-            <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath={basePath} />
+            <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath={basePath} params={filterParams} />
           </div>
         </section>
       </div>
@@ -320,5 +361,6 @@ export default function OperationalDashboard({
         onDecisionComplete={handleDecisionComplete}
       />
     </div>
+    </KindFilterProvider>
   );
 }

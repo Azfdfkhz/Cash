@@ -2,9 +2,15 @@ import { google } from "googleapis";
 import { Readable } from "stream";
 import { getDriveAuth } from "./drive-auth";
 
-async function getOrCreateSubfolder(drive, parentFolderId, name) {
-  const safeName = name.replace(/'/g, "\\'");
-  const q = `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}' and trashed = false`;
+// `legacyNames`: nama folder format lama yang tetap dipakai kalau sudah ada,
+// supaya file pengajuan lama tidak terpecah ke folder baru saat format nama
+// folder berubah. Folder baru selalu dibuat dengan `name`.
+async function getOrCreateSubfolder(drive, parentFolderId, name, legacyNames = []) {
+  const escape = (v) => v.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  const nameFilter = [name, ...legacyNames]
+    .map((n) => `name = '${escape(n)}'`)
+    .join(" or ");
+  const q = `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and (${nameFilter}) and trashed = false`;
 
   const existing = await drive.files.list({
     q,
@@ -35,6 +41,7 @@ export async function uploadReceiptToDrive({
   filename,
   mimeType,
   folderName,
+  legacyFolderNames,
 }) {
   const auth = getDriveAuth();
   const drive = google.drive({ version: "v3", auth });
@@ -45,7 +52,7 @@ export async function uploadReceiptToDrive({
   }
 
   const targetFolderId = folderName
-    ? await getOrCreateSubfolder(drive, rootFolderId, folderName)
+    ? await getOrCreateSubfolder(drive, rootFolderId, folderName, legacyFolderNames)
     : rootFolderId;
 
   const res = await drive.files.create({
@@ -71,4 +78,37 @@ export async function uploadReceiptToDrive({
     fileId: res.data.id,
     viewUrl: res.data.webViewLink,
   };
+}
+
+// Unduh isi file Drive (dipakai laporan PDF untuk menyertakan foto bukti).
+export async function downloadDriveFile(fileId) {
+  const auth = getDriveAuth();
+  const drive = google.drive({ version: "v3", auth });
+  const res = await drive.files.get(
+    { fileId, alt: "media", supportsAllDrives: true },
+    { responseType: "arraybuffer" }
+  );
+  return Buffer.from(res.data);
+}
+
+// Gambar hasil render Google Drive (JPEG) untuk file foto. Dipakai kalau foto
+// tidak bisa dibaca di server -- terutama HEIC dari iPhone, yang tidak
+// didukung sharp versi prebuilt. Drive bisa merender HEIC.
+export async function downloadDriveThumbnail(fileId, size = 2000) {
+  const auth = getDriveAuth();
+  const drive = google.drive({ version: "v3", auth });
+  const { data } = await drive.files.get({
+    fileId,
+    fields: "thumbnailLink",
+    supportsAllDrives: true,
+  });
+  if (!data.thumbnailLink) {
+    throw new Error("Drive tidak punya pratinjau untuk file ini.");
+  }
+  const { token } = await auth.getAccessToken();
+  const res = await fetch(data.thumbnailLink.replace(/=s\d+$/, `=s${size}`), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Gagal mengambil pratinjau Drive (${res.status}).`);
+  return Buffer.from(await res.arrayBuffer());
 }

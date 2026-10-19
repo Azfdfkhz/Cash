@@ -19,7 +19,7 @@ export async function POST(request, { params }) {
   const { data: ca } = await supabase
     .from("cash_advances")
     .select(
-      "purpose, amount_requested, status, review_note, bank_name, bank_account_number, profiles:requester_id(telegram_chat_id)"
+      "purpose, kind, amount_requested, status, review_note, bank_name, bank_account_number, bank_account_holder, profiles:requester_id(telegram_chat_id)"
     )
     .eq("id", id)
     .single();
@@ -41,12 +41,16 @@ export async function POST(request, { params }) {
             amount: ca.amount_requested,
             bankName: ca.bank_name,
             bankAccountNumber: ca.bank_account_number,
+            bankAccountHolder: ca.bank_account_holder,
+            kind: ca.kind,
             formatCurrency,
           })
         : buildRejectionMessage({
             purpose: ca.purpose,
             amount: ca.amount_requested,
             note: ca.review_note,
+            reviseUrl: `${new URL(request.url).origin}/cash-advances/${id}`,
+            kind: ca.kind,
             formatCurrency,
           });
     await sendTelegramMessage(chatId, text);

@@ -71,6 +71,11 @@ Requester dapat notifikasi Telegram otomatis saat pengajuannya disetujui.
 Kalau tidak diisi, fitur ini otomatis dilewati (approval tetap jalan normal
 tanpa notifikasi).
 
+**Grup Tim Operasional (opsional):** masukkan bot ke grup Telegram tim ops,
+lalu isi `TELEGRAM_OPS_CHAT_ID` dengan Chat ID grup (angka negatif, mis.
+`-1001234567890`). Grup akan dapat pesan setiap ada pengajuan Cash Advance /
+Reimbursement baru atau diajukan ulang.
+
 ## 4. Environment variables
 
 Salin `.env.local.example` ke `.env.local` dan isi semua nilainya:
@@ -111,7 +116,12 @@ jadikan operational lewat SQL (langkah 1.4) untuk mencoba alur persetujuan.
   `rejected`, `closed`), termasuk rekening tujuan transfer (`bank_name`,
   `bank_account_number`).
 - `receipts` — kwitansi realisasi per Cash Advance (nominal, vendor,
-  tanggal, link foto Drive, teks OCR mentah).
+  tanggal, link foto Drive, teks OCR mentah, pos RAB `rab_item_id`).
+- `rab_items` — rincian RAB per Cash Advance (uraian, jumlah + satuan,
+  frekuensi, harga satuan, total otomatis). Bisa diisi manual di app atau
+  di-import dari Google Spreadsheet (akses "siapa saja yang memiliki link",
+  atau share ke email service account). Selama pending, nominal diajukan
+  otomatis = total RAB. Realisasi & sisa per pos dihitung dari kwitansi.
 - `cash_advance_returns` — pengembalian sisa saldo ke perusahaan kalau
   kwitansi < nominal diajukan (nominal, bukti transfer, konfirmasi Tim
   Operasional).

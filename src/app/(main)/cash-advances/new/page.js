@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Info } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import CurrencyInput from "@/components/CurrencyInput";
+import { notifyOps } from "@/lib/receiptScan";
+import BankInput from "@/components/BankInput";
+import KindSwitch from "@/components/KindSwitch";
+import RabEditor, { newRabItem, toRabRows } from "@/components/RabEditor";
+import { formatCurrency } from "@/lib/utils";
+import { rabTotal } from "@/lib/rab";
 
 export default function NewCashAdvancePage() {
   const router = useRouter();
@@ -13,9 +20,13 @@ export default function NewCashAdvancePage() {
   const [programRef, setProgramRef] = useState("");
   const [objective, setObjective] = useState("");
   const [rabUrl, setRabUrl] = useState("");
-  const [amount, setAmount] = useState("");
+  const [rabItems, setRabItems] = useState(() => [newRabItem()]);
   const [bankName, setBankName] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankAccountHolder, setBankAccountHolder] = useState("");
+  // true kalau rekening default di profil belum lengkap -> tampilkan info
+  // untuk mengaturnya di Pengaturan supaya pengajuan berikutnya terisi sendiri.
+  const [profileBankMissing, setProfileBankMissing] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,12 +43,16 @@ export default function NewCashAdvancePage() {
       if (!user) return;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("bank_name, bank_account_number")
+        .select("bank_name, bank_account_number, bank_account_holder")
         .eq("id", user.id)
         .single();
       if (!active || !profile) return;
+      setProfileBankMissing(
+        !profile.bank_name || !profile.bank_account_number || !profile.bank_account_holder
+      );
       setBankName((prev) => prev || profile.bank_name || "");
       setBankAccountNumber((prev) => prev || profile.bank_account_number || "");
+      setBankAccountHolder((prev) => prev || profile.bank_account_holder || "");
     })();
     return () => {
       active = false;
@@ -48,9 +63,30 @@ export default function NewCashAdvancePage() {
     e.preventDefault();
     setError("");
 
-    const numericAmount = Number(amount);
+    // RAB wajib; nominal diajukan = total RAB (dijaga juga oleh trigger
+    // sync_ca_amount_from_rab di DB).
+    if (!rabItems.length) {
+      setError("RAB wajib diisi minimal satu baris.");
+      return;
+    }
+    const numericAmount = rabTotal(rabItems);
+    let rabRows = [];
+    try {
+      rabRows = toRabRows(rabItems, null).map(
+        ({ description, quantity, unit, frequency, unit_price }) => ({
+          description,
+          quantity,
+          unit,
+          frequency,
+          unit_price,
+        })
+      );
+    } catch (err) {
+      setError(err.message);
+      return;
+    }
     if (!numericAmount || numericAmount <= 0) {
-      setError("Nominal harus lebih dari 0.");
+      setError("Total RAB harus lebih dari 0.");
       return;
     }
 
@@ -61,28 +97,22 @@ export default function NewCashAdvancePage() {
 
     setLoading(true);
     const supabase = createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      setLoading(false);
-      setError("Sesi Anda sudah berakhir. Silakan masuk ulang.");
-      return;
-    }
-
-    const { error } = await supabase.from("cash_advances").insert({
-      requester_id: user.id,
-      purpose,
-      fund_usage_date: fundUsageDate,
-      funding_source: fundingSource,
-      program_ref: fundingSource === "program" ? programRef.trim() : null,
-      objective,
-      rab_url: rabUrl.trim() || null,
-      amount_requested: numericAmount,
-      bank_name: bankName,
-      bank_account_number: bankAccountNumber,
+    // Pengajuan + RAB disimpan sekaligus (atomik) lewat RPC, karena RAB tidak
+    // bisa ditulis requester lagi setelah pengajuan berstatus pending.
+    const { data: newId, error } = await supabase.rpc("create_cash_advance", {
+      ca: {
+        purpose,
+        fund_usage_date: fundUsageDate,
+        funding_source: fundingSource,
+        program_ref: fundingSource === "program" ? programRef.trim() : null,
+        objective,
+        rab_url: rabUrl.trim() || null,
+        bank_name: bankName,
+        bank_account_number: bankAccountNumber,
+        bank_account_holder: bankAccountHolder.trim(),
+      },
+      rab: rabRows,
     });
 
     setLoading(false);
@@ -97,14 +127,15 @@ export default function NewCashAdvancePage() {
       return;
     }
 
+    notifyOps(newId);
     router.back();
     router.refresh();
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:max-w-3xl">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">
+        <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">
           Ajukan Cash Advance
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">
@@ -112,9 +143,11 @@ export default function NewCashAdvancePage() {
         </p>
       </div>
 
+      <KindSwitch active="cash_advance" />
+
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4"
+        className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 lg:rounded-3xl lg:p-6"
       >
         {error && (
           <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
@@ -208,15 +241,14 @@ export default function NewCashAdvancePage() {
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Link RAB (Spreadsheet){" "}
-            <span className="text-slate-400 font-normal">(opsional)</span>
+            RAB
           </label>
-          <input
-            type="url"
-            value={rabUrl}
-            onChange={(e) => setRabUrl(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-            placeholder="https://docs.google.com/spreadsheets/..."
+          <RabEditor
+            items={rabItems}
+            onItemsChange={setRabItems}
+            sourceUrl={rabUrl}
+            onSourceUrlChange={setRabUrl}
+            onImported={({ title }) => setPurpose((prev) => prev || title)}
           />
         </div>
 
@@ -224,25 +256,36 @@ export default function NewCashAdvancePage() {
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Nominal Diajukan (Rp)
           </label>
-          <CurrencyInput
-            required
-            value={amount}
-            onValueChange={setAmount}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-          />
+          <p className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 font-semibold text-slate-900">
+            {formatCurrency(rabTotal(rabItems))}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Mengikuti total RAB.</p>
         </div>
+
+        {profileBankMissing && (
+          <div className="flex gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-800">
+            <Info size={16} className="shrink-0 mt-0.5" />
+            <p>
+              Rekening default Anda belum lengkap di{" "}
+              <Link href="/profile" className="font-semibold underline">
+                Pengaturan
+              </Link>
+              . Isi di sana supaya bank, nomor rekening, dan atas nama terisi
+              otomatis setiap mengajukan. Untuk pengajuan ini, isi langsung di
+              bawah.
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Bank Tujuan Transfer (dengan atas nama)
+            Bank Tujuan Transfer
           </label>
-          <input
-            type="text"
+          <BankInput
             required
             value={bankName}
-            onChange={(e) => setBankName(e.target.value)}
+            onChange={setBankName}
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-            placeholder="Contoh: BCA, Mandiri, BRI"
           />
         </div>
 
@@ -261,6 +304,20 @@ export default function NewCashAdvancePage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
             placeholder="Nomor rekening penerima"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Atas Nama Rekening
+          </label>
+          <input
+            type="text"
+            required
+            value={bankAccountHolder}
+            onChange={(e) => setBankAccountHolder(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+            placeholder="Nama pemilik rekening sesuai buku tabungan"
+          />
           <p className="text-xs text-slate-500 mt-2">
             Terisi otomatis dari profil. Ubah di sini kalau pengajuan ini pakai
             rekening lain, atau set default di halaman Profil.
@@ -270,7 +327,7 @@ export default function NewCashAdvancePage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors"
+          className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
         >
           {loading ? "Mengirim..." : "Kirim Pengajuan"}
         </button>

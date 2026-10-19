@@ -2,15 +2,19 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Download, ExternalLink, Upload } from "lucide-react";
+import { Check, Download, Eye, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
+import { FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
 import {
   formatCurrency,
   formatDate,
   toCsvValue,
   downloadCsv,
+  COMPANY_RETURN_ACCOUNTS,
 } from "@/lib/utils";
+import { compareRab, describeReceiptLines, receiptLines } from "@/lib/rab";
+import { toJpegFile } from "@/lib/imageConvert";
 
 async function downloadClosureReport(supabase, cashAdvanceId) {
   const { data: ca } = await supabase
@@ -21,7 +25,7 @@ async function downloadClosureReport(supabase, cashAdvanceId) {
 
   const { data: receipts } = await supabase
     .from("receipts")
-    .select("*")
+    .select("*, receipt_lines(*)")
     .eq("cash_advance_id", cashAdvanceId)
     .order("created_at", { ascending: true });
 
@@ -36,6 +40,13 @@ async function downloadClosureReport(supabase, cashAdvanceId) {
     .select("*, createdBy:created_by(full_name)")
     .eq("cash_advance_id", cashAdvanceId)
     .order("created_at", { ascending: true });
+
+  const { data: rabItems } = await supabase
+    .from("rab_items")
+    .select("*")
+    .eq("cash_advance_id", cashAdvanceId)
+    .order("position");
+  const rab = compareRab(rabItems ?? [], receipts ?? []);
 
   const totalSpent = (receipts ?? []).reduce(
     (sum, r) => sum + Number(r.amount || 0),
@@ -54,14 +65,47 @@ async function downloadClosureReport(supabase, cashAdvanceId) {
     `Requester,${toCsvValue(ca.profiles?.full_name)}`,
     `Nominal Diajukan,${ca.amount_requested}`,
     "",
+    ...(rab.rows.length
+      ? [
+          "PERBANDINGAN RAB VS REALISASI",
+          ["No", "Uraian", "Jumlah", "Satuan", "Frekuensi", "Harga Satuan", "Total RAB", "Volume RAB", "Volume Realisasi", "Realisasi", "Sisa"].join(","),
+          ...rab.rows.map(({ item, budget, realized, remaining, volume, usedVolume }, i) =>
+            [
+              i + 1,
+              item.description,
+              item.quantity,
+              item.unit,
+              item.frequency,
+              item.unit_price,
+              budget,
+              volume,
+              usedVolume,
+              realized,
+              remaining,
+            ]
+              .map(toCsvValue)
+              .join(",")
+          ),
+          ...(rab.outside.length
+            ? [["", "Di luar RAB (tak terduga)", "", "", "", "", 0, "", rab.outside.reduce((s, r) => s + Number(r.quantity ?? 1), 0), rab.outsideTotal, -rab.outsideTotal].map(toCsvValue).join(",")]
+            : []),
+          ...(rab.unassigned.length
+            ? [["", "Kwitansi tanpa pos RAB", "", "", "", "", "", "", "", rab.unassignedTotal, -rab.unassignedTotal].map(toCsvValue).join(",")]
+            : []),
+          ["Total", "", "", "", "", "", rab.totalBudget, "", "", rab.totalRealized, rab.totalRemaining].map(toCsvValue).join(","),
+          "",
+        ]
+      : []),
     "KWITANSI REALISASI",
-    ["Tanggal", "Vendor", "Nominal", "Catatan", "Link Foto"].join(","),
+    ["Tanggal", "Pos RAB / Kategori", "Vendor", "Volume", "Nominal", "Catatan", "Link Foto"].join(","),
     ...(receipts ?? []).map((r) =>
       [
         r.receipt_date ? formatDate(r.receipt_date) : "-",
+        describeReceiptLines(r, { items: rabItems ?? [], formatCurrency }),
         r.vendor,
+        receiptLines(r).reduce((s, l) => s + Number(l.quantity ?? 1), 0),
         r.amount,
-        r.notes,
+        [r.notes, ...receiptLines(r).map((l) => l.notes)].filter(Boolean).join("; "),
         r.drive_view_url,
       ]
         .map(toCsvValue)
@@ -118,6 +162,11 @@ export default function ReturnsSection({
   returns,
   totalReimbursed,
   reimbursements,
+  reportUrl,
+  bankName,
+  bankAccountNumber,
+  bankAccountHolder,
+  kind,
   amountRequested = 0,
   totalSpent = 0,
 }) {
@@ -129,6 +178,7 @@ export default function ReturnsSection({
   const [submitting, setSubmitting] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
   const [closing, setClosing] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [error, setError] = useState("");
 
   const reimburseFileInputRef = useRef(null);
@@ -141,11 +191,15 @@ export default function ReturnsSection({
   const [reimbursing, setReimbursing] = useState(false);
 
   const remaining = balance - totalReturned;
-  const showReturnForm = isOwner && status === "approved" && remaining > 0;
+  // Reimbursement tidak punya sisa/kekurangan: selesai lewat transfer
+  // reimbursement (DisbursementSection), jadi form-form ini tidak berlaku.
+  const isCashAdvance = kind !== "reimbursement";
+  const showReturnForm =
+    isCashAdvance && isOwner && status === "approved" && remaining > 0;
   const showReimburseForm =
-    isOperational && status === "approved" && balance < 0 && deficit > 0;
+    isCashAdvance && isOperational && status === "approved" && balance < 0 && deficit > 0;
   const showDirectClose =
-    isOperational && status === "approved" && balance === 0;
+    isCashAdvance && isOperational && status === "approved" && balance === 0;
 
   async function handleSubmitReturn(e) {
     e.preventDefault();
@@ -236,7 +290,7 @@ export default function ReturnsSection({
         data: { user },
       } = await supabase.auth.getUser();
 
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from("cash_advance_reimbursements")
         .insert({
           cash_advance_id: cashAdvanceId,
@@ -245,7 +299,9 @@ export default function ReturnsSection({
           note: reimburseNote || null,
           proof_drive_file_id: uploadData.fileId,
           proof_drive_view_url: uploadData.viewUrl,
-        });
+        })
+        .select("id")
+        .single();
 
       if (insertError) throw new Error(insertError.message);
 
@@ -255,8 +311,16 @@ export default function ReturnsSection({
         .eq("id", cashAdvanceId)
         .single();
 
+      // Notifikasi dikirim setelah status terbaru terbaca, supaya pesannya
+      // bisa bilang "sudah selesai" kalau penggantian ini menutup kekurangan.
+      fetch(`/api/cash-advances/${cashAdvanceId}/notify-reimbursed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reimbursementId: inserted.id }),
+      }).catch(() => {});
+
       if (updatedCa?.status === "closed") {
-        await downloadClosureReport(supabase, cashAdvanceId);
+        await handleClosed(supabase);
       }
 
       setReimburseFile(null);
@@ -267,6 +331,27 @@ export default function ReturnsSection({
     } finally {
       setReimbursing(false);
     }
+  }
+
+  // Batalkan pengembalian yang belum dikonfirmasi (mis. supaya kwitansi
+  // bisa dikoreksi dulu). Policy returns_delete_unconfirmed di DB yang
+  // menjaga hanya yang belum dikonfirmasi yang bisa dihapus.
+  async function handleCancelReturn(returnId) {
+    setError("");
+    setConfirmingId(returnId);
+    const supabase = createClient();
+    const { data, error: deleteError } = await supabase
+      .from("cash_advance_returns")
+      .delete()
+      .eq("id", returnId)
+      .is("confirmed_at", null)
+      .select("id");
+    setConfirmingId(null);
+    if (deleteError || !data?.length) {
+      setError("Gagal membatalkan pengembalian.");
+      return;
+    }
+    router.refresh();
   }
 
   async function handleConfirm(returnId) {
@@ -296,7 +381,7 @@ export default function ReturnsSection({
       .single();
 
     if (updatedCa?.status === "closed") {
-      await downloadClosureReport(supabase, cashAdvanceId);
+      await handleClosed(supabase);
     }
 
     setConfirmingId(null);
@@ -319,9 +404,36 @@ export default function ReturnsSection({
       return;
     }
 
-    await downloadClosureReport(supabase, cashAdvanceId);
+    await handleClosed(supabase);
     setClosing(false);
     router.refresh();
+  }
+
+  // Simpan laporan PDF ke folder Drive pengajuan. Kalau gagal, tombol
+  // "Simpan Laporan ke Drive" tetap muncul untuk dicoba ulang.
+  // force = buat ulang & simpan file laporan baru (mis. setelah lampiran
+  // yang dulu gagal dimuat sudah bisa dimuat).
+  async function archiveReport({ force = false } = {}) {
+    setArchiving(true);
+    try {
+      const res = await fetch(
+        `/api/cash-advances/${cashAdvanceId}/report${force ? "?force=1" : ""}`,
+        { method: "POST" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Gagal menyimpan laporan ke Drive.");
+      }
+    } catch {
+      setError("Gagal menyimpan laporan ke Drive.");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  async function handleClosed(supabase) {
+    await archiveReport();
+    await downloadClosureReport(supabase, cashAdvanceId);
   }
 
   async function handleDownload() {
@@ -357,6 +469,25 @@ export default function ReturnsSection({
               <span className="font-semibold">
                 {formatCurrency(Math.max(remaining, 0))}
               </span>
+              {remaining > 0 && (
+                <div className="mt-2 border-t border-amber-200 pt-2">
+                  <p className="text-xs">
+                    Transfer sisa dana ke salah satu rekening berikut, lalu
+                    unggah bukti transfernya:
+                  </p>
+                  <ul className="mt-1 space-y-0.5">
+                    {COMPANY_RETURN_ACCOUNTS.map((acc) => (
+                      <li key={acc.number} className="text-xs">
+                        {acc.bank} ·{" "}
+                        <span className="font-semibold tracking-wide select-all">
+                          {acc.number}
+                        </span>{" "}
+                        a.n. {acc.holder}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -376,17 +507,16 @@ export default function ReturnsSection({
                       {r.note ? ` · ${r.note}` : ""}
                     </p>
                     {r.proof_drive_view_url && (
-                      <a
-                        href={r.proof_drive_view_url}
-                        target="_blank"
-                        rel="noreferrer"
+                      <FilePreviewLink
+                        url={r.proof_drive_view_url}
+                        title={`Bukti transfer ${formatCurrency(r.amount)}`}
                         className="text-xs text-brand inline-flex items-center gap-1 mt-1"
                       >
-                        Lihat bukti <ExternalLink size={12} />
-                      </a>
+                        Lihat bukti <Eye size={12} />
+                      </FilePreviewLink>
                     )}
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex flex-col items-end gap-1.5">
                     {r.confirmed_at ? (
                       <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
                         Terkonfirmasi
@@ -404,6 +534,15 @@ export default function ReturnsSection({
                       <span className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
                         Menunggu konfirmasi
                       </span>
+                    )}
+                    {!r.confirmed_at && (isOwner || isOperational) && (
+                      <button
+                        onClick={() => handleCancelReturn(r.id)}
+                        disabled={confirmingId === r.id}
+                        className="text-xs font-medium text-rose-600 disabled:opacity-60"
+                      >
+                        Batalkan
+                      </button>
                     )}
                   </div>
                 </div>
@@ -425,6 +564,18 @@ export default function ReturnsSection({
               <span className="font-semibold">
                 {formatCurrency(Math.max(deficit, 0))}
               </span>
+              {deficit > 0 && (bankName || bankAccountNumber) && (
+                <div className="mt-2 border-t border-rose-200 pt-2 text-xs">
+                  Transfer ke rekening requester (sesuai pengajuan):
+                  <p className="mt-1">
+                    {bankName} ·{" "}
+                    <span className="font-semibold tracking-wide select-all">
+                      {bankAccountNumber}
+                    </span>
+                    {bankAccountHolder ? ` a.n. ${bankAccountHolder}` : ""}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -444,14 +595,13 @@ export default function ReturnsSection({
                       {r.note ? ` · ${r.note}` : ""}
                     </p>
                     {r.proof_drive_view_url && (
-                      <a
-                        href={r.proof_drive_view_url}
-                        target="_blank"
-                        rel="noreferrer"
+                      <FilePreviewLink
+                        url={r.proof_drive_view_url}
+                        title={`Bukti transfer ${formatCurrency(r.amount)}`}
                         className="text-xs text-brand inline-flex items-center gap-1 mt-1"
                       >
-                        Lihat bukti <ExternalLink size={12} />
-                      </a>
+                        Lihat bukti <Eye size={12} />
+                      </FilePreviewLink>
                     )}
                   </div>
                   <div className="shrink-0">
@@ -534,10 +684,15 @@ export default function ReturnsSection({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                accept="image/*,.heic,.heif"
+                onChange={async (e) => {
+                  const raw = e.target.files?.[0];
+                  e.target.value = "";
+                  setFile(raw ? await toJpegFile(raw) : null);
+                }}
                 className="hidden"
               />
+              <LocalFilePreview file={file} className="mt-2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -652,10 +807,15 @@ export default function ReturnsSection({
             <input
               ref={reimburseFileInputRef}
               type="file"
-              accept="image/*"
-              onChange={(e) => setReimburseFile(e.target.files?.[0] || null)}
+              accept="image/*,.heic,.heif"
+              onChange={async (e) => {
+                const raw = e.target.files?.[0];
+                e.target.value = "";
+                setReimburseFile(raw ? await toJpegFile(raw) : null);
+              }}
               className="hidden"
             />
+            <LocalFilePreview file={reimburseFile} className="mt-2" />
           </div>
           <button
             type="submit"
@@ -678,13 +838,61 @@ export default function ReturnsSection({
       )}
 
       {status === "closed" && (
-        <button
-          onClick={handleDownload}
-          className="w-full flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium rounded-xl py-3"
-        >
-          <Download size={16} />
-          Unduh Laporan
-        </button>
+        <div className="space-y-2">
+          {reportUrl ? (
+            <FilePreviewLink
+              url={reportUrl}
+              title="Laporan penutupan"
+              className="w-full flex items-center justify-center gap-2 border border-brand text-brand font-medium rounded-xl py-3"
+            >
+              <Eye size={16} />
+              Lihat Laporan
+            </FilePreviewLink>
+          ) : null}
+          {reportUrl && (
+            <button
+              onClick={async () => {
+                setError("");
+                await archiveReport({ force: true });
+                router.refresh();
+              }}
+              disabled={archiving}
+              className="w-full text-xs font-medium text-slate-500 hover:text-brand disabled:opacity-60 py-1"
+            >
+              {archiving
+                ? "Membuat ulang laporan..."
+                : "Perbarui laporan di Drive (buat ulang dari data terbaru)"}
+            </button>
+          )}
+          {!reportUrl && (
+            <button
+              onClick={async () => {
+                setError("");
+                await archiveReport();
+                router.refresh();
+              }}
+              disabled={archiving}
+              className="w-full flex items-center justify-center gap-2 border border-brand text-brand disabled:opacity-60 font-medium rounded-xl py-3"
+            >
+              <Upload size={16} />
+              {archiving ? "Menyimpan laporan ke Drive..." : "Simpan Laporan ke Drive"}
+            </button>
+          )}
+          <a
+            href={`/api/cash-advances/${cashAdvanceId}/report`}
+            className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-medium rounded-xl py-3"
+          >
+            <FileText size={16} />
+            Unduh Laporan (PDF)
+          </a>
+          <button
+            onClick={handleDownload}
+            className="w-full flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium rounded-xl py-3"
+          >
+            <Download size={16} />
+            Unduh Data (CSV)
+          </button>
+        </div>
       )}
     </div>
   );

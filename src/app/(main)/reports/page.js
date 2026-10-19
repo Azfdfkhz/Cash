@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { fetchAll, MAX_FETCH_ROWS } from "@/lib/pagination";
 import ReportsTable from "@/components/ReportsTable";
+import { KIND_LABEL } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function ReportsPage() {
     supabase
       .from("receipts")
       .select(
-        "id, receipt_date, vendor, amount, notes, drive_view_url, cash_advances:cash_advance_id(purpose, profiles:requester_id(full_name))"
+        "id, receipt_date, vendor, amount, notes, drive_view_url, receipt_lines(position, category, outside_rab, rab_items(description)), cash_advances:cash_advance_id(purpose, kind, profiles:requester_id(full_name))"
       )
       .order("created_at", { ascending: false })
       .range(from, to)
@@ -32,6 +33,13 @@ export default async function ReportsPage() {
     receiptDate: r.receipt_date,
     requesterName: r.cash_advances?.profiles?.full_name ?? "-",
     purpose: r.cash_advances?.purpose ?? "-",
+    kind: KIND_LABEL[r.cash_advances?.kind] ?? "Cash Advance",
+    // Pos RAB / kategori dari rincian kwitansi (bisa lebih dari satu).
+    category: [...(r.receipt_lines ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((l) => l.category ?? (l.outside_rab ? "Di luar RAB" : l.rab_items?.description))
+      .filter(Boolean)
+      .join(", "),
     vendor: r.vendor,
     amount: r.amount,
     notes: r.notes,
@@ -45,7 +53,7 @@ export default async function ReportsPage() {
       <div>
         <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">Laporan</h1>
         <p className="text-sm text-slate-500 mt-0.5">
-          Rekap seluruh kwitansi realisasi Cash Advance.
+          Rekap seluruh kwitansi Cash Advance dan Reimbursement.
         </p>
       </div>
       {capped && (

@@ -9,20 +9,22 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  applicationName: "Cash Advance",
+  applicationName: "Cash Advance dan Reimbursement SharingHappiness",
   title: {
-    default: "Cash Advance",
-    template: "%s · Cash Advance",
+    default: "Cash Advance dan Reimbursement SharingHappiness",
+    template: "%s · Cash Advance dan Reimbursement SharingHappiness",
   },
-  description: "Pencatatan pengajuan dan realisasi Cash Advance",
+  description:
+    "Pengajuan dan realisasi Cash Advance serta Reimbursement SharingHappiness",
   appleWebApp: {
     capable: true,
-    title: "Cash Advance",
+    title: "SH Cash Advance",
     statusBarStyle: "default",
   },
   openGraph: {
-    title: "Cash Advance",
-    description: "Pencatatan pengajuan dan realisasi Cash Advance",
+    title: "Cash Advance dan Reimbursement SharingHappiness",
+    description:
+      "Pengajuan dan realisasi Cash Advance serta Reimbursement SharingHappiness",
     type: "website",
   },
 };

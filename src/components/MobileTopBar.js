@@ -6,18 +6,19 @@ import { useLogout } from "@/components/useLogout";
 
 // Top bar mobile (disembunyikan di desktop, di mana sidebar yang dipakai).
 export default function MobileTopBar() {
-  const logout = useLogout();
+  const { requestLogout, dialog } = useLogout();
   return (
     <header className="lg:hidden flex items-center justify-between px-5 pt-8 pb-1 safe-top">
       <BrandMark size="lg" />
       <button
         type="button"
-        onClick={logout}
+        onClick={requestLogout}
         aria-label="Keluar"
         className="h-11 w-11 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
       >
         <LogOut size={18} strokeWidth={1.75} />
       </button>
+      {dialog}
     </header>
   );
 }

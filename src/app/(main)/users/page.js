@@ -17,7 +17,7 @@ export default async function UsersPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">
+        <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">
           Kelola Pengguna
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">

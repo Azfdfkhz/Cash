@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
+import { Plus, ReceiptText, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
+import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
 import { PAGE_SIZE } from "@/lib/pagination";
 import {
@@ -13,6 +14,7 @@ import {
   formatDateLong,
   formatDateShort,
   formatNumber,
+  KIND_LABEL,
 } from "@/lib/utils";
 import { RoleBadge, StatCard, TH } from "./parts";
 
@@ -23,6 +25,20 @@ const STATUS_TILE = {
   rejected: { bg: "bg-[#fff0f2]", icon: X, color: "text-[#e11d48]" },
 };
 
+// Penanda status pencairan untuk pengajuan yang sudah disetujui.
+function pendingTransferLabel(ca) {
+  if (ca.status !== "approved" || ca.disbursed_at) return null;
+  return ca.kind === "reimbursement" ? "Belum ditransfer" : "Belum dicairkan";
+}
+
+function KindTag({ kind }) {
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
+      {KIND_LABEL[kind] ?? "Cash Advance"}
+    </p>
+  );
+}
+
 function Metric({ value, label }) {
   return (
     <div className="flex-1">
@@ -32,15 +48,17 @@ function Metric({ value, label }) {
   );
 }
 
-export default function RequesterDashboard({ name, stats, list, count, page, currentUserId }) {
+export default function RequesterDashboard({ name, stats, list, count, page, kind, currentUserId }) {
   const [viewCaId, setViewCaId] = useState(null);
   const viewIndex = list.findIndex((ca) => ca.id === viewCaId);
   const viewCa = viewIndex >= 0 ? list[viewIndex] : null;
 
+  const filterParams = { jenis: kind };
+  const emptyText = `Belum ada pengajuan${kind ? " dengan jenis ini" : ""}.`;
   const hasMore = (count ?? 0) > PAGE_SIZE;
   const viewAll = hasMore ? (
     <Link
-      href="/dashboard?page=2"
+      href={`/dashboard?${kind ? `jenis=${kind}&` : ""}page=2`}
       className="text-sm font-semibold text-brand hover:underline"
     >
       Lihat Semua
@@ -48,6 +66,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
   ) : null;
 
   return (
+    <KindFilterProvider basePath="/dashboard" active={kind}>
     <div>
       {/* ───────── Mobile ───────── */}
       <div className="lg:hidden space-y-5">
@@ -75,13 +94,22 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
           </div>
         </section>
 
-        <Link
-          href="/cash-advances/new"
-          className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#0f172a] py-4 text-base font-bold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] hover:bg-slate-800 transition-colors"
-        >
-          <Plus size={20} strokeWidth={2} />
-          Ajukan Cash Advance
-        </Link>
+        <div className="space-y-2.5">
+          <Link
+            href="/cash-advances/new"
+            className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#0f172a] py-4 text-base font-bold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] hover:bg-slate-800 transition-colors"
+          >
+            <Plus size={20} strokeWidth={2} />
+            Ajukan Cash Advance
+          </Link>
+          <Link
+            href="/reimbursements/new"
+            className="flex items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-800 hover:border-slate-400 transition-colors"
+          >
+            <ReceiptText size={18} strokeWidth={2} />
+            Ajukan Reimbursement
+          </Link>
+        </div>
 
         <section className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
@@ -90,11 +118,11 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
             </h2>
             {viewAll}
           </div>
+          <KindFilter />
 
+          <KindFilterContent>
           {list.length === 0 && (
-            <p className="text-sm text-slate-500">
-              Belum ada pengajuan Cash Advance.
-            </p>
+            <p className="text-sm text-slate-500">{emptyText}</p>
           )}
           <div className="space-y-3.5">
             {list.map((ca) => {
@@ -114,6 +142,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
                       <Icon size={22} strokeWidth={2} className={tile.color} />
                     </div>
                     <div className="min-w-0">
+                      <KindTag kind={ca.kind} />
                       <p className="line-clamp-2 text-sm font-bold leading-snug text-slate-900">
                         {ca.purpose}
                       </p>
@@ -127,12 +156,18 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
                       {formatCurrency(ca.amount_requested)}
                     </p>
                     <StatusBadge status={ca.status} />
+                    {pendingTransferLabel(ca) && (
+                      <span className="text-[11px] font-medium text-amber-700">
+                        {pendingTransferLabel(ca)}
+                      </span>
+                    )}
                   </div>
                 </button>
               );
             })}
           </div>
-          <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath="/dashboard" />
+          </KindFilterContent>
+          <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath="/dashboard" params={filterParams} />
         </section>
       </div>
 
@@ -153,6 +188,23 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
           </div>
         </div>
 
+        <div className="mt-6 flex gap-3">
+          <Link
+            href="/cash-advances/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0f172a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+          >
+            <Plus size={16} strokeWidth={2} />
+            Ajukan Cash Advance
+          </Link>
+          <Link
+            href="/reimbursements/new"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400 transition-colors"
+          >
+            <ReceiptText size={16} strokeWidth={2} />
+            Ajukan Reimbursement
+          </Link>
+        </div>
+
         <div className="mt-8 grid grid-cols-4 gap-5">
           <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
           <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
@@ -170,6 +222,9 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
             </div>
             {viewAll}
           </div>
+          <div className="px-6 pb-4">
+            <KindFilter />
+          </div>
 
           <table className="w-full border-t border-slate-200 text-left">
             <thead>
@@ -185,7 +240,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
               {list.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-500">
-                    Belum ada pengajuan Cash Advance.
+                    {emptyText}
                   </td>
                 </tr>
               )}
@@ -200,6 +255,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
                       onClick={() => setViewCaId(ca.id)}
                       className="text-left after:absolute after:inset-0"
                     >
+                      <KindTag kind={ca.kind} />
                       {ca.purpose}
                     </button>
                   </td>
@@ -211,6 +267,11 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
                   </td>
                   <td className="px-5 py-4 text-center">
                     <StatusBadge status={ca.status} />
+                    {pendingTransferLabel(ca) && (
+                      <p className="mt-1 text-[11px] font-medium text-amber-700">
+                        {pendingTransferLabel(ca)}
+                      </p>
+                    )}
                   </td>
                   <td className="px-5 py-4 text-center">
                     <span className="inline-block rounded-lg bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700">
@@ -222,7 +283,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
             </tbody>
           </table>
           <div className="px-6 pb-4 empty:hidden">
-            <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath="/dashboard" />
+            <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath="/dashboard" params={filterParams} />
           </div>
         </section>
       </div>
@@ -238,5 +299,6 @@ export default function RequesterDashboard({ name, stats, list, count, page, cur
         currentUserId={currentUserId}
       />
     </div>
+    </KindFilterProvider>
   );
 }

@@ -3,21 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-pdf-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-pdf-worker.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "google:drive-auth": "node scripts/google-drive-auth.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.109.0",
     "date-fns": "^4.4.0",
     "googleapis": "^176.0.0",
+    "heic-to": "^1.6.6",
     "lucide-react": "^1.33.0",
     "next": "16.3.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

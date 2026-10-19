@@ -43,7 +43,8 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
 }
 
 // Toggle "Semua | Menunggu (n)" berbasis query ?filter=
-export function FilterTabs({ filter, pendingCount, size = "md" }) {
+export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
+  const jenis = kind ? `jenis=${kind}` : "";
   const base =
     size === "sm"
       ? "whitespace-nowrap px-3 py-1.5 text-xs"
@@ -56,11 +57,11 @@ export function FilterTabs({ filter, pendingCount, size = "md" }) {
     }`;
   return (
     <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
-      <Link href="/dashboard" className={tab(filter !== "pending")}>
+      <Link href={jenis ? `/dashboard?${jenis}` : "/dashboard"} className={tab(filter !== "pending")}>
         Semua
       </Link>
       <Link
-        href="/dashboard?filter=pending"
+        href={`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`}
         className={tab(filter === "pending")}
       >
         Menunggu ({pendingCount})

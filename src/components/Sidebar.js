@@ -11,7 +11,7 @@ import { getInitials, shortName } from "@/lib/utils";
 // Sidebar desktop 256px (≥lg). Di mobile tidak dirender (pakai BottomNav).
 export default function Sidebar({ role, fullName, pendingCount = 0 }) {
   const pathname = usePathname();
-  const logout = useLogout();
+  const { requestLogout, dialog } = useLogout();
   const items = navFor(role);
 
   return (
@@ -22,8 +22,8 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
 
       <nav className="flex-1 px-3.5 py-4">
         <ul className="space-y-1.5">
-          {items.map(({ href, label, icon: Icon, badge }) => {
-            const active = isActive(pathname, href);
+          {items.map(({ href, label, icon: Icon, badge, also }) => {
+            const active = isActive(pathname, href, also);
             return (
               <li key={href}>
                 <Link
@@ -64,7 +64,7 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
         </div>
         <button
           type="button"
-          onClick={logout}
+          onClick={requestLogout}
           aria-label="Keluar"
           title="Keluar"
           className="h-10 w-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"
@@ -72,6 +72,7 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
           <LogOut size={17} strokeWidth={1.75} />
         </button>
       </div>
+      {dialog}
     </aside>
   );
 }

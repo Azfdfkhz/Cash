@@ -2,12 +2,19 @@ import Link from "next/link";
 
 // Navigasi halaman berbasis query param `?page=`. Cukup dipakai di Server
 // Component — tidak butuh state klien.
-export default function Pagination({ page, total, pageSize, basePath }) {
+// `params`: query lain yang ikut dibawa saat pindah halaman (mis. filter).
+export default function Pagination({ page, total, pageSize, basePath, params = {} }) {
+  const href = (p) => {
+    // basePath boleh sudah membawa query (mis. "/dashboard?filter=pending")
+    const [path, existing = ""] = basePath.split("?");
+    const q = new URLSearchParams(existing);
+    for (const [k, v] of Object.entries(params)) if (v) q.set(k, v);
+    q.set("page", String(p));
+    return `${path}?${q}`;
+  };
   const totalPages = Math.max(1, Math.ceil((total ?? 0) / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
-  // basePath boleh sudah membawa query (mis. "/dashboard?filter=pending")
-  const sep = basePath.includes("?") ? "&" : "?";
 
   if (!canPrev && !canNext) return null;
 
@@ -19,7 +26,7 @@ export default function Pagination({ page, total, pageSize, basePath }) {
   return (
     <div className="flex items-center justify-between pt-1">
       {canPrev ? (
-        <Link href={`${basePath}${sep}page=${page - 1}`} className={linkCls}>
+        <Link href={href(page - 1)} className={linkCls}>
           Sebelumnya
         </Link>
       ) : (
@@ -31,7 +38,7 @@ export default function Pagination({ page, total, pageSize, basePath }) {
       </span>
 
       {canNext ? (
-        <Link href={`${basePath}${sep}page=${page + 1}`} className={linkCls}>
+        <Link href={href(page + 1)} className={linkCls}>
           Berikutnya
         </Link>
       ) : (
