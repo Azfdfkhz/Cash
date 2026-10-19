@@ -2,12 +2,13 @@ import Link from "next/link";
 import { formatCurrency, formatDate, KIND_LABEL } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
 
-export default function CashAdvanceCard({ ca, showRequester = false }) {
-  return (
-    <Link
-      href={`/cash-advances/${ca.id}`}
-      className="block bg-white rounded-xl border border-slate-200 p-4 hover:border-brand transition-colors"
-    >
+// Tanpa `onClick`: tautan ke /cash-advances/<id> (membuka pop up di Beranda).
+// Dengan `onClick`: tombol yang membuka pop up di halaman yang sedang dibuka.
+export default function CashAdvanceCard({ ca, showRequester = false, onClick }) {
+  const cls =
+    "block w-full text-left bg-white rounded-xl border border-slate-200 p-4 hover:border-brand transition-colors";
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
@@ -55,6 +56,15 @@ export default function CashAdvanceCard({ ca, showRequester = false }) {
           </div>
         )}
       </div>
+    </>
+  );
+  return onClick ? (
+    <button type="button" onClick={onClick} className={cls}>
+      {content}
+    </button>
+  ) : (
+    <Link href={`/cash-advances/${ca.id}`} className={cls}>
+      {content}
     </Link>
   );
 }

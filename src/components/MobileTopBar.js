@@ -11,6 +11,8 @@ export default function MobileTopBar() {
   const pathname = usePathname();
   // Halaman Pengajuan baru punya header sendiri (tombol kembali + judul).
   if (/^\/(cash-advances|reimbursements)\/new/.test(pathname)) return null;
+  // Halaman Profil juga punya header sendiri (judul + avatar), sesuai desain.
+  if (pathname === "/profile") return null;
   return (
     <header className="lg:hidden flex items-center justify-between px-5 pt-8 pb-1 safe-top">
       <BrandMark size="lg" />

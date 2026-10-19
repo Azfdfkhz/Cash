@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import Link from "next/link";
 import CashAdvanceCard from "@/components/CashAdvanceCard";
 import StatusBadge from "@/components/StatusBadge";
 import ApprovalActions from "@/components/ApprovalActions";
+import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
+import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import {
   formatCompactIdr,
@@ -26,10 +28,88 @@ function Info({ label, children }) {
   );
 }
 
-// Mobile: daftar kartu yang membuka halaman detail.
+// Mobile: daftar kartu; kartu menunggu persetujuan membuka pop up tinjau,
+// kartu menunggu pencairan membuka pop up detail (form pencairan).
 // Desktop (≥lg): daftar di kiri + panel detail & aksi di kanan.
-export default function ApprovalsWorkspace({ items, toDisburse = [], kind = null, count, pagination }) {
+// Semua pop up dibuka langsung di halaman ini -- tidak pindah ke Beranda.
+export default function ApprovalsWorkspace({
+  items,
+  toDisburse = [],
+  kind = null,
+  count,
+  pagination,
+  currentUserId,
+}) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? null);
+
+  // Pop up tinjau pengajuan (mobile). `held` = salinan pengajuan yang baru
+  // diputuskan, supaya modal tetap menampilkan hasilnya walau daftar
+  // "menunggu" sudah di-refresh dan pengajuan itu hilang dari daftar.
+  const [reviewId, setReviewId] = useState(null);
+  const [held, setHeld] = useState(null);
+  // Pop up detail lengkap: { ca, focus } -- `ca` disimpan sebagai cadangan
+  // kalau pengajuannya sudah keluar dari daftar (mis. setelah dicairkan).
+  const [detail, setDetail] = useState(null);
+
+  const reviewIndex = items.findIndex((i) => i.id === reviewId);
+  const liveReview =
+    reviewIndex >= 0 ? items[reviewIndex] : toDisburse.find((i) => i.id === reviewId) ?? null;
+  const heldHere = held && held.id === reviewId ? held : null;
+  const heldOnly = !!heldHere && reviewIndex < 0;
+  const reviewCa =
+    liveReview && liveReview.status !== "pending" ? liveReview : heldHere ?? liveReview;
+  const inReviewList = heldOnly || reviewIndex >= 0;
+  const prevReview = !inReviewList
+    ? undefined
+    : heldOnly
+      ? items[held.index - 1]
+      : items[reviewIndex - 1];
+  const nextReview = !inReviewList
+    ? undefined
+    : heldOnly
+      ? items[held.index]
+      : items[reviewIndex + 1];
+  const pendingOthers = items.filter((ca) => ca.id !== reviewId);
+
+  function openReview(id) {
+    setHeld(null);
+    setReviewId(id);
+  }
+
+  function handleDecisionComplete(decidedId, status, note) {
+    if (reviewCa) {
+      setHeld({
+        ...reviewCa,
+        status,
+        review_note: note ?? reviewCa.review_note ?? null,
+        reviewed_at: new Date().toISOString(),
+        index: Math.max(0, reviewIndex),
+      });
+    }
+    router.refresh();
+  }
+
+  function handleGoNextPending() {
+    const afterIndex = heldOnly ? held.index - 1 : reviewIndex;
+    const next =
+      pendingOthers.find((ca) => items.indexOf(ca) > afterIndex) ?? pendingOthers[0];
+    if (next) openReview(next.id);
+  }
+
+  const detailLive = detail
+    ? items.find((i) => i.id === detail.ca.id) ??
+      toDisburse.find((i) => i.id === detail.ca.id) ??
+      null
+    : null;
+  // Objek baru tiap data di-refresh supaya pop up memuat ulang isinya, juga
+  // saat pengajuan sudah tidak ada di kedua daftar.
+  const detailCa = useMemo(
+    () => (detail ? detailLive ?? { ...detail.ca } : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [detail, detailLive, items, toDisburse]
+  );
+
   const index = Math.max(0, items.findIndex((i) => i.id === selectedId));
   const selected = items[index] ?? null;
 
@@ -73,7 +153,12 @@ export default function ApprovalsWorkspace({ items, toDisburse = [], kind = null
               Menunggu Pencairan ({toDisburse.length})
             </h2>
             {toDisburse.map((ca) => (
-              <CashAdvanceCard key={ca.id} ca={ca} showRequester />
+              <CashAdvanceCard
+                key={ca.id}
+                ca={ca}
+                showRequester
+                onClick={() => setDetail({ ca, focus: "pencairan" })}
+              />
             ))}
             <h2 className="pt-2 text-sm font-semibold text-slate-700">
               Menunggu Persetujuan
@@ -89,7 +174,12 @@ export default function ApprovalsWorkspace({ items, toDisburse = [], kind = null
 
         <div className="space-y-3 lg:hidden">
           {items.map((ca) => (
-            <CashAdvanceCard key={ca.id} ca={ca} showRequester />
+            <CashAdvanceCard
+              key={ca.id}
+              ca={ca}
+              showRequester
+              onClick={() => openReview(ca.id)}
+            />
           ))}
         </div>
 
@@ -241,12 +331,13 @@ export default function ApprovalsWorkspace({ items, toDisburse = [], kind = null
 
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>Diajukan pada {formatDateTimeShort(selected.created_at)}</span>
-                <Link
-                  href={`/cash-advances/${selected.id}`}
+                <button
+                  type="button"
+                  onClick={() => setDetail({ ca: selected, focus: null })}
                   className="font-semibold text-brand hover:underline"
                 >
                   Lihat detail lengkap
-                </Link>
+                </button>
               </div>
             </div>
 
@@ -262,6 +353,35 @@ export default function ApprovalsWorkspace({ items, toDisburse = [], kind = null
           </div>
         )}
       </aside>
+
+      <CashAdvanceReviewModal
+        isOpen={!!reviewCa}
+        onClose={() => {
+          setReviewId(null);
+          setHeld(null);
+        }}
+        ca={reviewCa}
+        onPrev={() => prevReview && openReview(prevReview.id)}
+        onNext={() => nextReview && openReview(nextReview.id)}
+        hasPrev={!!prevReview}
+        hasNext={!!nextReview}
+        currentUserId={currentUserId}
+        canReview
+        onDecisionComplete={handleDecisionComplete}
+        nextPendingCount={pendingOthers.length}
+        onGoNext={handleGoNextPending}
+      />
+
+      {detailCa && (
+        <CashAdvanceDetailPopup
+          ca={detailCa}
+          onClose={() => setDetail(null)}
+          currentUserId={currentUserId}
+          isOperational
+          initialFocus={detail.focus}
+          standalone
+        />
+      )}
     </div>
     </KindFilterProvider>
   );

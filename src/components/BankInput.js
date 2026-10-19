@@ -6,7 +6,13 @@ import { BANKS, normalizeBankName } from "@/lib/banks";
 // Isian nama bank dengan saran dari daftar bank Indonesia (ketik untuk
 // mencari). Saat keluar dari isian, ketikan dinormalkan ke nama baku
 // (mis. "bca" -> "BCA"). Bank di luar daftar tetap bisa diketik manual.
-export default function BankInput({ value, onChange, required, className }) {
+export default function BankInput({
+  value,
+  onChange,
+  required,
+  className,
+  placeholder = "Ketik untuk mencari, mis. BCA, Mandiri, BRI",
+}) {
   const listId = useId();
   return (
     <>
@@ -22,7 +28,7 @@ export default function BankInput({ value, onChange, required, className }) {
         }}
         autoComplete="off"
         className={className}
-        placeholder="Ketik untuk mencari, mis. BCA, Mandiri, BRI"
+        placeholder={placeholder}
       />
       <datalist id={listId}>
         {BANKS.map((bank) => (

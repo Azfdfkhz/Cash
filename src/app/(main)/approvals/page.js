@@ -41,6 +41,7 @@ export default async function ApprovalsPage({ searchParams }) {
       items={cashAdvances ?? []}
       toDisburse={toDisburse ?? []}
       kind={kind}
+      currentUserId={profile.id}
       count={count ?? 0}
       pagination={
         <Pagination

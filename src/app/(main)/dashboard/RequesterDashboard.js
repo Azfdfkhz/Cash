@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, ReceiptText, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
+import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
@@ -101,22 +101,13 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           </div>
         </section>
 
-        <div className="space-y-2.5">
-          <Link
-            href="/cash-advances/new"
-            className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#0f172a] py-4 text-base font-bold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] hover:bg-slate-800 transition-colors"
-          >
-            <Plus size={20} strokeWidth={2} />
-            Ajukan Cash Advance
-          </Link>
-          <Link
-            href="/reimbursements/new"
-            className="flex items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-800 hover:border-slate-400 transition-colors"
-          >
-            <ReceiptText size={18} strokeWidth={2} />
-            Ajukan Reimbursement
-          </Link>
-        </div>
+        <Link
+          href="/cash-advances/new"
+          className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#0f172a] py-4 text-base font-bold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] hover:bg-slate-800 transition-colors"
+        >
+          <Plus size={20} strokeWidth={2} />
+          Buat Pengajuan
+        </Link>
 
         <section className="space-y-4 pt-2">
           <div className="flex items-center justify-between">

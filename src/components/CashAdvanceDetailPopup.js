@@ -56,7 +56,8 @@ function Title({ children, className = "" }) {
 
 // Detail pengajuan lengkap sebagai pop up mengambang (menggantikan halaman
 // /cash-advances/[id]). Di desktop muncul di area kosong sebelah kiri panel
-// tinjau; di mobile menutupi layar. Dipakai oleh Operasional dan Requester:
+// tinjau; di mobile menutupi layar. `standalone`: dibuka sendiri (tanpa panel
+// tinjau), menutupi seluruh layar di halaman yang sedang dibuka. Dipakai oleh Operasional dan Requester:
 // aksi yang tampil mengikuti peran & status pengajuan.
 export default function CashAdvanceDetailPopup({
   ca,
@@ -64,6 +65,7 @@ export default function CashAdvanceDetailPopup({
   currentUserId,
   isOperational = false,
   initialFocus = null,
+  standalone = false,
 }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -188,7 +190,9 @@ export default function CashAdvanceDetailPopup({
     <>
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}
-      className="animate-fade-in absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4 sm:right-[420px] sm:p-6"
+      className={`animate-fade-in inset-0 flex items-center justify-center bg-slate-900/40 p-4 sm:p-6 ${
+        standalone ? "fixed z-50" : "absolute z-20 sm:right-[420px]"
+      }`}
       role="dialog"
       aria-modal="true"
       aria-label="Detail pengajuan"

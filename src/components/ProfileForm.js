@@ -2,11 +2,44 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  CreditCard,
+  Landmark,
+  Mail,
+  Send,
+  User,
+  UserRound,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BankInput from "@/components/BankInput";
 
+// Satu baris isian: kotak ikon + label kecil + nilai (sesuai desain Figma).
+function Row({ icon: Icon, label, children, trailing }) {
+  return (
+    <div className="flex items-center gap-4 border-t border-slate-100 px-4 py-3.5 first:border-t-0 focus-within:bg-slate-50/60">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">
+        <Icon size={20} strokeWidth={1.75} />
+      </span>
+      <label className="block min-w-0 flex-1">
+        <span className="block text-xs text-slate-400">{label}</span>
+        {children}
+      </label>
+      {trailing}
+    </div>
+  );
+}
+
+const valueCls =
+  "mt-0.5 block w-full bg-transparent text-[15px] font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-500 focus:outline-none";
+const readOnlyCls = `${valueCls} truncate`;
+const sectionLabel =
+  "mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500";
+const cardCls =
+  "overflow-hidden rounded-2xl border border-slate-200 bg-white";
+
 export default function ProfileForm({
   profileId,
+  fullName,
   email,
   initialChatId,
   initialBankName,
@@ -56,57 +89,49 @@ export default function ProfileForm({
     router.refresh();
   }
 
-  const inputCls =
-    "w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand";
-  const labelCls = "block text-sm font-medium text-slate-700 mb-1";
-  const sectionLabel =
-    "hidden lg:block mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500";
-  const sectionBox =
-    "space-y-4 lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:p-5";
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 lg:space-y-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0"
-    >
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {error}
         </div>
       )}
       {saved && (
-        <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           Tersimpan.
         </div>
       )}
 
-      <div>
+      <section>
         <h2 className={sectionLabel}>Informasi Akun</h2>
-        <div className={sectionBox}>
-          <div className="hidden lg:block">
-            <label className={labelCls}>Email</label>
+        <div className={cardCls}>
+          <Row icon={User} label="Username">
+            <input
+              type="text"
+              value={fullName || ""}
+              readOnly
+              tabIndex={-1}
+              className={readOnlyCls}
+            />
+          </Row>
+          <Row icon={Mail} label="Email">
             <input
               type="text"
               value={email || ""}
               readOnly
-              disabled
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-500"
+              tabIndex={-1}
+              className={readOnlyCls}
             />
-          </div>
-
-          <div>
-            <label className={labelCls}>
-              Bank Tujuan Transfer
-            </label>
+          </Row>
+          <Row icon={Landmark} label="Bank tujuan transfer (dengan atas nama)">
             <BankInput
               value={bankName}
               onChange={setBankName}
-              className={inputCls}
+              className={valueCls}
+              placeholder="Contoh: BCA, Mandiri, BRI (atas nama)"
             />
-          </div>
-
-          <div>
-            <label className={labelCls}>Nomor Rekening</label>
+          </Row>
+          <Row icon={CreditCard} label="No. rekening">
             <input
               type="text"
               inputMode="numeric"
@@ -114,86 +139,99 @@ export default function ProfileForm({
               onChange={(e) =>
                 setBankAccountNumber(e.target.value.replace(/\D/g, ""))
               }
-              className={inputCls}
+              className={valueCls}
               placeholder="Nomor rekening penerima"
             />
-          </div>
-
-          <div>
-            <label className={labelCls}>Atas Nama Rekening</label>
+          </Row>
+          <Row icon={UserRound} label="Atas nama rekening">
             <input
               type="text"
               value={bankAccountHolder}
               onChange={(e) => setBankAccountHolder(e.target.value)}
-              className={inputCls}
+              className={valueCls}
               placeholder="Nama pemilik rekening sesuai buku tabungan"
             />
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Rekening ini otomatis terisi saat mengajukan Cash Advance atau
-              Reimbursement, jadi tidak perlu diketik ulang. Tetap bisa diubah
-              per pengajuan.
-            </p>
-          </div>
+          </Row>
         </div>
-      </div>
+        <p className="mt-2 px-1 text-xs leading-relaxed text-slate-500">
+          Rekening ini otomatis terisi saat mengajukan Cash Advance atau
+          Reimbursement, jadi tidak perlu diketik ulang. Tetap bisa diubah per
+          pengajuan.
+        </p>
+      </section>
 
-      <div className="border-t border-slate-100 pt-4 lg:border-0 lg:pt-0">
-        <div className="flex items-center justify-between">
-          <h2 className={sectionLabel}>Telegram</h2>
-          <a
-            href="https://t.me/userinfobot"
-            target="_blank"
-            rel="noreferrer"
-            className="hidden lg:inline-flex mb-2 rounded-full border border-brand px-3 py-1 text-xs font-semibold text-brand hover:bg-primary-muted"
+      <section>
+        <h2 className={sectionLabel}>Telegram</h2>
+        <div className={cardCls}>
+          <Row
+            icon={Send}
+            label="Telegram Chat ID"
+            trailing={
+              <a
+                href={
+                  botUsername
+                    ? `https://web.telegram.org/a/@userinfobot`
+                    : "https://t.me/userinfobot"
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-full border border-brand px-4 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"
+              >
+                Open Telegram
+              </a>
+            }
           >
-            Buka Telegram
-          </a>
-        </div>
-        <div className={sectionBox}>
-          <div>
-            <label className={labelCls}>Telegram Chat ID</label>
             <input
               type="text"
               inputMode="numeric"
               value={chatId}
               onChange={(e) => setChatId(e.target.value.replace(/\D/g, ""))}
-              className={inputCls}
+              className={valueCls}
               placeholder="Contoh: 123456789"
             />
+          </Row>
+          <div className="border-t border-slate-100 px-5 py-4 text-xs leading-relaxed text-slate-500">
+            <p>
+              Diisi supaya Anda dapat notifikasi Telegram saat pengajuan Cash
+              Advance disetujui atau ditolak. Caranya:
+            </p>
+            <ol className="mt-2 space-y-1">
+              <li>
+                1. Chat bot{" "}
+                <span className="font-medium">@Userinfobot</span> di Telegram
+                untuk tahu Chat ID Anda (angka).
+              </li>
+              <li>
+                2. Cari bot notifikasi perusahaan
+                {botUsername && (
+                  <>
+                    {" "}
+                    (
+                    <a
+                      href={`https://t.me/${botUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-brand underline"
+                    >
+                      @{botUsername}
+                    </a>
+                    )
+                  </>
+                )}{" "}
+                dan tekan <span className="font-medium">/start</span> (wajib,
+                kalau tidak notifikasi tidak akan terkirim).
+              </li>
+              <li>3. Masukkan Chat ID dari langkah 1 di sini.</li>
+            </ol>
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Diisi supaya Anda dapat notifikasi Telegram saat pengajuan
-            disetujui, ditolak, atau dananya ditransfer. Caranya:
-            <br />
-            1. Chat bot <span className="font-medium">@userinfobot</span> di
-            Telegram untuk tahu Chat ID Anda (angka).
-            <br />
-            2. Masukkan Chat ID dari langkah 1 di sini.
-            <br />
-            3. Terakhir, buka bot notifikasi{" "}
-            {botUsername ? (
-              <a
-                href={`https://t.me/${botUsername}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-brand underline"
-              >
-                @{botUsername}
-              </a>
-            ) : (
-              <span className="font-medium">perusahaan</span>
-            )}{" "}
-            di Telegram dan tekan <span className="font-medium">Start</span>{" "}
-            (wajib, kalau tidak notifikasi tidak akan terkirim).
-          </p>
         </div>
-      </div>
+      </section>
 
       <div className="lg:flex lg:justify-end">
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:w-auto lg:px-8"
+          className="w-full rounded-xl bg-brand py-3 font-medium text-white transition-colors hover:bg-brand-dark disabled:opacity-60 lg:w-auto lg:px-8 lg:py-2.5"
         >
           {saving ? "Menyimpan..." : "Simpan"}
         </button>
