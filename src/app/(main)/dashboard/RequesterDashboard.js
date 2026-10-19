@@ -48,10 +48,17 @@ function Metric({ value, label }) {
   );
 }
 
-export default function RequesterDashboard({ name, stats, list, count, page, kind, currentUserId }) {
-  const [viewCaId, setViewCaId] = useState(null);
+export default function RequesterDashboard({ name, stats, list, count, page, kind, currentUserId, focusCa = null }) {
+  const [viewCaId, setViewCaId] = useState(focusCa?.id ?? null);
+  // Dibuka dari tautan (?ca=): langsung tampilkan pop up detail.
+  const [autoDetailId, setAutoDetailId] = useState(focusCa?.id ?? null);
   const viewIndex = list.findIndex((ca) => ca.id === viewCaId);
-  const viewCa = viewIndex >= 0 ? list[viewIndex] : null;
+  function openView(id) {
+    setAutoDetailId(null);
+    setViewCaId(id);
+  }
+  const viewCa =
+    viewIndex >= 0 ? list[viewIndex] : focusCa && focusCa.id === viewCaId ? focusCa : null;
 
   const filterParams = { jenis: kind };
   const emptyText = `Belum ada pengajuan${kind ? " dengan jenis ini" : ""}.`;
@@ -132,7 +139,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                 <button
                   key={ca.id}
                   type="button"
-                  onClick={() => setViewCaId(ca.id)}
+                  onClick={() => openView(ca.id)}
                   className="flex w-full items-center justify-between gap-3 text-left rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.03)] transition-colors hover:border-slate-300"
                 >
                   <div className="flex min-w-0 items-center gap-3.5">
@@ -235,7 +242,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                   <td className="px-6 py-5 whitespace-nowrap text-sm font-semibold text-slate-900">
                     <button
                       type="button"
-                      onClick={() => setViewCaId(ca.id)}
+                      onClick={() => openView(ca.id)}
                       className="text-left after:absolute after:inset-0"
                     >
                       <KindTag kind={ca.kind} />
@@ -273,13 +280,14 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
 
       <CashAdvanceReviewModal
         isOpen={!!viewCa}
-        onClose={() => setViewCaId(null)}
+        onClose={() => openView(null)}
         ca={viewCa}
-        onPrev={() => viewIndex > 0 && setViewCaId(list[viewIndex - 1].id)}
-        onNext={() => viewIndex < list.length - 1 && setViewCaId(list[viewIndex + 1].id)}
+        onPrev={() => viewIndex > 0 && openView(list[viewIndex - 1].id)}
+        onNext={() => viewIndex < list.length - 1 && openView(list[viewIndex + 1].id)}
         hasPrev={viewIndex > 0}
         hasNext={viewIndex >= 0 && viewIndex < list.length - 1}
         currentUserId={currentUserId}
+        startWithDetail={!!viewCa && viewCa.id === autoDetailId}
       />
     </div>
     </KindFilterProvider>

@@ -15,7 +15,7 @@ export default function GoogleButton({ loading, onClick, children }) {
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="w-full h-13 flex items-center justify-center gap-3 rounded-full border border-slate-300 bg-white text-[15px] font-semibold text-slate-900 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-60 transition-colors"
+      className="w-full h-13 lg:h-12 lg:border-[#cbd5e1] lg:text-[#1e293b] flex items-center justify-center gap-3 rounded-full border border-slate-300 bg-white text-[15px] font-semibold text-slate-900 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-60 transition-colors"
     >
       <GoogleIcon />
       {loading ? "Memproses..." : children}
@@ -25,9 +25,9 @@ export default function GoogleButton({ loading, onClick, children }) {
 
 export function OrDivider({ children }) {
   return (
-    <div className="flex items-center gap-4 my-7">
+    <div className="flex items-center gap-4 my-7 lg:my-5">
       <div className="h-px flex-1 bg-slate-200" />
-      <span className="text-[13px] text-slate-400">{children}</span>
+      <span className="text-[13px] lg:text-xs text-slate-400 lg:text-[#64748b]">{children}</span>
       <div className="h-px flex-1 bg-slate-200" />
     </div>
   );

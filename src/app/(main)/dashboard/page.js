@@ -23,6 +23,16 @@ export default async function DashboardPage({ searchParams }) {
   const isOperational = profile?.role === "operational";
   const name = profile?.full_name ?? user?.email ?? "";
 
+  // ?ca=<id> (dari tautan lama /cash-advances/<id>, notifikasi Telegram, atau
+  // kembali dari halaman scan): buka pop up detail pengajuan itu, walau tidak
+  // ada di halaman daftar saat ini. RLS menentukan siapa yang boleh melihat.
+  const focusId = typeof params?.ca === "string" ? params.ca : null;
+  const focusSelect =
+    "*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder)";
+  const focusCa = focusId
+    ? (await supabase.from("cash_advances").select(focusSelect).eq("id", focusId).maybeSingle()).data
+    : null;
+
   // Statistik (RPC, lintas seluruh data) dan daftar halaman ini tidak saling
   // bergantung -- dijalankan paralel.
   if (isOperational) {
@@ -52,6 +62,7 @@ export default async function DashboardPage({ searchParams }) {
         filter={filter}
         kind={kind}
         currentUserId={profile.id}
+        focusCa={focusCa}
       />
     );
   }
@@ -81,6 +92,7 @@ export default async function DashboardPage({ searchParams }) {
       page={page}
       kind={kind}
       currentUserId={profile.id}
+      focusCa={focusCa}
     />
   );
 }

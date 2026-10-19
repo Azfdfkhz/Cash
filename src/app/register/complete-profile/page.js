@@ -73,6 +73,9 @@ export default function CompleteProfilePage() {
       return;
     }
 
+    // Langkah 2 selesai -> hapus penanda agar tidak diarahkan ke sini lagi.
+    await supabase.auth.updateUser({ data: { onboarding_pending: false } });
+
     router.push("/dashboard");
     router.refresh();
   }
@@ -89,7 +92,6 @@ export default function CompleteProfilePage() {
   return (
     <AuthShell
       compact
-      wide
       side={
         <>
           <SideHeadline>
@@ -104,13 +106,13 @@ export default function CompleteProfilePage() {
       }
       step={{ current: 2, total: 2, label: "Data rekening dan notifikasi" }}
     >
-      <p className="hidden lg:block text-[13px] font-semibold uppercase tracking-wider text-brand mb-2">
+      <p className="hidden lg:block text-xs leading-4 font-bold uppercase tracking-[0.6px] text-[#1a68ff] mb-2">
         Langkah 2 dari 2
       </p>
-      <h2 className="text-2xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2 lg:mb-3">
+      <h2 className="text-2xl lg:text-4xl font-bold lg:font-extrabold tracking-tight lg:leading-10 lg:tracking-[-0.9px] text-slate-900 lg:text-[#111827] mb-2 lg:mb-3">
         Lengkapi data Anda
       </h2>
-      <p className="text-[15px] leading-relaxed text-slate-500 mb-6 lg:mb-8">
+      <p className="text-[15px] lg:text-[13.5px] leading-relaxed lg:leading-[21.94px] text-slate-500 lg:text-[#596579] mb-6 lg:mb-6">
         <span className="lg:hidden">
           Dipakai untuk pencairan dana dan notifikasi persetujuan.
         </span>
@@ -142,13 +144,13 @@ export default function CompleteProfilePage() {
         />
 
         {/* Bank + account */}
-        <div className="space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-5">
+        <div className="space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         <div>
           <AuthLabel>Bank tujuan transfer</AuthLabel>
           <button
             type="button"
             onClick={() => setBankModalOpen(true)}
-            className="w-full h-13 flex items-center gap-3 rounded-full border border-slate-300 bg-white pl-4.5 pr-4 text-left text-base text-slate-800 hover:border-brand transition-colors focus:outline-none focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15"
+            className="w-full h-13 lg:h-[51px] flex items-center gap-3 rounded-full lg:rounded-2xl border border-slate-300 lg:border-[#d1d5db] bg-white pl-4.5 lg:pl-4 pr-4 text-left text-base lg:text-sm text-slate-800 lg:text-[#374151] lg:shadow-xs hover:border-brand transition-colors focus:outline-none focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15"
           >
             <Building2
               size={20}
@@ -196,14 +198,14 @@ export default function CompleteProfilePage() {
                 onChange={(e) =>
                   setTelegramChatId(e.target.value.replace(/\D/g, ""))
                 }
-                className="w-full h-13 rounded-full border border-slate-300 bg-white pl-11.5 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+                className="w-full h-13 lg:h-[51px] rounded-full lg:rounded-2xl border border-slate-300 lg:border-[#d1d5db] bg-white pl-11.5 lg:pl-11 pr-3 text-base lg:text-sm text-slate-900 placeholder:text-slate-400 lg:shadow-xs focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
                 placeholder="Contoh: 123456789"
               />
             </div>
             <button
               type="button"
               onClick={openTelegram}
-              className="h-13 shrink-0 rounded-full border border-slate-300 bg-white px-4 text-[13px] font-semibold text-brand hover:bg-slate-50 transition-colors"
+              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[114px] lg:px-0 text-[13px] lg:text-[10px] font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
             >
               Open Telegram
             </button>
@@ -216,7 +218,7 @@ export default function CompleteProfilePage() {
               strokeWidth={1.75}
               className="mt-0.5 shrink-0 text-brand"
             />
-            <p className="text-[13px] leading-relaxed text-slate-600">
+            <p className="text-[13px] lg:text-xs leading-relaxed lg:leading-[19.5px] text-slate-600 lg:text-[#4b5563]">
               Cari{" "}
               <span className="font-semibold text-slate-900">@userinfobot</span>{" "}
               di Telegram untuk tahu Chat ID Anda. Lalu buka bot notifikasi
@@ -230,7 +232,7 @@ export default function CompleteProfilePage() {
         <div className="mt-4 flex gap-3">
           <Link
             href="/register"
-            className="hidden lg:flex h-14 items-center justify-center rounded-full border border-slate-200 bg-white px-8 text-base font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+            className="hidden lg:flex h-[50px] items-center justify-center rounded-full border border-[#d1d5db] bg-white px-[33px] text-sm font-semibold text-[#1f2937] shadow-xs hover:bg-slate-50 transition-colors"
           >
             Kembali
           </Link>

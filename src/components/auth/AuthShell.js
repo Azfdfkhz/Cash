@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { Check, Wallet } from "lucide-react";
 
 // Logo Sharing Happiness (wordmark biru, jadi ditaruh di kartu putih supaya
 // terbaca di atas header navy) + nama aplikasi.
@@ -23,10 +23,28 @@ function Brand() {
   );
 }
 
-// ── Desktop left-panel building blocks ──────────────────────────────
-export function SideHeadline({ children }) {
+// Brand panel kiri desktop (Figma): tile 48px #0f172a + nama "CashAdvance".
+function DesktopBrand() {
   return (
-    <h2 className="text-[44px] xl:text-5xl font-bold tracking-tight leading-[1.1]">
+    <div className="flex items-center gap-4">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-[#0f172a] drop-shadow-[0_4px_6px_rgba(37,99,235,0.25)]">
+        <Wallet size={26} strokeWidth={1.75} className="text-white" />
+      </div>
+      <span className="text-2xl font-bold tracking-[-0.32px] text-white">
+        CashAdvance
+      </span>
+    </div>
+  );
+}
+
+// ── Desktop left-panel building blocks ──────────────────────────────
+export function SideHeadline({ children, heavy = false }) {
+  return (
+    <h2
+      className={`max-w-96 text-[48px] leading-[48px] tracking-[-1.2px] ${
+        heavy ? "font-extrabold" : "font-bold"
+      }`}
+    >
       {children}
     </h2>
   );
@@ -34,10 +52,10 @@ export function SideHeadline({ children }) {
 
 export function SideChecklist({ items }) {
   return (
-    <ul className="mt-10 space-y-5">
+    <ul className="mt-10 space-y-4">
       {items.map((t) => (
-        <li key={t} className="flex items-center gap-4 text-lg text-slate-200">
-          <Check size={22} strokeWidth={2.5} className="text-blue-500 shrink-0" />
+        <li key={t} className="flex items-center gap-3.5 text-lg leading-7 text-[#e2e8f0]">
+          <Check size={20} strokeWidth={2.5} className="text-blue-500 shrink-0" />
           {t}
         </li>
       ))}
@@ -58,40 +76,40 @@ export function SideSteps({ current }) {
     },
   ];
   return (
-    <ol className="mt-12">
+    <ol className="mt-14">
       {steps.map((s, i) => {
         const n = i + 1;
         const done = n < current;
         const active = n === current;
         return (
-          <li key={n} className="relative flex gap-4 pb-8 last:pb-0">
+          <li key={n} className="relative flex gap-4 pb-[38px] last:pb-0">
             {i < steps.length - 1 && (
               <span
-                className={`absolute left-[19px] top-11 h-[calc(100%-2.75rem)] w-0.5 ${
-                  done ? "bg-brand" : "bg-slate-700"
+                className={`absolute left-[17px] top-10 h-10 w-0.5 ${
+                  done ? "bg-[rgba(37,99,235,0.7)]" : "bg-slate-700"
                 }`}
               />
             )}
             <span
-              className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold ${
+              className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold ${
                 done
-                  ? "bg-brand text-white"
+                  ? "bg-[#1a68ff] text-white shadow-md"
                   : active
-                    ? "border-2 border-slate-300 text-white"
+                    ? "border-2 border-white/60 bg-[#0d1527] text-white"
                     : "border-2 border-slate-600 text-slate-400"
               }`}
             >
-              {done ? <Check size={20} strokeWidth={3} /> : n}
+              {done ? <Check size={20} strokeWidth={2.5} /> : n}
             </span>
             <div className="pt-0.5">
               <p
-                className={`font-semibold ${
+                className={`text-base font-semibold leading-6 tracking-[0.4px] ${
                   done || active ? "text-white" : "text-slate-300"
                 }`}
               >
                 {s.title}
               </p>
-              <p className="text-sm text-slate-400">{s.desc}</p>
+              <p className="text-sm leading-5 text-[#9ca3af]">{s.desc}</p>
             </div>
           </li>
         );
@@ -106,18 +124,24 @@ export function SideSteps({ current }) {
 //   compact → step pages (smaller top padding on mobile)
 //   step    → { current, total, label } mobile progress bar
 //   side    → desktop left-panel content (headline, checklist/steps…)
-//   wide    → wider form column on desktop (profile page)
+//   variant → "login" memakai proporsi frame Login Figma (panel 44%, form 440px);
+//             default = frame Daftar/Lengkapi data (panel 43%, form 576px)
 export default function AuthShell({
   compact = false,
   step,
   title,
   subtitle,
   side,
-  wide = false,
+  variant,
   children,
 }) {
+  const login = variant === "login";
   return (
-    <main className="min-h-dvh flex flex-col bg-dark-navy lg:grid lg:grid-cols-[44fr_56fr] lg:bg-white">
+    <main
+      className={`min-h-dvh flex flex-col bg-dark-navy lg:grid lg:bg-white ${
+        login ? "lg:grid-cols-[44fr_56fr]" : "lg:grid-cols-[43fr_57fr]"
+      }`}
+    >
       {/* ───── Mobile header ───── */}
       <header
         className={`px-6 pb-14 ${compact ? "pt-8" : "pt-12"} text-white lg:hidden`}
@@ -157,19 +181,31 @@ export default function AuthShell({
       </header>
 
       {/* ───── Desktop brand panel ───── */}
-      <aside className="hidden lg:flex flex-col bg-[#0d1525] px-14 xl:px-24 py-14 text-white">
-        <Brand />
+      <aside
+        className={`hidden lg:flex flex-col text-white ${
+          login ? "bg-[#0c1322] p-20" : "bg-[#0d1527] p-24"
+        }`}
+      >
+        <DesktopBrand />
         <div className="flex-1 flex flex-col justify-center py-12">{side}</div>
-        <p className="text-sm text-slate-400">
-          © Yayasan Peduli Bersama · Cash Advance v1.0.0
+        <p
+          className={
+            login
+              ? "text-sm leading-5 text-[#94a3b8]"
+              : "text-xs leading-4 tracking-[0.3px] text-[#9ca3af]"
+          }
+        >
+          © Yayasan Berbagi Bahagia
         </p>
       </aside>
 
       {/* ───── Form (white sheet on mobile / right column on desktop) ───── */}
-      <section className="relative flex-1 -mt-6 rounded-t-[40px] bg-white px-6 pt-8 pb-10 lg:mt-0 lg:rounded-none lg:flex lg:items-center lg:justify-center lg:px-12 xl:px-16 lg:py-14">
+      <section className={`relative flex-1 -mt-6 rounded-t-[40px] bg-white px-6 pt-8 pb-10 lg:mt-0 lg:rounded-none lg:flex lg:items-center lg:justify-center lg:py-16 ${
+          login ? "lg:px-12" : "lg:px-28"
+        }`}>
         <div
           className={`mx-auto w-full max-w-sm ${
-            wide ? "lg:max-w-xl" : "lg:max-w-lg"
+            login ? "lg:max-w-[440px]" : "lg:max-w-[576px]"
           }`}
         >
           {children}

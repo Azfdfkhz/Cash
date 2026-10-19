@@ -76,35 +76,75 @@ export default function OperationalDashboard({
   filter,
   kind,
   currentUserId,
+  focusCa = null,
 }) {
   const router = useRouter();
   const basePath = filter === "pending" ? "/dashboard?filter=pending" : "/dashboard";
   const filterParams = { jenis: kind };
 
   // State untuk pop up review pengajuan
-  const [reviewCaId, setReviewCaId] = useState(null);
+  const [reviewCaId, setReviewCaId] = useState(focusCa?.id ?? null);
+  // Dibuka dari tautan (?ca=): langsung tampilkan pop up detail.
+  const [autoDetailId, setAutoDetailId] = useState(focusCa?.id ?? null);
+  // Salinan pengajuan yang baru diputuskan. Dipakai supaya modal tetap terbuka
+  // di pengajuan itu (menampilkan hasilnya) walau daftar "menunggu" sudah
+  // di-refresh dan pengajuan tsb hilang dari daftar.
+  const [held, setHeld] = useState(null);
 
-  // Prev/next menelusuri seluruh daftar yang tampil (bukan hanya yang menunggu)
-  const currentReviewIndex = list.findIndex((ca) => ca.id === reviewCaId);
-  const reviewCa = currentReviewIndex >= 0 ? list[currentReviewIndex] : null;
+  const listIndex = list.findIndex((ca) => ca.id === reviewCaId);
+  const heldHere = held && held.id === reviewCaId ? held : null;
+  const heldOnly = !!heldHere && listIndex < 0; // sudah hilang dari daftar
+  // Data segar dari server dipakai begitu statusnya sudah bukan "menunggu"
+  // (mis. setelah dicairkan); sebelum itu pakai salinan hasil keputusan.
+  const listCa =
+    listIndex >= 0 ? list[listIndex] : focusCa && focusCa.id === reviewCaId ? focusCa : null;
+  const reviewCa =
+    listCa && listCa.status !== "pending" ? listCa : heldHere ?? listCa;
+
+  // Posisi acuan untuk prev/next. Kalau pengajuan sudah hilang dari daftar,
+  // pakai posisi saat diputuskan (item berikutnya bergeser ke posisi itu).
+  const inList = heldOnly || listIndex >= 0;
+  const prevCa = !inList ? undefined : heldOnly ? list[held.index - 1] : list[listIndex - 1];
+  const nextCa = !inList ? undefined : heldOnly ? list[held.index] : list[listIndex + 1];
+
+  const pendingOthers = list.filter(
+    (ca) => ca.status === "pending" && ca.id !== reviewCaId
+  );
+
+  function openReview(id) {
+    setHeld(null);
+    setAutoDetailId(null);
+    setReviewCaId(id);
+  }
 
   function handlePrevReview() {
-    if (currentReviewIndex > 0) setReviewCaId(list[currentReviewIndex - 1].id);
+    if (prevCa) openReview(prevCa.id);
   }
 
   function handleNextReview() {
-    if (currentReviewIndex >= 0 && currentReviewIndex < list.length - 1) {
-      setReviewCaId(list[currentReviewIndex + 1].id);
-    }
+    if (nextCa) openReview(nextCa.id);
   }
 
-  // Setelah setuju/tolak: lanjut ke pengajuan menunggu berikutnya, atau tutup.
-  function handleDecisionComplete(decidedId) {
+  // Setelah setuju/tolak: TIDAK pindah otomatis. Modal tetap di pengajuan ini;
+  // pindah hanya kalau user memilih "Lanjut" di pop up (handleGoNextPending).
+  function handleDecisionComplete(decidedId, status, note) {
+    if (reviewCa) {
+      setHeld({
+        ...reviewCa,
+        status,
+        review_note: note ?? reviewCa.review_note ?? null,
+        reviewed_at: new Date().toISOString(),
+        index: Math.max(0, listIndex),
+      });
+    }
     router.refresh();
-    const others = list.filter((ca) => ca.status === "pending" && ca.id !== decidedId);
+  }
+
+  function handleGoNextPending() {
+    const afterIndex = heldOnly ? held.index - 1 : listIndex;
     const next =
-      others.find((ca) => list.indexOf(ca) > currentReviewIndex) ?? others[0];
-    setReviewCaId(next ? next.id : null);
+      pendingOthers.find((ca) => list.indexOf(ca) > afterIndex) ?? pendingOthers[0];
+    if (next) openReview(next.id);
   }
 
   return (
@@ -202,7 +242,7 @@ export default function OperationalDashboard({
 
                   <button
                     type="button"
-                    onClick={() => setReviewCaId(ca.id)}
+                    onClick={() => openReview(ca.id)}
                     className={
                       action.primary
                         ? "mt-3 ml-auto flex w-fit items-center rounded-full bg-[#0f172a] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
@@ -287,7 +327,7 @@ export default function OperationalDashboard({
                 return (
                   <tr
                     key={ca.id}
-                    onClick={() => setReviewCaId(ca.id)}
+                    onClick={() => openReview(ca.id)}
                     className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
                     <td className="px-5 py-4 whitespace-nowrap text-[13px] font-semibold text-slate-900">
@@ -295,7 +335,7 @@ export default function OperationalDashboard({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setReviewCaId(ca.id);
+                          openReview(ca.id);
                         }}
                         className="hover:text-brand transition-colors text-left font-semibold"
                       >
@@ -325,7 +365,7 @@ export default function OperationalDashboard({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setReviewCaId(ca.id);
+                          openReview(ca.id);
                         }}
                         className={
                           isPending
@@ -350,15 +390,18 @@ export default function OperationalDashboard({
       {/* ───────── Pop Up Modal Tinjau Pengajuan ───────── */}
       <CashAdvanceReviewModal
         isOpen={!!reviewCa}
-        onClose={() => setReviewCaId(null)}
+        onClose={() => openReview(null)}
         ca={reviewCa}
         onPrev={handlePrevReview}
         onNext={handleNextReview}
-        hasPrev={currentReviewIndex > 0}
-        hasNext={currentReviewIndex >= 0 && currentReviewIndex < list.length - 1}
+        hasPrev={!!prevCa}
+        hasNext={!!nextCa}
         currentUserId={currentUserId}
         canReview
         onDecisionComplete={handleDecisionComplete}
+        nextPendingCount={pendingOthers.length}
+        onGoNext={handleGoNextPending}
+        startWithDetail={!!reviewCa && reviewCa.id === autoDetailId}
       />
     </div>
     </KindFilterProvider>

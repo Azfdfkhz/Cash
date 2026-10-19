@@ -47,13 +47,29 @@ export default function RegisterPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: email.split("@")[0] } },
+      options: {
+        // Penanda langkah 2 belum selesai; disimpan di metadata auth sehingga
+        // tidak bergantung pada migrasi/backfill kolom di tabel profiles.
+        data: { full_name: email.split("@")[0], onboarding_pending: true },
+        // Link konfirmasi email diarahkan ke /auth/callback (bukan ke halaman
+        // login) supaya user otomatis masuk dan langsung diarahkan ke
+        // langkah 2 ("Lengkapi data Anda").
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      const rateLimited =
+        error.status === 429 ||
+        error.code === "over_email_send_rate_limit" ||
+        /rate limit/i.test(error.message || "");
+      setError(
+        rateLimited
+          ? "Terlalu sering mendaftar. Tunggu beberapa saat lalu coba lagi."
+          : error.message
+      );
       return;
     }
 
@@ -92,13 +108,13 @@ export default function RegisterPage() {
       subtitle="Daftar dengan email perusahaan Anda."
     >
       <div className="hidden lg:block mb-8">
-        <p className="text-[13px] font-semibold uppercase tracking-wider text-brand">
+        <p className="text-xs leading-4 font-bold uppercase tracking-[0.6px] text-[#1a68ff]">
           Langkah 1 dari 2
         </p>
-        <h2 className="mt-2 text-4xl font-bold tracking-tight text-slate-900">
+        <h2 className="mt-2 text-4xl font-extrabold leading-10 tracking-[-0.9px] text-[#111827]">
           Buat akun
         </h2>
-        <p className="mt-3 text-[15px] text-slate-500">
+        <p className="mt-3 text-[13.5px] leading-[21.94px] text-[#596579]">
           Daftar dengan email perusahaan Anda.
         </p>
       </div>

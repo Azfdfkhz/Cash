@@ -22,7 +22,10 @@ export async function GET(request) {
           .select("profile_completed_at")
           .eq("id", user.id)
           .single();
-        if (!profileError && profile && profile.profile_completed_at === null) {
+        const pending =
+          user.user_metadata?.onboarding_pending === true ||
+          (!profileError && profile && profile.profile_completed_at === null);
+        if (pending) {
           return NextResponse.redirect(`${origin}/register/complete-profile`);
         }
       }

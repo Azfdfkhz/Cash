@@ -21,9 +21,10 @@ export default function RabSection({
   canEdit,
   showRealization,
   canAssign,
+  defaultOpen = false,
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState([]);
   const [draftUrl, setDraftUrl] = useState("");

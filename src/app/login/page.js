@@ -71,14 +71,15 @@ function LoginForm() {
 
   return (
     <AuthShell
+      variant="login"
       side={
         <>
-          <SideHeadline>
+          <SideHeadline heavy>
             Pengelolaan dana,
             <br />
             dalam satu sistem.
           </SideHeadline>
-          <p className="mt-8 text-lg leading-relaxed text-slate-300 max-w-md">
+          <p className="mt-6 text-lg leading-7 text-[#cbd5e1] max-w-md">
             Dari pengajuan hingga pertanggungjawaban, semua tercatat dan dapat
             ditelusuri.
           </p>
@@ -99,10 +100,10 @@ function LoginForm() {
         </>
       }
     >
-      <h2 className="text-[28px] lg:text-4xl font-bold tracking-tight text-slate-900 mb-6 lg:mb-3">
+      <h2 className="text-[28px] lg:text-4xl font-bold lg:font-extrabold tracking-tight lg:leading-10 lg:tracking-[-0.9px] text-slate-900 lg:text-[#0c1322] mb-6 lg:mb-2">
         Masuk
       </h2>
-      <p className="hidden lg:block text-[15px] leading-relaxed text-slate-500 mb-8">
+      <p className="hidden lg:block text-sm leading-[22.75px] text-[#64748b] mb-5">
         Gunakan akun yayasan Anda untuk mengelola pengajuan dan pelaporan kas
         bon.
       </p>
@@ -133,6 +134,7 @@ function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nama@perusahaan.org"
+          shape="soft"
         />
 
         <AuthField
@@ -145,6 +147,7 @@ function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Masukkan kata sandi"
+          shape="soft"
           trailing={
             <button
               type="button"
@@ -174,7 +177,7 @@ function LoginForm() {
           </button>
         </div>
 
-        <PrimaryButton type="submit" disabled={loading}>
+        <PrimaryButton type="submit" disabled={loading} desktop="login">
           {loading ? "Memproses..." : "Masuk"}
         </PrimaryButton>
       </form>

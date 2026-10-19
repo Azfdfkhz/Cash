@@ -59,6 +59,17 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* ── Skala UI desktop ──
+   Semua ukuran Tailwind berbasis rem, jadi cukup mengecilkan root
+   font-size di desktop agar sidebar, teks, padding, kartu, dan tombol
+   ikut mengecil proporsional. Mobile (<1024px) tidak berubah.
+   Ubah angka 14px untuk menyesuaikan: 16px = ukuran asli. */
+@media (min-width: 1024px) {
+  html {
+    font-size: 14px;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
