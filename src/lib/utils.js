@@ -141,10 +141,10 @@ export const STATUS_LABEL = {
 };
 
 export const STATUS_STYLE = {
-  pending: "bg-[#fff6e5] text-[#c27803] border-[#fde7b5]",
-  approved: "bg-[#ebf9f0] text-[#1fa653] border-[#c9eed8]",
+  pending: "bg-[#fef3c7] text-[#b45309] border-transparent",
+  approved: "bg-[#e8f8ee] text-[#1e824c] border-transparent",
   rejected: "bg-[#fff0f2] text-[#e11d48] border-[#fccdd5]",
-  closed: "bg-[#eef2f6] text-[#64748b] border-[#e2e8f0]",
+  closed: "bg-[#f1f5f9] text-[#475569] border-transparent",
 };
 
 export const FUNDING_SOURCE_LABEL = {

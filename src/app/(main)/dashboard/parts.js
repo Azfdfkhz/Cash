@@ -4,7 +4,7 @@ export function RoleBadge({ children, dot = false, dark = false }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border bg-white px-4 py-1 text-xs font-semibold tracking-wide ${
-        dark ? "border-[#1e293b] text-[#1e293b]" : "border-slate-200 text-slate-700"
+        dark ? "border-[#1e293b] text-[#1e293b]" : "border-slate-300 text-slate-600"
       }`}
     >
       {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
@@ -17,7 +17,7 @@ export function RoleBadge({ children, dot = false, dark = false }) {
 export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-3xl mt-5" }) {
   return (
     <div
-      className={`rounded-3xl border p-6 ${
+      className={`rounded-2xl border p-6 ${
         dark
           ? "border-[#0f172a] bg-[#0f172a] text-white"
           : "border-slate-200 bg-white text-slate-900"
@@ -25,8 +25,8 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
     >
       <div className="flex items-start justify-between">
         <p
-          className={`text-[11px] font-semibold uppercase tracking-wider ${
-            dark ? "text-slate-300" : "text-slate-600"
+          className={`text-[11px] uppercase tracking-[0.55px] ${
+            dark ? "font-semibold text-slate-400" : "font-bold text-slate-600"
           }`}
         >
           {label}
@@ -34,7 +34,7 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
         {dot && <span className="h-2 w-2 rounded-full bg-white" />}
         {Icon && <Icon size={16} strokeWidth={1.75} className={iconClass} />}
       </div>
-      <p className={`font-extrabold tracking-tight ${valueClass}`}>{value}</p>
+      <p className={`font-bold tracking-tight ${valueClass}`}>{value}</p>
       <p className={`mt-3 text-xs ${dark ? "text-slate-300" : "text-slate-500"}`}>
         {caption}
       </p>
@@ -72,4 +72,4 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
 
 // Sel tabel desktop: header & body
 export const TH =
-  "whitespace-nowrap px-5 py-3 text-[10.5px] font-semibold uppercase tracking-wider text-slate-500";
+  "whitespace-nowrap px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.55px] text-slate-400";

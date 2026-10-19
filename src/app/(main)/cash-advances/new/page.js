@@ -1,16 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Info } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { notifyOps } from "@/lib/receiptScan";
-import BankInput from "@/components/BankInput";
-import KindSwitch from "@/components/KindSwitch";
 import RabEditor, { newRabItem, toRabRows } from "@/components/RabEditor";
-import { formatCurrency } from "@/lib/utils";
+import RequestShell from "@/components/request/RequestShell";
+import ValidationSummary from "@/components/request/ValidationSummary";
+import SubmitSuccessModal from "@/components/request/SubmitSuccessModal";
+import BankAccountField from "@/components/request/BankAccountField";
+import {
+  Field,
+  SelectField,
+  inputCls,
+  formatWeekdayDate,
+  maskedAccount,
+} from "@/components/request/fields";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/draft";
+import { formatCurrency, formatDateLong } from "@/lib/utils";
 import { rabTotal } from "@/lib/rab";
+
+const FORM_ID = "new-cash-advance-form";
+const DRAFT_KIND = "cash_advance";
 
 export default function NewCashAdvancePage() {
   const router = useRouter();
@@ -29,6 +41,17 @@ export default function NewCashAdvancePage() {
   const [profileBankMissing, setProfileBankMissing] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [draftNotice, setDraftNotice] = useState("");
+  const errorRef = useRef(null);
+
+  function fail(message) {
+    setError(message);
+    requestAnimationFrame(() =>
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    );
+  }
 
   // Prefill rekening tujuan dari profil supaya tidak perlu diketik ulang tiap
   // pengajuan. Pakai functional updater + `prev ||` agar tidak menimpa kalau
@@ -36,6 +59,21 @@ export default function NewCashAdvancePage() {
   useEffect(() => {
     let active = true;
     (async () => {
+      // Pulihkan draft (kalau ada) dulu; rekening profil hanya mengisi yang kosong.
+      const draft = loadDraft(DRAFT_KIND);
+      if (draft) {
+        setPurpose(draft.purpose ?? "");
+        setFundUsageDate(draft.fundUsageDate ?? "");
+        setFundingSource(draft.fundingSource ?? "");
+        setProgramRef(draft.programRef ?? "");
+        setObjective(draft.objective ?? "");
+        setRabUrl(draft.rabUrl ?? "");
+        if (draft.rabItems?.length) setRabItems(draft.rabItems.map((it) => newRabItem(it)));
+        setBankName(draft.bankName ?? "");
+        setBankAccountNumber(draft.bankAccountNumber ?? "");
+        setBankAccountHolder(draft.bankAccountHolder ?? "");
+        setDraftNotice("Draft sebelumnya dipulihkan dari perangkat ini.");
+      }
       const supabase = createClient();
       const {
         data: { user },
@@ -66,7 +104,7 @@ export default function NewCashAdvancePage() {
     // RAB wajib; nominal diajukan = total RAB (dijaga juga oleh trigger
     // sync_ca_amount_from_rab di DB).
     if (!rabItems.length) {
-      setError("RAB wajib diisi minimal satu baris.");
+      fail("RAB wajib diisi minimal satu baris.");
       return;
     }
     const numericAmount = rabTotal(rabItems);
@@ -82,16 +120,20 @@ export default function NewCashAdvancePage() {
         })
       );
     } catch (err) {
-      setError(err.message);
+      fail(err.message);
       return;
     }
     if (!numericAmount || numericAmount <= 0) {
-      setError("Total RAB harus lebih dari 0.");
+      fail("Total RAB harus lebih dari 0.");
       return;
     }
 
     if (fundingSource === "program" && !programRef.trim()) {
-      setError("Masukkan ID campaign atau nama dana program.");
+      fail("Masukkan ID campaign atau nama dana program.");
+      return;
+    }
+    if (!agreed) {
+      fail("Centang Kebijakan SPJ terlebih dahulu.");
       return;
     }
 
@@ -119,7 +161,7 @@ export default function NewCashAdvancePage() {
 
     if (error) {
       console.error("Gagal mengajukan Cash Advance:", error);
-      setError(
+      fail(
         `Gagal mengajukan Cash Advance: ${error.message}${
           error.code ? ` (${error.code})` : ""
         }`
@@ -128,121 +170,167 @@ export default function NewCashAdvancePage() {
     }
 
     notifyOps(newId);
-    router.back();
+    clearDraft(DRAFT_KIND);
+    setSuccess({
+      rows: [
+        { label: "Nominal pengajuan", value: formatCurrency(numericAmount) },
+        { label: "Metode Pencairan", value: `Transfer Bank (${bankName})` },
+        { label: "Tanggal Kebutuhan Dana", value: formatDateLong(fundUsageDate) },
+      ],
+    });
+  }
+
+  function handleDone() {
+    router.replace("/dashboard");
     router.refresh();
   }
 
+  function handleDraft() {
+    const ok = saveDraft(DRAFT_KIND, {
+      purpose,
+      fundUsageDate,
+      fundingSource,
+      programRef,
+      objective,
+      rabUrl,
+      rabItems: rabItems.map(({ _key, ...rest }) => rest),
+      bankName,
+      bankAccountNumber,
+      bankAccountHolder,
+    });
+    setDraftNotice(
+      ok
+        ? "Draft tersimpan di perangkat ini."
+        : "Draft gagal disimpan (penyimpanan browser tidak tersedia)."
+    );
+  }
+
+  // ── Validasi untuk ringkasan ──
+  const total = rabTotal(rabItems);
+  const rabFilled =
+    rabItems.length > 0 && rabItems.every((it) => it.description?.trim()) && total > 0;
+  const sourceOk = Boolean(fundingSource) && (fundingSource !== "program" || programRef.trim());
+  const bankOk = Boolean(bankName && bankAccountNumber && bankAccountHolder.trim());
+  const checks = [
+    { label: "Judul kegiatan diisi", ok: Boolean(purpose.trim()) },
+    { label: "Tujuan dipilih", ok: Boolean(objective) },
+    { label: "Sumber dana dipilih", ok: Boolean(sourceOk) },
+    { label: `RAB terisi (${rabItems.length} baris)`, ok: rabFilled },
+    { label: "Tanggal kebutuhan valid", ok: Boolean(fundUsageDate) },
+    { label: "Rekening tujuan terisi", ok: bankOk },
+    { label: "Kebijakan SPJ disetujui", ok: agreed },
+  ];
+
   return (
-    <div className="space-y-4 lg:max-w-3xl">
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">
-          Ajukan Cash Advance
-        </h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Pengajuan akan dikirim ke Tim Operasional untuk disetujui.
-        </p>
-      </div>
-
-      <KindSwitch active="cash_advance" />
-
+    <RequestShell
+      active="cash_advance"
+      summary={
+        <ValidationSummary
+          kindLabel="Cash Advance"
+          kindIcon={Briefcase}
+          totalLabel="Total dana diminta"
+          total={formatCurrency(total)}
+          rows={[
+            { label: "Rekening", value: bankOk ? maskedAccount(bankName, bankAccountNumber) : "" },
+            { label: "Dibutuhkan", value: fundUsageDate ? formatDateLong(fundUsageDate) : "" },
+          ]}
+          checks={checks}
+          declaration={
+            <>
+              <strong className="text-[#78350f]">Kebijakan SPJ.</strong> Saya akan mengunggah
+              kwitansi dan bukti pengeluaran maksimal{" "}
+              <strong className="text-[#78350f]">7 hari kalender</strong> setelah dana cair.
+            </>
+          }
+          agreed={agreed}
+          onAgreedChange={setAgreed}
+          formId={FORM_ID}
+          onDraft={handleDraft}
+          loading={loading}
+          submitLabel="Mengirim..."
+          notice={draftNotice}
+        />
+      }
+    >
       <form
+        id={FORM_ID}
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 lg:rounded-3xl lg:p-6"
+        className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 lg:rounded-3xl lg:p-8"
       >
         {error && (
-          <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+          <div
+            ref={errorRef}
+            className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          >
             {error}
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Keperluan
-          </label>
-          <textarea
+        <Field label="Keperluan / judul kegiatan" required hint={`${purpose.length}/80`} htmlFor="purpose">
+          <input
+            id="purpose"
+            type="text"
             required
-            rows={3}
+            maxLength={80}
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+            className={inputCls}
             placeholder="Contoh: Operasional perjalanan dinas ke Surabaya"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Tanggal Dana Mulai Digunakan
-          </label>
-          <input
-            type="date"
-            required
-            value={fundUsageDate}
-            onChange={(e) => setFundUsageDate(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Tujuan
-          </label>
-          <select
-            required
-            value={objective}
-            onChange={(e) => setObjective(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-          >
-            <option value="" disabled>
-              Pilih tujuan
-            </option>
-            <option value="penyaluran">Penyaluran</option>
-            <option value="event">Event</option>
-            <option value="lainnya">Lainnya</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Sumber Dana
-          </label>
-          <select
-            required
-            value={fundingSource}
-            onChange={(e) => {
-              setFundingSource(e.target.value);
-              if (e.target.value !== "program") setProgramRef("");
-            }}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-          >
-            <option value="" disabled>
-              Pilih sumber dana
-            </option>
-            <option value="program">Program</option>
-            <option value="marketing_operasional">Marketing / Operasional</option>
-            <option value="program_lainnya">Program Lainnya</option>
-          </select>
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
+          <Field label="Tujuan pengajuan" required htmlFor="objective">
+            <SelectField id="objective" required value={objective} onChange={(e) => setObjective(e.target.value)}>
+              <option value="" disabled>
+                Pilih tujuan
+              </option>
+              <option value="penyaluran">Penyaluran</option>
+              <option value="event">Event</option>
+              <option value="lainnya">Lainnya</option>
+            </SelectField>
+          </Field>
+          <Field label="Sumber dana" required htmlFor="funding-source">
+            <SelectField
+              id="funding-source"
+              required
+              value={fundingSource}
+              onChange={(e) => {
+                setFundingSource(e.target.value);
+                if (e.target.value !== "program") setProgramRef("");
+              }}
+            >
+              <option value="" disabled>
+                Pilih sumber dana
+              </option>
+              <option value="program">Program</option>
+              <option value="marketing_operasional">Marketing / Operasional</option>
+              <option value="program_lainnya">Program Lainnya</option>
+            </SelectField>
+          </Field>
         </div>
 
         {fundingSource === "program" && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ID Campaign / Dana Program
-            </label>
+          <Field label="ID campaign / dana program" required htmlFor="program-ref">
             <input
+              id="program-ref"
               type="text"
               required
               value={programRef}
               onChange={(e) => setProgramRef(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+              className={inputCls}
               placeholder="Contoh: CMP-2026-014 atau nama dana program"
             />
-          </div>
+          </Field>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            RAB
-          </label>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3">
+            <h2 className="text-base font-bold text-slate-900">
+              Rencana Anggaran Biaya (RAB) <span className="text-rose-500">*</span>
+            </h2>
+            <span className="text-xs text-slate-500">Nominal pengajuan mengikuti total RAB</span>
+          </div>
           <RabEditor
             items={rabItems}
             onItemsChange={setRabItems}
@@ -252,86 +340,40 @@ export default function NewCashAdvancePage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Nominal Diajukan (Rp)
-          </label>
-          <p className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 font-semibold text-slate-900">
-            {formatCurrency(rabTotal(rabItems))}
-          </p>
-          <p className="text-xs text-slate-500 mt-1">Mengikuti total RAB.</p>
-        </div>
-
-        {profileBankMissing && (
-          <div className="flex gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-800">
-            <Info size={16} className="shrink-0 mt-0.5" />
-            <p>
-              Rekening default Anda belum lengkap di{" "}
-              <Link href="/profile" className="font-semibold underline">
-                Pengaturan
-              </Link>
-              . Isi di sana supaya bank, nomor rekening, dan atas nama terisi
-              otomatis setiap mengajukan. Untuk pengajuan ini, isi langsung di
-              bawah.
-            </p>
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Bank Tujuan Transfer
-          </label>
-          <BankInput
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
+          <Field
+            label="Tanggal kebutuhan dana"
             required
-            value={bankName}
-            onChange={setBankName}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Nomor Rekening
-          </label>
-          <input
-            type="text"
-            required
-            inputMode="numeric"
-            value={bankAccountNumber}
-            onChange={(e) =>
-              setBankAccountNumber(e.target.value.replace(/\D/g, ""))
+            htmlFor="fund-date"
+            helper={
+              fundUsageDate && (
+                <p className="mt-2 text-xs text-slate-400">{formatWeekdayDate(fundUsageDate)}</p>
+              )
             }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-            placeholder="Nomor rekening penerima"
-          />
+          >
+            <input
+              id="fund-date"
+              type="date"
+              required
+              value={fundUsageDate}
+              onChange={(e) => setFundUsageDate(e.target.value)}
+              className={inputCls}
+            />
+          </Field>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Atas Nama Rekening
-          </label>
-          <input
-            type="text"
-            required
-            value={bankAccountHolder}
-            onChange={(e) => setBankAccountHolder(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-            placeholder="Nama pemilik rekening sesuai buku tabungan"
-          />
-          <p className="text-xs text-slate-500 mt-2">
-            Terisi otomatis dari profil. Ubah di sini kalau pengajuan ini pakai
-            rekening lain, atau set default di halaman Profil.
-          </p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
-        >
-          {loading ? "Mengirim..." : "Kirim Pengajuan"}
-        </button>
+        <BankAccountField
+          bankName={bankName}
+          onBankName={setBankName}
+          accountNumber={bankAccountNumber}
+          onAccountNumber={setBankAccountNumber}
+          accountHolder={bankAccountHolder}
+          onAccountHolder={setBankAccountHolder}
+          profileBankMissing={profileBankMissing}
+        />
       </form>
-    </div>
+
+      <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />
+    </RequestShell>
   );
 }

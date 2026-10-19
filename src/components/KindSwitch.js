@@ -1,31 +1,47 @@
 import Link from "next/link";
+import { Briefcase, ReceiptText } from "lucide-react";
 
-// Pilihan jenis pengajuan di atas form "Ajukan".
+// Pilihan jenis pengajuan di atas form "Ajukan" (kartu + radio, sesuai Figma).
 export default function KindSwitch({ active }) {
   const items = [
-    { kind: "cash_advance", href: "/cash-advances/new", label: "Cash Advance", hint: "Minta dana sebelum belanja" },
-    { kind: "reimbursement", href: "/reimbursements/new", label: "Reimbursement", hint: "Klaim uang pribadi yang sudah terpakai" },
+    { kind: "cash_advance", href: "/cash-advances/new", label: "Cash Advance", hint: "Minta dana sebelum belanja", icon: Briefcase },
+    { kind: "reimbursement", href: "/reimbursements/new", label: "Reimbursement", hint: "Klaim uang pribadi yang sudah terpakai", icon: ReceiptText },
   ];
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 lg:max-w-md">
-      {items.map((item) => (
-        <Link
-          key={item.kind}
-          href={item.href}
-          replace
-          aria-current={active === item.kind ? "page" : undefined}
-          className={`rounded-lg px-3 py-2 text-center transition-colors ${
-            active === item.kind
-              ? "bg-white shadow-sm text-brand"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <span className="block text-sm font-semibold">{item.label}</span>
-          <span className="block text-[11px] text-slate-500 leading-tight mt-0.5">
-            {item.hint}
-          </span>
-        </Link>
-      ))}
+    <div className="grid grid-cols-2 gap-3 lg:gap-5" role="radiogroup" aria-label="Jenis pengajuan">
+      {items.map(({ kind, href, label, hint, icon: Icon }) => {
+        const selected = active === kind;
+        return (
+          <Link
+            key={kind}
+            href={href}
+            replace
+            role="radio"
+            aria-checked={selected}
+            className={`relative flex flex-col gap-2 rounded-2xl bg-white p-4 transition-colors lg:flex-row lg:items-center lg:gap-4 lg:rounded-3xl lg:px-5 lg:py-5 ${
+              selected
+                ? "border-2 border-[#0f172a]"
+                : "border border-slate-200 opacity-60 hover:opacity-90"
+            }`}
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 lg:h-12 lg:w-12 lg:bg-slate-50">
+              <Icon size={22} strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 flex-1 pr-7 lg:pr-9">
+              <span className="block text-sm font-bold text-slate-900 lg:text-base">{label}</span>
+              <span className="mt-0.5 block text-xs leading-snug text-slate-500 lg:text-sm">{hint}</span>
+            </span>
+            <span
+              aria-hidden="true"
+              className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full border-2 lg:top-1/2 lg:-translate-y-1/2 ${
+                selected ? "border-[#0f172a]" : "border-slate-300"
+              }`}
+            >
+              {selected && <span className="h-3 w-3 rounded-full bg-[#0f172a]" />}
+            </span>
+          </Link>
+        );
+      })}
     </div>
   );
 }

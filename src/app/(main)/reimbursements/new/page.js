@@ -2,23 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Camera, Eye, FileText, Info, Loader2, Trash2 } from "lucide-react";
+import { Camera, Check, FileText, Loader2, ReceiptText, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
-import BankInput from "@/components/BankInput";
-import KindSwitch from "@/components/KindSwitch";
 import { FilePreviewModal } from "@/components/FilePreview";
-import { formatCurrency } from "@/lib/utils";
+import RequestShell from "@/components/request/RequestShell";
+import ValidationSummary from "@/components/request/ValidationSummary";
+import SubmitSuccessModal from "@/components/request/SubmitSuccessModal";
+import BankAccountField from "@/components/request/BankAccountField";
+import { Field, SelectField, inputCls, maskedAccount } from "@/components/request/fields";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/draft";
+import { formatCurrency, formatDateLong, formatDateShort } from "@/lib/utils";
 import ReceiptLinesEditor, { newLine, toLinesPayload } from "@/components/ReceiptLinesEditor";
 import { renderPdfPreview } from "@/lib/pdfPreview";
 import { notifyOps, scanReceiptFile, uploadProof } from "@/lib/receiptScan";
 import { toJpegFile } from "@/lib/imageConvert";
 
-const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand";
+const FORM_ID = "new-reimbursement-form";
+const DRAFT_KIND = "reimbursement";
 const smallInput =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand";
+  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand";
 
 let draftSeq = 0;
 
@@ -42,10 +45,33 @@ export default function NewReimbursementPage() {
   const [slowHeic, setSlowHeic] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [draftNotice, setDraftNotice] = useState("");
+  const errorRef = useRef(null);
+
+  function fail(message) {
+    setError(message);
+    requestAnimationFrame(() =>
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    );
+  }
 
   useEffect(() => {
     let active = true;
     (async () => {
+      // Pulihkan draft teks (file kwitansi tidak bisa disimpan; lampirkan ulang).
+      const draft = loadDraft(DRAFT_KIND);
+      if (draft) {
+        setPurpose(draft.purpose ?? "");
+        setObjective(draft.objective ?? "");
+        setFundingSource(draft.fundingSource ?? "");
+        setProgramRef(draft.programRef ?? "");
+        setBankName(draft.bankName ?? "");
+        setBankAccountNumber(draft.bankAccountNumber ?? "");
+        setBankAccountHolder(draft.bankAccountHolder ?? "");
+        setDraftNotice("Draft sebelumnya dipulihkan. Kwitansi perlu dilampirkan ulang.");
+      }
       const supabase = createClient();
       const {
         data: { user },
@@ -135,19 +161,20 @@ export default function NewReimbursementPage() {
     e.preventDefault();
     setError("");
 
-    if (!drafts.length) return setError("Lampirkan minimal satu kwitansi.");
+    if (!drafts.length) return fail("Lampirkan minimal satu kwitansi.");
     for (const [i, d] of drafts.entries()) {
-      if (d.scanning) return setError("Tunggu sampai semua kwitansi selesai dibaca.");
-      if (!(Number(d.amount) > 0)) return setError(`Nominal kwitansi ${i + 1} harus lebih dari 0.`);
+      if (d.scanning) return fail("Tunggu sampai semua kwitansi selesai dibaca.");
+      if (!(Number(d.amount) > 0)) return fail(`Nominal kwitansi ${i + 1} harus lebih dari 0.`);
       try {
         toLinesPayload(d.lines, { kind: "reimbursement", total: d.amount });
       } catch (err) {
-        return setError(`Kwitansi ${i + 1}: ${err.message}`);
+        return fail(`Kwitansi ${i + 1}: ${err.message}`);
       }
     }
     if (fundingSource === "program" && !programRef.trim()) {
-      return setError("Masukkan ID campaign atau nama dana program.");
+      return fail("Masukkan ID campaign atau nama dana program.");
     }
+    if (!agreed) return fail("Centang pernyataan terlebih dahulu.");
 
     // Id dibuat di sini supaya file bisa diunggah ke folder Drive pengajuan
     // sebelum barisnya dibuat oleh create_reimbursement.
@@ -191,75 +218,137 @@ export default function NewReimbursementPage() {
       if (rpcError) throw new Error(rpcError.message);
 
       notifyOps(id);
-      router.replace(`/cash-advances/${id}`);
-      router.refresh();
+      clearDraft(DRAFT_KIND);
+      setSubmitting("");
+      setSuccess({
+        id,
+        rows: [
+          { label: "Total klaim", value: formatCurrency(total) },
+          { label: "Jumlah kwitansi", value: String(drafts.length) },
+          { label: "Metode Pembayaran", value: `Transfer Bank (${bankName})` },
+        ],
+      });
     } catch (err) {
-      setError(`Gagal mengajukan reimbursement: ${err.message}`);
+      fail(`Gagal mengajukan reimbursement: ${err.message}`);
       setSubmitting("");
     }
   }
 
+  function handleDone() {
+    router.replace("/dashboard");
+    router.refresh();
+  }
+
+  function handleDraft() {
+    const ok = saveDraft(DRAFT_KIND, {
+      purpose,
+      objective,
+      fundingSource,
+      programRef,
+      bankName,
+      bankAccountNumber,
+      bankAccountHolder,
+    });
+    setDraftNotice(
+      ok
+        ? "Draft tersimpan di perangkat ini (kwitansi tidak ikut tersimpan)."
+        : "Draft gagal disimpan (penyimpanan browser tidak tersedia)."
+    );
+  }
+
+  // ── Validasi untuk ringkasan ──
+  const receiptsReady =
+    drafts.length > 0 && drafts.every((d) => !d.scanning && Number(d.amount) > 0);
+  const bankOk = Boolean(bankName && bankAccountNumber && bankAccountHolder.trim());
+  const sourceOk = Boolean(fundingSource) && (fundingSource !== "program" || programRef.trim());
+  const latestReceiptDate = drafts.map((d) => d.receiptDate).filter(Boolean).sort().at(-1);
+  const checks = [
+    { label: "Keperluan diisi", ok: Boolean(purpose.trim()) },
+    { label: "Tujuan dan sumber dana dipilih", ok: Boolean(objective) && Boolean(sourceOk) },
+    { label: `Kwitansi terlampir (${drafts.length})`, ok: drafts.length > 0 },
+    { label: "Total sesuai kwitansi", ok: receiptsReady },
+    { label: "Rekening tujuan terisi", ok: bankOk },
+    { label: "Pernyataan disetujui", ok: agreed },
+  ];
+
   return (
-    <div className="space-y-4 lg:max-w-3xl">
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">Ajukan Reimbursement</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Klaim penggantian uang pribadi yang sudah terpakai. Lampirkan semua
-          kwitansinya.
-        </p>
-      </div>
-
-      <KindSwitch active="reimbursement" />
-
+    <RequestShell
+      active="reimbursement"
+      summary={
+        <ValidationSummary
+          kindLabel="Reimbursement"
+          kindIcon={ReceiptText}
+          totalLabel="Total klaim"
+          total={formatCurrency(total)}
+          rows={[
+            { label: "Jumlah kwitansi", value: String(drafts.length) },
+            { label: "Rekening", value: bankOk ? maskedAccount(bankName, bankAccountNumber) : "" },
+            { label: "Tgl transaksi", value: latestReceiptDate ? formatDateLong(latestReceiptDate) : "" },
+          ]}
+          checks={checks}
+          declaration={
+            <>
+              <strong className="text-[#78350f]">Pernyataan.</strong> Saya menyatakan kwitansi yang
+              dilampirkan asli dan sesuai dengan transaksi yang saya bayarkan.
+            </>
+          }
+          agreed={agreed}
+          onAgreedChange={setAgreed}
+          formId={FORM_ID}
+          onDraft={handleDraft}
+          loading={Boolean(submitting)}
+          submitLabel={submitting || "Kirim Pengajuan"}
+          notice={draftNotice}
+        />
+      }
+    >
       <form
+        id={FORM_ID}
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 lg:rounded-3xl lg:p-6"
+        className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 lg:rounded-3xl lg:p-8"
       >
         {error && (
-          <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+          <div
+            ref={errorRef}
+            className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          >
             {error}
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Keperluan</label>
-          <textarea
+        <Field label="Keperluan / judul kegiatan" required hint={`${purpose.length}/80`} htmlFor="purpose">
+          <input
+            id="purpose"
+            type="text"
             required
-            rows={2}
+            maxLength={80}
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            className={inputClass}
+            className={inputCls}
             placeholder="Contoh: Survei lokasi penyaluran Garut"
           />
-        </div>
+        </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tujuan</label>
-            <select
-              required
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-              className={`${inputClass} bg-white`}
-            >
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
+          <Field label="Tujuan pengajuan" required htmlFor="objective">
+            <SelectField id="objective" required value={objective} onChange={(e) => setObjective(e.target.value)}>
               <option value="" disabled>
                 Pilih tujuan
               </option>
               <option value="penyaluran">Penyaluran</option>
               <option value="event">Event</option>
               <option value="lainnya">Lainnya</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Sumber Dana</label>
-            <select
+            </SelectField>
+          </Field>
+          <Field label="Sumber dana" required htmlFor="funding-source">
+            <SelectField
+              id="funding-source"
               required
               value={fundingSource}
               onChange={(e) => {
                 setFundingSource(e.target.value);
                 if (e.target.value !== "program") setProgramRef("");
               }}
-              className={`${inputClass} bg-white`}
             >
               <option value="" disabled>
                 Pilih sumber dana
@@ -267,112 +356,110 @@ export default function NewReimbursementPage() {
               <option value="program">Program</option>
               <option value="marketing_operasional">Marketing / Operasional</option>
               <option value="program_lainnya">Program Lainnya</option>
-            </select>
-          </div>
+            </SelectField>
+          </Field>
         </div>
 
         {fundingSource === "program" && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ID Campaign / Dana Program
-            </label>
+          <Field label="ID campaign / dana program" required htmlFor="program-ref">
             <input
+              id="program-ref"
               type="text"
               required
               value={programRef}
               onChange={(e) => setProgramRef(e.target.value)}
-              className={inputClass}
+              className={inputCls}
               placeholder="Contoh: CMP-2026-014 atau nama dana program"
             />
-          </div>
+          </Field>
         )}
 
         <div>
-          <p className="block text-sm font-medium text-slate-700 mb-1">
-            Kwitansi &amp; Bukti Transfer ({drafts.length})
-          </p>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-900/80 pb-3 lg:border-0 lg:pb-0">
+            <h2 className="text-base font-bold text-slate-900">
+              Kwitansi &amp; Bukti Transfer ({drafts.length}) <span className="text-rose-500">*</span>
+            </h2>
+            <span className="hidden text-xs text-slate-500 lg:inline">Total klaim dihitung dari kwitansi</span>
+          </div>
           <div className="space-y-3">
             {drafts.map((d, i) => (
-              <div key={d.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-medium text-slate-500">Kwitansi {i + 1}</p>
+              <div key={d.key} className="rounded-2xl border border-slate-200 bg-white">
+                <div className="flex items-center gap-3 p-3 lg:p-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                    <FileText size={20} strokeWidth={1.75} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-900">
+                      {d.vendor || `Kwitansi ${i + 1}`}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                      {d.receiptDate ? formatDateShort(d.receiptDate) : d.file.name}
+                    </p>
+                    {d.scanning ? (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                        <Loader2 size={12} className="animate-spin" /> Membaca dokumen...
+                      </p>
+                    ) : (
+                      d.rawText && (
+                        <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-600">
+                          <Check size={12} strokeWidth={3} /> Terpindai otomatis
+                        </p>
+                      )
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-bold text-slate-900">
+                      {d.amount ? formatCurrency(d.amount) : "-"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setViewingKey(d.key)}
+                      className="text-xs font-semibold text-brand hover:underline"
+                    >
+                      Lihat foto
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeDraft(d.key)}
-                    className="p-1 text-slate-400 hover:text-rose-600"
+                    className="shrink-0 p-1.5 text-slate-400 hover:text-rose-600"
                     aria-label={`Hapus kwitansi ${i + 1}`}
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={17} />
                   </button>
                 </div>
 
-                {/* Pratinjau besar langsung; klik untuk layar penuh. */}
-                <button
-                  type="button"
-                  onClick={() => setViewingKey(d.key)}
-                  className="relative block w-full overflow-hidden rounded-lg border border-slate-200 bg-white"
-                  aria-label={`Lihat kwitansi ${i + 1} layar penuh`}
-                >
-                  {d.isPdf ? (
-                    d.pdfPages?.length ? (
-                      <div className="max-h-96 overflow-y-auto space-y-2 bg-slate-100 p-2">
-                        {d.pdfPages.map((src, p) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={p} src={src} alt={`Halaman ${p + 1}`} className="w-full bg-white" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex h-40 flex-col items-center justify-center gap-2 text-slate-400">
-                        {d.pdfPages ? <FileText size={28} /> : <Loader2 size={24} className="animate-spin" />}
-                        <span className="text-xs">
-                          {d.pdfPages ? `${d.file.name} (pratinjau tidak tersedia)` : "Menyiapkan pratinjau PDF..."}
-                        </span>
-                      </div>
-                    )
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={d.previewUrl} alt={`Kwitansi ${i + 1}`} className="mx-auto max-h-96 w-full object-contain" />
-                  )}
-                  <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
-                    <Eye size={12} /> Layar penuh
-                  </span>
-                </button>
-
-                {d.scanning ? (
-                  <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Loader2 size={14} className="animate-spin" /> Membaca dokumen...
-                  </p>
-                ) : (
-                  <CurrencyInput
-                    required
-                    value={d.amount}
-                    onValueChange={(v) => updateDraft(d.key, { amount: v })}
-                    className={smallInput}
-                    placeholder="Nominal kwitansi"
-                  />
-                )}
                 {!d.scanning && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={d.vendor}
-                      onChange={(e) => updateDraft(d.key, { vendor: e.target.value })}
+                  <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 p-3 lg:p-4">
+                    <CurrencyInput
+                      required
+                      value={d.amount}
+                      onValueChange={(v) => updateDraft(d.key, { amount: v })}
                       className={smallInput}
-                      placeholder="Toko / penerima transfer"
+                      placeholder="Nominal kwitansi"
                     />
-                    <input
-                      type="date"
-                      value={d.receiptDate}
-                      onChange={(e) => updateDraft(d.key, { receiptDate: e.target.value })}
-                      className={smallInput}
-                    />
-                    <div className="col-span-2">
-                      <ReceiptLinesEditor
-                        kind="reimbursement"
-                        lines={d.lines}
-                        onChange={(lines) => updateDraft(d.key, { lines })}
-                        total={d.amount}
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={d.vendor}
+                        onChange={(e) => updateDraft(d.key, { vendor: e.target.value })}
+                        className={smallInput}
+                        placeholder="Toko / penerima transfer"
                       />
+                      <input
+                        type="date"
+                        value={d.receiptDate}
+                        onChange={(e) => updateDraft(d.key, { receiptDate: e.target.value })}
+                        className={smallInput}
+                      />
+                      <div className="col-span-2">
+                        <ReceiptLinesEditor
+                          kind="reimbursement"
+                          lines={d.lines}
+                          onChange={(lines) => updateDraft(d.key, { lines })}
+                          total={d.amount}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -382,9 +469,10 @@ export default function NewReimbursementPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-sm font-medium text-slate-600 hover:border-brand hover:text-brand"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 py-4 text-sm font-semibold text-slate-700 hover:border-brand hover:text-brand"
             >
               <Camera size={18} /> Tambah Kwitansi / Bukti Transfer
+              <span className="hidden font-normal text-slate-500 lg:inline">Foto, unggah, atau isi manual</span>
             </button>
             {preparing > 0 && (
               <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
@@ -403,69 +491,20 @@ export default function NewReimbursementPage() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Total Reimbursement
-          </label>
-          <p className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 font-semibold text-slate-900">
-            {formatCurrency(total)}
-          </p>
-          <p className="text-xs text-slate-500 mt-1">Jumlah semua kwitansi.</p>
+        <div className="flex items-center justify-between rounded-2xl bg-[#f1f5f9] px-5 py-4">
+          <span className="text-sm text-slate-600">Total Reimbursement</span>
+          <span className="text-lg font-bold text-slate-900">{formatCurrency(total)}</span>
         </div>
 
-        {profileBankMissing && (
-          <div className="flex gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-800">
-            <Info size={16} className="shrink-0 mt-0.5" />
-            <p>
-              Rekening default Anda belum lengkap di{" "}
-              <Link href="/profile" className="font-semibold underline">
-                Pengaturan
-              </Link>
-              . Isi di sana supaya terisi otomatis setiap mengajukan. Untuk
-              pengajuan ini, isi langsung di bawah.
-            </p>
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Bank Tujuan Transfer
-          </label>
-          <BankInput required value={bankName} onChange={setBankName} className={inputClass} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Rekening</label>
-          <input
-            type="text"
-            required
-            inputMode="numeric"
-            value={bankAccountNumber}
-            onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
-            className={inputClass}
-            placeholder="Nomor rekening penerima"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Atas Nama Rekening
-          </label>
-          <input
-            type="text"
-            required
-            value={bankAccountHolder}
-            onChange={(e) => setBankAccountHolder(e.target.value)}
-            className={inputClass}
-            placeholder="Nama pemilik rekening sesuai buku tabungan"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={Boolean(submitting)}
-          className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
-        >
-          {submitting || "Kirim Pengajuan"}
-        </button>
+        <BankAccountField
+          bankName={bankName}
+          onBankName={setBankName}
+          accountNumber={bankAccountNumber}
+          onAccountNumber={setBankAccountNumber}
+          accountHolder={bankAccountHolder}
+          onAccountHolder={setBankAccountHolder}
+          profileBankMissing={profileBankMissing}
+        />
       </form>
 
       <FilePreviewModal
@@ -482,6 +521,8 @@ export default function NewReimbursementPage() {
         loading={viewing?.isPdf && !viewing.pdfPages}
         fallbackUrl={viewing?.previewUrl}
       />
-    </div>
+
+      <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />
+    </RequestShell>
   );
 }

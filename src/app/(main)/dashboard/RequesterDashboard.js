@@ -175,34 +175,17 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
       <div className="hidden lg:block">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[19px] text-slate-500">Selamat Datang</p>
-            <h1 className="mt-1 text-[28px] leading-tight font-extrabold tracking-tight text-slate-900">
+            <p className="text-xl font-light text-slate-500">Selamat Datang</p>
+            <h1 className="mt-1 text-4xl leading-tight font-bold tracking-[-0.9px] text-slate-900">
               {name}
             </h1>
           </div>
           <div className="flex items-center gap-4 pt-1">
             <RoleBadge dot>Requester</RoleBadge>
-            <span className="text-xs font-medium text-slate-600">
+            <span className="text-xs font-medium text-slate-600 px-3.5">
               Hari Ini, {formatDateLong()}
             </span>
           </div>
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <Link
-            href="/cash-advances/new"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0f172a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
-          >
-            <Plus size={16} strokeWidth={2} />
-            Ajukan Cash Advance
-          </Link>
-          <Link
-            href="/reimbursements/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400 transition-colors"
-          >
-            <ReceiptText size={16} strokeWidth={2} />
-            Ajukan Reimbursement
-          </Link>
         </div>
 
         <div className="mt-8 grid grid-cols-4 gap-5">
@@ -212,18 +195,18 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
         </div>
 
-        <section className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white">
-          <div className="flex items-end justify-between px-6 pb-4 pt-8">
+        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="flex items-center justify-between gap-4 px-6 py-5">
             <div>
-              <h2 className="text-base font-bold text-slate-900">Pengajuan Terbaru</h2>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <h2 className="text-base font-semibold text-slate-900">Pengajuan terbaru</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
             </div>
-            {viewAll}
-          </div>
-          <div className="px-6 pb-4">
-            <KindFilter />
+            <div className="flex items-center gap-4">
+              <KindFilter />
+              {viewAll}
+            </div>
           </div>
 
           <table className="w-full border-t border-slate-200 text-left">
@@ -249,7 +232,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                   key={ca.id}
                   className="relative cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
                 >
-                  <td className="px-5 py-4 whitespace-nowrap text-[13px] font-semibold text-slate-900">
+                  <td className="px-6 py-5 whitespace-nowrap text-sm font-semibold text-slate-900">
                     <button
                       type="button"
                       onClick={() => setViewCaId(ca.id)}
@@ -259,13 +242,13 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       {ca.purpose}
                     </button>
                   </td>
-                  <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-5 text-sm text-slate-600">
                     {formatDateLong(ca.created_at)}
                   </td>
-                  <td className="px-5 py-4 text-[13px] font-bold text-slate-900">
+                  <td className="px-6 py-5 text-sm font-bold text-slate-900">
                     {formatNumber(ca.amount_requested)}
                   </td>
-                  <td className="px-5 py-4 text-center">
+                  <td className="px-6 py-4 text-center">
                     <StatusBadge status={ca.status} />
                     {pendingTransferLabel(ca) && (
                       <p className="mt-1 text-[11px] font-medium text-amber-700">
@@ -273,8 +256,8 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       </p>
                     )}
                   </td>
-                  <td className="px-5 py-4 text-center">
-                    <span className="inline-block rounded-lg bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700">
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-block rounded-lg bg-[#eef2f6] px-4 py-1.5 text-xs font-medium text-[#334155]">
                       Lihat
                     </span>
                   </td>

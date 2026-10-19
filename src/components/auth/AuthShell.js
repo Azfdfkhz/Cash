@@ -1,14 +1,23 @@
+import Image from "next/image";
 import { Check } from "lucide-react";
-import Logo from "@/components/Logo";
 
+// Logo Sharing Happiness (wordmark biru, jadi ditaruh di kartu putih supaya
+// terbaca di atas header navy) + nama aplikasi.
 function Brand() {
   return (
     <div className="flex items-center gap-4">
-      <div className="h-12 w-12 rounded-2xl bg-white/[0.06] flex items-center justify-center shadow-[0_6px_24px_-2px_rgba(37,99,235,0.45)]">
-        <Logo variant="outline" size={28} className="text-white" />
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-[0_6px_24px_-2px_rgba(37,99,235,0.45)] lg:h-16 lg:w-16">
+        <Image
+          src="/brand/sharinghappiness.png"
+          alt="Sharing Happiness"
+          width={800}
+          height={417}
+          priority
+          className="h-auto w-10 lg:w-12"
+        />
       </div>
-      <span className="text-base font-semibold tracking-tight lg:text-xl">
-        CashAdvance
+      <span className="text-base font-semibold leading-tight tracking-tight lg:text-xl">
+        CashAdvance &amp; Reimbursement
       </span>
     </div>
   );
