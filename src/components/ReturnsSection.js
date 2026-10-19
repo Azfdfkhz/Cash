@@ -169,6 +169,9 @@ export default function ReturnsSection({
   kind,
   amountRequested = 0,
   totalSpent = 0,
+  // Dipanggil setelah pengembalian tersimpan (dipakai ReturnPopup untuk
+  // menampilkan status pengembalian).
+  onReturnSubmitted,
 }) {
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -247,6 +250,13 @@ export default function ReturnsSection({
 
       if (insertError) throw new Error(insertError.message);
 
+      onReturnSubmitted?.({
+        amount: numericAmount,
+        note,
+        file,
+        viewUrl: uploadData.viewUrl,
+        submittedAt: new Date().toISOString(),
+      });
       setFile(null);
       setNote("");
       router.refresh();

@@ -18,6 +18,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import StatusBadge from "@/components/StatusBadge";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
+import ScanReceiptPopup from "@/components/ScanReceiptPopup";
+import ReturnPopup from "@/components/ReturnPopup";
 import {
   formatCurrency,
   formatDateTimeFull,
@@ -76,6 +78,9 @@ function CashAdvanceReviewModalContent({
   const [decidedHere, setDecidedHere] = useState(false);
   const [detailOpen, setDetailOpen] = useState(startWithDetail);
   const [detailFocus, setDetailFocus] = useState(null);
+  // Pop up terpisah dari "Lihat Detail": catat kwitansi & kembalikan sisa saldo.
+  const [scanOpen, setScanOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const [askContinueAfterDetail, setAskContinueAfterDetail] = useState(false);
   const overlayRef = useRef(null);
 
@@ -155,21 +160,12 @@ function CashAdvanceReviewModalContent({
     window.history.replaceState(window.history.state, "", url);
   }
 
-// Catat kwitansi = halaman scan terpisah. Tandai URL dengan ?ca= supaya
-  // tombol kembali di sana membuka modal + detail ini lagi.
-  function goScan() {
-    const url = new URL(window.location.href);
-    url.searchParams.set("ca", ca.id);
-    window.history.replaceState(window.history.state, "", url);
-    router.push(`/cash-advances/${ca.id}/scan`);
-  }
-
   function afterDisburseChoice() {
     setResult(nextPendingCount > 0 ? { status: "approved", step: "continue" } : null);
   }
 
   function handleOverlayClick(e) {
-    if (e.target === overlayRef.current && !result && !detailOpen) {
+    if (e.target === overlayRef.current && !result && !detailOpen && !scanOpen && !returnOpen) {
       onClose();
     }
   }
@@ -456,17 +452,14 @@ function CashAdvanceReviewModalContent({
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setDetailFocus("pengembalian");
-                  setDetailOpen(true);
-                }}
+                onClick={() => setReturnOpen(true)}
                 className="flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Kembalikan sisa
               </button>
               <button
                 type="button"
-                onClick={goScan}
+                onClick={() => setScanOpen(true)}
                 className="flex items-center justify-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
               >
                 <Plus size={14} strokeWidth={2.5} />
@@ -518,6 +511,18 @@ function CashAdvanceReviewModalContent({
           currentUserId={currentUserId}
           isOperational={canReview}
           initialFocus={detailFocus}
+        />
+      )}
+      {scanOpen && <ScanReceiptPopup ca={ca} onClose={() => setScanOpen(false)} />}
+      {returnOpen && (
+        <ReturnPopup
+          ca={ca}
+          currentUserId={currentUserId}
+          onClose={() => setReturnOpen(false)}
+          onOpenDetail={() => {
+            setReturnOpen(false);
+            setDetailOpen(true);
+          }}
         />
       )}
       {result && (

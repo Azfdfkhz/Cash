@@ -16,7 +16,17 @@ import { toJpegFile } from "@/lib/imageConvert";
 // Kwitansi + rinciannya (pos RAB untuk Cash Advance, kategori untuk
 // Reimbursement -- dipakai saat requester merevisi reimbursement). Satu
 // kwitansi bisa dibagi ke beberapa pos/kategori.
-export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance = null }) {
+export default function ScanForm({
+  cashAdvanceId,
+  rabItems = [],
+  kind,
+  balance = null,
+  // Dipakai di dalam pop up: tata letak dua kolom mengikuti lebar pop up
+  // (container query), bukan lebar layar, dan setelah simpan memanggil
+  // `onDone` alih-alih router.back().
+  embedded = false,
+  onDone,
+}) {
   const isReimbursement = kind === "reimbursement";
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -177,8 +187,9 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
       });
       if (saveError) throw new Error(saveError.message);
 
-      router.back();
       router.refresh();
+      if (onDone) onDone();
+      else router.back();
     } catch (err) {
       setError(err.message || "Gagal menyimpan kwitansi. Coba lagi.");
     } finally {
@@ -187,7 +198,13 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`${embedded ? "@container " : ""}space-y-4`}>
+      {embedded ? (
+        <p className="text-sm text-slate-500">
+          Kwitansi, struk, nota, atau bukti transfer (foto, screenshot, atau PDF). File
+          disimpan ke shared drive dan datanya dibaca otomatis.
+        </p>
+      ) : (
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">
@@ -208,10 +225,17 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
           </div>
         )}
       </div>
+      )}
 
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+      <div
+        className={
+          embedded
+            ? "flex flex-col gap-4 @2xl:grid @2xl:grid-cols-2 @2xl:items-start @2xl:gap-6"
+            : "flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6"
+        }
+      >
         {/* Pratinjau (kanan di desktop) */}
-        <div className="lg:col-start-2 lg:row-start-1">
+        <div className={embedded ? "@2xl:col-start-2 @2xl:row-start-1" : "lg:col-start-2 lg:row-start-1"}>
           {preparing ? (
             <div className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-2xl py-14 text-slate-500">
               <Loader2 size={28} className="animate-spin" />
@@ -232,7 +256,7 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
             <div className="relative rounded-2xl overflow-hidden border border-slate-200">
               {file?.type === "application/pdf" ? (
                 pdfPreview?.pages ? (
-                  <div className="max-h-96 lg:max-h-[34rem] overflow-y-auto bg-slate-100 space-y-2 p-2">
+                  <div className={`max-h-96 ${embedded ? "@2xl:max-h-[26rem]" : "lg:max-h-[34rem]"} overflow-y-auto bg-slate-100 space-y-2 p-2`}>
                     {pdfPreview.pages.map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -268,7 +292,7 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
                 <img
                   src={previewUrl}
                   alt="Preview kwitansi"
-                  className="w-full max-h-72 object-contain bg-slate-50 lg:max-h-[30rem]"
+                  className={`w-full max-h-72 object-contain bg-slate-50 ${embedded ? "@2xl:max-h-[24rem]" : "lg:max-h-[30rem]"}`}
                 />
               )}
               {scanning && (
@@ -328,7 +352,7 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
 
 
         {/* Form (kiri di desktop) */}
-        <div className="space-y-4 lg:col-start-1 lg:row-start-1">
+        <div className={`space-y-4 ${embedded ? "@2xl:col-start-1 @2xl:row-start-1" : "lg:col-start-1 lg:row-start-1"}`}>
           {error && (
             <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
               {error}
@@ -336,7 +360,7 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
           )}
 
           {!scanned && (
-            <div className="hidden rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 lg:block">
+            <div className={`hidden rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 ${embedded ? "@2xl:block" : "lg:block"}`}>
               Pilih foto atau PDF kwitansi di panel kanan. Nominal, vendor, dan
               tanggal akan terisi otomatis.
             </div>
@@ -345,10 +369,10 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
           {scanned && (
             <form
               onSubmit={handleSubmit}
-              className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 lg:rounded-3xl lg:p-6"
+              className={`bg-white rounded-2xl border border-slate-200 p-5 space-y-4 ${embedded ? "@2xl:rounded-3xl @2xl:p-6" : "lg:rounded-3xl lg:p-6"}`}
             >
               {scanOk && (
-                <div className="hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 lg:block">
+                <div className={`hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 ${embedded ? "@2xl:block" : "lg:block"}`}>
                   <p className="text-sm font-semibold text-slate-900">
                     Data Kwitansi Berhasil Diekstrak
                   </p>
@@ -367,10 +391,10 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
                   required
                   value={amount}
                   onValueChange={setAmount}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand lg:font-semibold"
+                  className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand ${embedded ? "@2xl:font-semibold" : "lg:font-semibold"}`}
                 />
                 {balance !== null && !isReimbursement && (
-                  <p className="mt-1.5 hidden text-xs text-slate-400 lg:block">
+                  <p className={`mt-1.5 hidden text-xs text-slate-400 ${embedded ? "@2xl:block" : "lg:block"}`}>
                     Sisa pagu saldo saat ini: {formatCurrency(balance)}
                   </p>
                 )}
@@ -420,18 +444,22 @@ export default function ScanForm({ cashAdvanceId, rabItems = [], kind, balance =
                 />
               </div>
 
-              <div className="flex gap-3 lg:pt-4">
+              <div className={`flex gap-3 ${embedded ? "@2xl:pt-4" : "lg:pt-4"}`}>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="hidden flex-1 rounded-full border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 lg:block"
+                  className={`hidden flex-1 rounded-full border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 ${embedded ? "@2xl:block" : "lg:block"}`}
                 >
                   Ganti File
                 </button>
                 <button
                   type="submit"
                   disabled={saving || scanning}
-                  className="flex-1 bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
+                  className={`flex-1 bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors ${
+                    embedded
+                      ? "@2xl:rounded-full @2xl:bg-dark-navy @2xl:font-semibold @2xl:hover:bg-slate-800"
+                      : "lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
+                  }`}
                 >
                   {saving ? "Menyimpan..." : "Simpan"}
                 </button>

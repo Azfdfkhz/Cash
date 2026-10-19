@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Camera, ExternalLink, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import StatusBadge from "@/components/StatusBadge";
@@ -10,6 +9,7 @@ import ResubmitPanel from "@/components/ResubmitPanel";
 import DisbursementSection from "@/components/DisbursementSection";
 import ReturnsSection from "@/components/ReturnsSection";
 import ReceiptCard from "@/components/ReceiptCard";
+import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import { flattenReceiptLines } from "@/lib/rab";
 import {
   formatCaCode,
@@ -57,9 +57,9 @@ export default function CashAdvanceDetailPopup({
   isOperational = false,
   initialFocus = null,
 }) {
-  const router = useRouter();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [scanOpen, setScanOpen] = useState(false);
   const disburseRef = useRef(null);
   const returnsRef = useRef(null);
 
@@ -155,16 +155,8 @@ export default function CashAdvanceDetailPopup({
 
   const showMoneyFlow = c.status === "approved" || c.status === "closed";
 
-  // Halaman scan terpisah: tandai URL dengan ?ca= supaya tombol "kembali"
-  // di sana membuka pop up ini lagi.
-  function goScan() {
-    const url = new URL(window.location.href);
-    url.searchParams.set("ca", c.id);
-    window.history.replaceState(window.history.state, "", url);
-    router.push(`/cash-advances/${c.id}/scan`);
-  }
-
   return (
+    <>
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}
       className="animate-fade-in absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4 sm:right-[420px] sm:p-6"
@@ -330,7 +322,7 @@ export default function CashAdvanceDetailPopup({
               {isOwner && c.status === (isReimbursement ? "rejected" : "approved") && (
                 <button
                   type="button"
-                  onClick={goScan}
+                  onClick={() => setScanOpen(true)}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-medium text-white hover:bg-brand-dark"
                 >
                   <Camera size={16} />
@@ -434,5 +426,7 @@ export default function CashAdvanceDetailPopup({
         </div>
       </div>
     </div>
+    {scanOpen && <ScanReceiptPopup ca={c} onClose={() => setScanOpen(false)} />}
+    </>
   );
 }
