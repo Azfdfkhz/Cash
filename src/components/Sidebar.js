@@ -16,11 +16,11 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-slate-200 bg-white">
-      <div className="px-7 pt-8 pb-5 border-b border-slate-200">
+      <div className="border-b border-slate-100 px-6 pb-5 pt-7">
         <BrandMark size="sm" />
       </div>
 
-      <nav className="flex-1 px-3.5 py-4">
+      <nav className="flex-1 px-3 py-5">
         <ul className="space-y-1.5">
           {items.map(({ href, label, icon: Icon, badge, also }) => {
             const active = isActive(pathname, href, also);
@@ -29,10 +29,10 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
                 <Link
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex items-center gap-4 rounded-xl px-4 py-3 text-xs transition-colors ${
+                  className={`relative flex items-center gap-3.5 rounded-xl px-4 py-3 text-[13px] transition-colors ${
                     active
-                      ? "bg-[#e5e5e5] font-semibold text-[#0f172a] shadow-[0_4px_6px_-1px_rgba(0,0,0,0.2),0_2px_4px_-2px_rgba(0,0,0,0.2)]"
-                      : "font-medium text-slate-600 hover:bg-slate-100"
+                      ? "bg-blue-50 font-semibold text-blue-800 ring-1 ring-inset ring-blue-100"
+                      : "font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon size={20} strokeWidth={1.75} className="shrink-0" />
@@ -50,7 +50,7 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
         </ul>
       </nav>
 
-      <div className="flex items-center gap-3 border-t border-slate-200 px-5 py-5">
+      <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-4">
         <div className="h-9 w-9 shrink-0 rounded-full border border-slate-300 bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
           {getInitials(fullName)}
         </div>

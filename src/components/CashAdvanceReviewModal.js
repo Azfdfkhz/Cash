@@ -170,7 +170,7 @@ function CashAdvanceReviewModalContent({
     }
   }
 
-  const lbl = "text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1.5";
+  const lbl = "mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500";
 
   return (
     <div
@@ -256,7 +256,7 @@ function CashAdvanceReviewModalContent({
           {/* Plafon + tenggat (sebaris seperti desain) */}
           <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3">
             <div className="min-w-0">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 {isReimbursement ? "NOMINAL DIAJUKAN" : "PLAFON DIAJUKAN"}
               </p>
               <p className="mt-0.5 text-lg font-extrabold leading-tight tracking-tight text-slate-900">
@@ -272,10 +272,10 @@ function CashAdvanceReviewModalContent({
             <div className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
               <Calendar size={13} strokeWidth={2} className="text-[#2563eb]" />
               <div>
-                <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   TENGGAT LPJ / SPJ
                 </p>
-                <p className="text-[11px] font-bold text-slate-900">
+                <p className="text-xs font-bold text-slate-900">
                   {formatLpjDeadline(ca)}
                 </p>
               </div>
@@ -286,16 +286,16 @@ function CashAdvanceReviewModalContent({
           {/* Pemohon & rekening berdampingan */}
           <div className="grid grid-cols-[1fr_1.4fr] gap-2">
             <div className="rounded-xl border border-slate-200/90 bg-white p-2.5">
-              <p className="text-[10px] font-medium text-slate-400">Nama Pemohon</p>
+              <p className="text-[11px] font-medium text-slate-500">Nama Pemohon</p>
               <p className="mt-0.5 break-words text-xs font-bold text-slate-900">
                 {ca.profiles?.full_name || "-"}
               </p>
             </div>
             <div className="min-w-0 rounded-xl border border-slate-200/90 bg-white p-2.5">
               <div className="flex items-start justify-between gap-1">
-                <p className="text-[10px] font-medium text-slate-400">{isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}</p>
+                <p className="text-[11px] font-medium text-slate-500">{isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}</p>
                 {(ca.bank_name || ca.bank_account_number) && (
-                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-[9px] font-semibold text-[#1fa653]">
+                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-[10px] font-semibold text-[#1fa653]">
                     <Check size={9} strokeWidth={3} />
                     Terverifikasi
                   </span>
@@ -310,9 +310,7 @@ function CashAdvanceReviewModalContent({
 
           <div>
             <p className={lbl}>RINCIAN KEPERLUAN PENGAJUAN</p>
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 px-3 py-2.5 text-xs leading-relaxed text-slate-700">
-              {ca.purpose}
-            </div>
+            <p className="text-[13px] leading-relaxed text-slate-800">{ca.purpose}</p>
           </div>
 
           {!isReimbursement ? (
@@ -337,11 +335,9 @@ function CashAdvanceReviewModalContent({
                 <ExternalLink size={14} strokeWidth={2} className="mr-1 text-slate-400 group-hover:text-slate-600" />
               </a>
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center text-[11px] text-slate-400">
-                Tidak ada link spreadsheet.
-              </div>
+              <p className="text-xs text-slate-400">Tidak ada link spreadsheet.</p>
             )}
-            <p className="mt-1.5 text-[10px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-400">
               Rincian pos RAB lengkap ada di{" "}
               <button type="button" onClick={() => setDetailOpen(true)} className="font-semibold text-brand hover:underline">
                 Lihat Detail
@@ -358,7 +354,7 @@ function CashAdvanceReviewModalContent({
           {canDecide ? (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label htmlFor="review-note-input" className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                <label htmlFor="review-note-input" className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   CATATAN <span className="font-semibold text-rose-500">(WAJIB DIISI JIKA MENOLAK)</span>
                 </label>
                 <span className="text-[10px] text-slate-400">Opsional untuk persetujuan</span>
@@ -377,17 +373,17 @@ function CashAdvanceReviewModalContent({
               {error && <p className="mt-1 text-[11px] font-semibold text-rose-600">{error}</p>}
             </div>
           ) : (
-            !isPending && (
+            !isPending && ca.review_note && (
               <div>
                 <p className={lbl}>CATATAN OPERASIONAL</p>
-                <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 px-3 py-2.5 text-xs leading-relaxed text-slate-700">
-                  {ca.review_note || <span className="text-slate-400">Tidak ada catatan.</span>}
-                </div>
+                <p className="rounded-xl bg-slate-50 px-3 py-2.5 text-[13px] leading-relaxed text-slate-700">
+                  {ca.review_note}
+                </p>
               </div>
             )
           )}
 
-          <div className="space-y-1 text-[10px] text-slate-400">
+          <div className="space-y-1 border-t border-slate-100 pt-3 text-[11px] text-slate-400">
             <div className="flex items-center gap-1.5">
               <Clock size={12} strokeWidth={1.75} />
               <span>Diajukan pada {formatDateTimeFull(ca.created_at)}</span>

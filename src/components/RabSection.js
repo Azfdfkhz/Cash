@@ -22,6 +22,7 @@ export default function RabSection({
   showRealization,
   canAssign,
   defaultOpen = false,
+  bare = false, // dipakai di dalam tab: tanpa kartu pembungkus & tanpa tombol lipat
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
@@ -33,7 +34,7 @@ export default function RabSection({
 
   const total = items.reduce((sum, it) => sum + Number(it.total), 0);
   const summary = showRealization ? compareRab(items, receipts ?? []) : null;
-  const expanded = open || editing;
+  const expanded = bare || open || editing;
 
   function startEditing() {
     setDraft(items.map((it) => newRabItem(it)));
@@ -92,12 +93,12 @@ export default function RabSection({
   if (!items.length && !canEdit && !rabUrl) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 lg:rounded-3xl lg:p-6">
+    <div className={bare ? "space-y-3" : "bg-white rounded-2xl border border-slate-200 p-5 space-y-3 lg:rounded-3xl lg:p-6"}>
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          disabled={editing}
+          disabled={editing || bare}
           aria-expanded={expanded}
           className="flex-1 min-w-0 flex items-start gap-2 text-left"
         >
@@ -105,7 +106,7 @@ export default function RabSection({
             size={18}
             className={`mt-0.5 shrink-0 text-slate-400 transition-transform ${
               expanded ? "rotate-180" : ""
-            }`}
+            } ${bare ? "hidden" : ""}`}
           />
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-slate-700">

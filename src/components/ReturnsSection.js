@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Download, Eye, FileText, Upload } from "lucide-react";
+import { Check, Copy, Download, Eye, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
 import { FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
@@ -176,7 +176,10 @@ export default function ReturnsSection({
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
-  const [amount, setAmount] = useState(balance > 0 ? String(balance) : "");
+  const initialRemaining = balance - totalReturned;
+  const [amount, setAmount] = useState(initialRemaining > 0 ? String(initialRemaining) : "");
+  const [returnDate, setReturnDate] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [copiedAcc, setCopiedAcc] = useState(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
@@ -213,6 +216,10 @@ export default function ReturnsSection({
       setError("Nominal pengembalian harus lebih dari 0.");
       return;
     }
+    if (numericAmount > Math.max(remaining, 0)) {
+      setError("Nominal melebihi sisa saldo yang perlu dikembalikan.");
+      return;
+    }
     if (!file) {
       setError("Silakan lampirkan foto/bukti transfer.");
       return;
@@ -244,6 +251,7 @@ export default function ReturnsSection({
           created_by: user.id,
           amount: numericAmount,
           note: note || null,
+          return_date: returnDate || null,
           proof_drive_file_id: uploadData.fileId,
           proof_drive_view_url: uploadData.viewUrl,
         });
@@ -446,6 +454,16 @@ export default function ReturnsSection({
     await downloadClosureReport(supabase, cashAdvanceId);
   }
 
+  async function copyAccount(number) {
+    try {
+      await navigator.clipboard.writeText(number);
+      setCopiedAcc(number);
+      setTimeout(() => setCopiedAcc((cur) => (cur === number ? null : cur)), 2000);
+    } catch {
+      /* clipboard tidak tersedia: nomor tetap bisa diblok manual (select-all) */
+    }
+  }
+
   async function handleDownload() {
     const supabase = createClient();
     await downloadClosureReport(supabase, cashAdvanceId);
@@ -469,11 +487,11 @@ export default function ReturnsSection({
     <div className="space-y-3">
       {(hasReturns || remaining > 0) && (
         <div>
-          <h2 className="text-sm font-semibold text-slate-700 mb-2">
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Pengembalian Sisa Saldo
           </h2>
 
-          {balance > 0 && (
+          {remaining > 0 && !showReturnForm && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2 text-sm text-amber-800">
               Sisa saldo yang perlu dikembalikan:{" "}
               <span className="font-semibold">
@@ -513,7 +531,7 @@ export default function ReturnsSection({
                       {formatCurrency(r.amount)}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {formatDate(r.created_at)}
+                      {formatDate(r.return_date ?? r.created_at)}
                       {r.note ? ` · ${r.note}` : ""}
                     </p>
                     {r.proof_drive_view_url && (
@@ -564,7 +582,7 @@ export default function ReturnsSection({
 
       {(hasReimbursements || deficit > 0) && (
         <div>
-          <h2 className="text-sm font-semibold text-slate-700 mb-2">
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Penggantian Kelebihan Belanja
           </h2>
 
@@ -633,143 +651,173 @@ export default function ReturnsSection({
       )}
 
       {showReturnForm && (
-        <div className="space-y-3 lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-5 lg:space-y-0">
-          <form
-            id="return-form"
-            onSubmit={handleSubmitReturn}
-            className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 lg:rounded-3xl lg:p-6 lg:space-y-5"
-          >
-            <p className="text-sm font-semibold text-slate-700 lg:text-base lg:text-slate-900">
-              Ajukan Pengembalian
+        <form id="return-form" onSubmit={handleSubmitReturn} className="space-y-7">
+          {/* Sisa dana */}
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+            <p className="text-sm text-slate-500">Sisa dana yang perlu dikembalikan</p>
+            <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">
+              {formatCurrency(Math.max(remaining, 0))}
             </p>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Nominal Dikembalikan (Rp)
-              </label>
-              <div className="relative">
-                <CurrencyInput
-                  required
-                  value={amount}
-                  onValueChange={setAmount}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand lg:pr-20 lg:font-semibold"
-                />
-                <button
-                  type="button"
-                  onClick={() => setAmount(String(Math.max(remaining, 0)))}
-                  className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 lg:block"
-                >
-                  Semua
-                </button>
+            <dl className="mt-5 space-y-3 border-t border-slate-200 pt-4 text-sm">
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-slate-500">Total Plafon Diajukan</dt>
+                <dd className="font-bold text-slate-900">{formatCurrency(amountRequested)}</dd>
               </div>
-              <p className="mt-1.5 hidden text-xs text-slate-400 lg:block">
-                Sisa saldo yang perlu dikembalikan:{" "}
-                {formatCurrency(Math.max(remaining, 0))}.
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Bukti Transfer
-              </label>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-slate-500">Total Realisasi Terpakai</dt>
+                <dd className="font-bold text-slate-900">{formatCurrency(totalSpent)}</dd>
+              </div>
+            </dl>
+          </div>
+
+          {/* Jumlah */}
+          <div className="space-y-2.5">
+            <label className="block text-sm font-bold text-slate-900">Jumlah yang Dikembalikan</label>
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+              <span className="font-semibold text-slate-400">Rp</span>
+              <CurrencyInput
+                required
+                value={amount}
+                onValueChange={setAmount}
+                className="min-w-0 flex-1 border-0 bg-transparent py-2 font-bold text-slate-900 outline-none focus:outline-none"
+              />
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-slate-500 text-sm lg:flex-col lg:gap-1.5 lg:rounded-2xl lg:bg-slate-50 lg:py-10"
+                onClick={() => setAmount(String(Math.max(remaining, 0)))}
+                className="shrink-0 rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
               >
-                <Upload size={16} />
-                {file ? (
-                  file.name
-                ) : (
-                  <>
-                    <span className="lg:hidden">Unggah foto bukti transfer</span>
-                    <span className="hidden lg:inline">
-                      Seret file ke sini, atau{" "}
-                      <span className="font-semibold text-brand">pilih dokumen</span>
-                    </span>
-                    <span className="hidden text-xs text-slate-400 lg:inline">
-                      JPG atau PNG
-                    </span>
-                  </>
-                )}
+                Semua
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.heic,.heif"
-                onChange={async (e) => {
-                  const raw = e.target.files?.[0];
-                  e.target.value = "";
-                  setFile(raw ? await toJpegFile(raw) : null);
-                }}
-                className="hidden"
-              />
-              <LocalFilePreview file={file} className="mt-2" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Catatan (opsional)
-              </label>
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors lg:hidden"
-            >
-              {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
-            </button>
-          </form>
+            <p className="text-xs text-slate-500">Maksimal pengembalian sebesar sisa saldo.</p>
+          </div>
 
-          <aside className="hidden space-y-3 lg:block">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5">
-              <p className="text-xs text-slate-500">Sisa dana yang perlu dikembalikan</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-                {formatCurrency(Math.max(remaining, 0))}
-              </p>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200">
+          {/* Metode */}
+          <div className="space-y-2.5">
+            <label className="block text-sm font-bold text-slate-900">Metode Pengembalian</label>
+            <p className="text-xs text-slate-500">
+              Transfer ke salah satu rekening berikut, lalu unggah bukti transfernya.
+            </p>
+            <div className="space-y-3">
+              {COMPANY_RETURN_ACCOUNTS.map((acc) => (
                 <div
-                  className="h-full rounded-full bg-dark-navy"
-                  style={{
-                    width: `${
-                      amountRequested > 0
-                        ? Math.min(100, Math.max(0, (totalSpent / amountRequested) * 100))
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-              <dl className="mt-4 space-y-2 text-xs">
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-500">Total Plafon Diajukan</dt>
-                  <dd className="font-bold text-slate-900">{formatCurrency(amountRequested)}</dd>
+                  key={acc.number}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-slate-500">
+                      {acc.bank} · a.n. {acc.holder}
+                    </p>
+                    <p className="mt-1 select-all text-base font-bold tracking-wide text-slate-900">
+                      {acc.number}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyAccount(acc.number)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50"
+                  >
+                    {copiedAcc === acc.number ? (
+                      <>
+                        <Check size={14} className="text-emerald-600" /> Tersalin
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} /> Salin
+                      </>
+                    )}
+                  </button>
                 </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-500">Total Realisasi Terpakai</dt>
-                  <dd className="font-bold text-slate-900">{formatCurrency(totalSpent)}</dd>
-                </div>
-              </dl>
+              ))}
             </div>
-            <button
-              type="submit"
-              form="return-form"
-              disabled={submitting}
-              className="w-full rounded-full bg-dark-navy py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-            >
-              {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
-            </button>
+          </div>
+
+          {/* Tanggal */}
+          <div className="space-y-2.5">
+            <label htmlFor="return-date" className="block text-sm font-bold text-slate-900">
+              Tanggal Pengembalian
+            </label>
+            <input
+              id="return-date"
+              type="date"
+              required
+              value={returnDate}
+              max={new Date().toLocaleDateString("en-CA")}
+              onChange={(e) => setReturnDate(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-slate-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+            />
+          </div>
+
+          {/* Bukti */}
+          <div className="space-y-2.5">
+            <label className="block text-sm font-bold text-slate-900">Bukti Transfer Bank</label>
             <button
               type="button"
-              onClick={() => router.back()}
-              className="w-full rounded-full border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-left hover:border-slate-400 hover:bg-slate-50"
             >
-              Batal
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                {file ? <FileText size={20} /> : <Upload size={20} />}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold text-slate-900">
+                  {file ? file.name : "Pilih atau Unggah Dokumen"}
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  {file
+                    ? `${(file.size / (1024 * 1024)).toFixed(1)} MB · ketuk untuk mengganti`
+                    : "JPG, PNG, atau PDF · Maks 5 MB"}
+                </span>
+              </span>
             </button>
-          </aside>
-        </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.heic,.heif,application/pdf"
+              onChange={async (e) => {
+                const raw = e.target.files?.[0];
+                e.target.value = "";
+                if (!raw) return setFile(null);
+                const converted = await toJpegFile(raw);
+                if (converted.size > 5 * 1024 * 1024) {
+                  setFile(null);
+                  setError("Ukuran file maksimal 5 MB.");
+                  return;
+                }
+                setError("");
+                setFile(converted);
+              }}
+              className="hidden"
+            />
+            <LocalFilePreview file={file} className="mt-1" />
+          </div>
+
+          {/* Catatan */}
+          <div className="space-y-2.5">
+            <label htmlFor="return-note" className="block text-sm font-bold text-slate-900">
+              Catatan Tambahan <span className="font-normal text-slate-400">(Opsional)</span>
+            </label>
+            <textarea
+              id="return-note"
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Contoh: Sisa dana kegiatan telah ditransfer dari rekening orang"
+              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+            />
+          </div>
+
+          {/* Tombol kirim menempel di bawah area gulir */}
+          <div className="sticky bottom-0 z-10 -mx-6 -mb-5 border-t border-slate-100 bg-white px-6 py-4">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full rounded-full bg-[#0f172a] py-3.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
+            >
+              {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
+            </button>
+          </div>
+        </form>
       )}
 
       {showReimburseForm && (
@@ -848,60 +896,63 @@ export default function ReturnsSection({
       )}
 
       {status === "closed" && (
-        <div className="space-y-2">
-          {reportUrl ? (
-            <FilePreviewLink
-              url={reportUrl}
-              title="Laporan penutupan"
-              className="w-full flex items-center justify-center gap-2 border border-brand text-brand font-medium rounded-xl py-3"
+        <div className="space-y-2.5">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Laporan</h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {reportUrl ? (
+              <FilePreviewLink
+                url={reportUrl}
+                title="Laporan penutupan"
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <Eye size={15} />
+                Lihat Laporan
+              </FilePreviewLink>
+            ) : (
+              <button
+                onClick={async () => {
+                  setError("");
+                  await archiveReport();
+                  router.refresh();
+                }}
+                disabled={archiving}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                <Upload size={15} />
+                {archiving ? "Menyimpan..." : "Simpan ke Drive"}
+              </button>
+            )}
+            <a
+              href={`/api/cash-advances/${cashAdvanceId}/report`}
+              className="flex items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-dark"
             >
-              <Eye size={16} />
-              Lihat Laporan
-            </FilePreviewLink>
-          ) : null}
-          {reportUrl && (
+              <FileText size={15} />
+              Unduh PDF
+            </a>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
             <button
-              onClick={async () => {
-                setError("");
-                await archiveReport({ force: true });
-                router.refresh();
-              }}
-              disabled={archiving}
-              className="w-full text-xs font-medium text-slate-500 hover:text-brand disabled:opacity-60 py-1"
+              onClick={handleDownload}
+              className="inline-flex items-center gap-1.5 font-medium text-slate-500 hover:text-brand"
             >
-              {archiving
-                ? "Membuat ulang laporan..."
-                : "Perbarui laporan di Drive (buat ulang dari data terbaru)"}
+              <Download size={13} />
+              Unduh data (CSV)
             </button>
-          )}
-          {!reportUrl && (
-            <button
-              onClick={async () => {
-                setError("");
-                await archiveReport();
-                router.refresh();
-              }}
-              disabled={archiving}
-              className="w-full flex items-center justify-center gap-2 border border-brand text-brand disabled:opacity-60 font-medium rounded-xl py-3"
-            >
-              <Upload size={16} />
-              {archiving ? "Menyimpan laporan ke Drive..." : "Simpan Laporan ke Drive"}
-            </button>
-          )}
-          <a
-            href={`/api/cash-advances/${cashAdvanceId}/report`}
-            className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-medium rounded-xl py-3"
-          >
-            <FileText size={16} />
-            Unduh Laporan (PDF)
-          </a>
-          <button
-            onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium rounded-xl py-3"
-          >
-            <Download size={16} />
-            Unduh Data (CSV)
-          </button>
+            {reportUrl && (
+              <button
+                onClick={async () => {
+                  setError("");
+                  await archiveReport({ force: true });
+                  router.refresh();
+                }}
+                disabled={archiving}
+                title="Buat ulang laporan di Drive dari data terbaru"
+                className="font-medium text-slate-400 hover:text-brand disabled:opacity-60"
+              >
+                {archiving ? "Membuat ulang laporan..." : "Perbarui laporan di Drive"}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

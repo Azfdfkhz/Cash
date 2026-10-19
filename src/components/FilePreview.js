@@ -224,7 +224,7 @@ export function FilePreviewLink({ url, title, className, children }) {
 // Pratinjau besar file Drive langsung di halaman (foto, atau halaman pertama
 // PDF), dimuat saat kartunya mulai terlihat di layar. Klik untuk layar penuh.
 // Kalau gagal dimuat, pratinjau disembunyikan -- tombol "Layar penuh" tetap ada.
-export function DriveInlinePreview({ url, title, className = "" }) {
+export function DriveInlinePreview({ url, title, className = "", variant = "full" }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
@@ -247,6 +247,7 @@ export function DriveInlinePreview({ url, title, className = "" }) {
 
   const file = useAppFile(url, { enabled: visible, maxPages: 1, width: 900 });
   if (!driveFileId(url) || file.status === "error") return null;
+  const thumb = variant === "thumb";
 
   return (
     <>
@@ -254,7 +255,9 @@ export function DriveInlinePreview({ url, title, className = "" }) {
         ref={ref}
         type="button"
         onClick={() => setOpen(true)}
-        className={`relative block w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 ${className}`}
+        className={`relative block overflow-hidden border border-slate-200 bg-slate-50 ${
+          thumb ? "h-20 w-20 shrink-0 rounded-lg hover:border-slate-300" : "w-full rounded-lg"
+        } ${className}`}
         aria-label={`Lihat ${title || "file"} layar penuh`}
       >
         {file.status === "ready" ? (
@@ -262,14 +265,18 @@ export function DriveInlinePreview({ url, title, className = "" }) {
           <img
             src={file.pages[0]}
             alt={title || "Pratinjau file"}
-            className="mx-auto max-h-96 w-full object-contain"
+            className={thumb ? "h-full w-full object-cover object-top" : "mx-auto max-h-96 w-full object-contain"}
           />
         ) : (
-          <div className="flex h-40 items-center justify-center gap-2 text-xs text-slate-400">
-            <Loader2 size={16} className="animate-spin" /> Memuat pratinjau...
+          <div
+            className={`flex items-center justify-center gap-2 text-xs text-slate-400 ${
+              thumb ? "h-full w-full" : "h-40"
+            }`}
+          >
+            <Loader2 size={16} className="animate-spin" /> {!thumb && "Memuat pratinjau..."}
           </div>
         )}
-        {file.status === "ready" && file.pageCount > 1 && (
+        {!thumb && file.status === "ready" && file.pageCount > 1 && (
           <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
             <FileText size={12} /> PDF · {file.pageCount} halaman
           </span>

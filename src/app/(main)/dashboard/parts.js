@@ -17,16 +17,16 @@ export function RoleBadge({ children, dot = false, dark = false }) {
 export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-3xl mt-5" }) {
   return (
     <div
-      className={`rounded-2xl border p-6 ${
+      className={`rounded-2xl border p-5 xl:p-6 ${
         dark
-          ? "border-[#0f172a] bg-[#0f172a] text-white"
+          ? "border-slate-800 bg-slate-900 text-white"
           : "border-slate-200 bg-white text-slate-900"
       }`}
     >
       <div className="flex items-start justify-between">
         <p
-          className={`text-[11px] uppercase tracking-[0.55px] ${
-            dark ? "font-semibold text-slate-400" : "font-bold text-slate-600"
+          className={`text-[11px] uppercase tracking-[0.65px] ${
+            dark ? "font-medium text-slate-300" : "font-semibold text-slate-500"
           }`}
         >
           {label}
@@ -35,7 +35,7 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
         {Icon && <Icon size={16} strokeWidth={1.75} className={iconClass} />}
       </div>
       <p className={`font-bold tracking-tight ${valueClass}`}>{value}</p>
-      <p className={`mt-3 text-xs ${dark ? "text-slate-300" : "text-slate-500"}`}>
+      <p className={`mt-2.5 text-xs leading-relaxed ${dark ? "text-slate-300" : "text-slate-500"}`}>
         {caption}
       </p>
     </div>
@@ -52,11 +52,11 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
   const tab = (active) =>
     `${base} rounded-full font-semibold transition-colors ${
       active
-        ? "bg-white text-slate-900 shadow-[0_1px_3px_rgba(15,23,42,0.12)]"
+        ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80"
         : "text-slate-500 hover:text-slate-700"
     }`;
   return (
-    <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
+    <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1">
       <Link href={jenis ? `/dashboard?${jenis}` : "/dashboard"} className={tab(filter !== "pending")}>
         Semua
       </Link>

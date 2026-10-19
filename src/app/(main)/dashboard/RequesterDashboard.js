@@ -183,7 +183,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xl font-light text-slate-500">Selamat Datang</p>
-            <h1 className="mt-1 text-4xl leading-tight font-bold tracking-[-0.9px] text-slate-900">
+            <h1 className="mt-1 text-3xl leading-tight font-bold tracking-tight text-slate-900 2xl:text-4xl">
               {name}
             </h1>
           </div>
@@ -195,15 +195,15 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-4 gap-5">
+        <div className="mt-7 grid grid-cols-4 gap-4 xl:gap-5">
           <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
           <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
           <StatCard label="Menunggu" value={stats.pendingCount} caption="Menunggu persetujuan" icon={Info} />
           <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
         </div>
 
-        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between gap-4 px-6 py-5">
+        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/30">
+          <div className="flex items-center justify-between gap-4 px-5 py-4 xl:px-6 xl:py-5">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Pengajuan terbaru</h2>
               <p className="mt-0.5 text-xs text-slate-500">

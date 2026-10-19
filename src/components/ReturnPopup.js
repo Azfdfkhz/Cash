@@ -8,15 +8,6 @@ import ReturnsSection from "@/components/ReturnsSection";
 import { LocalFilePreview } from "@/components/FilePreview";
 import { formatCaCode, formatCurrency, formatDate } from "@/lib/utils";
 
-function Stat({ label, value, tone = "text-slate-900" }) {
-  return (
-    <div>
-      <p className="text-[10px] text-slate-500">{label}</p>
-      <p className={`text-xs font-bold ${tone}`}>{value}</p>
-    </div>
-  );
-}
-
 function Row({ label, children }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-2 text-xs">
@@ -164,7 +155,6 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
   const totalSpent = balanceRow?.total_spent ?? 0;
   const totalReturned = balanceRow?.total_returned ?? 0;
   const totalReimbursed = balanceRow?.total_reimbursed ?? 0;
-  const remaining = Math.max(balance - totalReturned, 0);
   const isOwner = c.requester_id === currentUserId;
 
   return (
@@ -184,17 +174,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
       {sent ? (
         <ReturnStatus ca={c} sent={sent} onClose={onClose} onBackToDetail={onOpenDetail ?? onClose} />
       ) : (
-      <div className="space-y-4">
-        <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-xl bg-slate-50 py-3 text-center">
-          <Stat label="Plafon Diajukan" value={formatCurrency(c.amount_requested)} />
-          <Stat label="Terpakai" value={formatCurrency(totalSpent)} />
-          <Stat
-            label="Sisa Dikembalikan"
-            value={formatCurrency(remaining)}
-            tone={remaining > 0 ? "text-amber-600" : "text-emerald-600"}
-          />
-        </div>
-
+      <div className="space-y-5">
         {!loaded ? (
           <p className="flex items-center gap-2 text-xs text-slate-500">
             <Loader2 size={14} className="animate-spin" /> Memuat data pengembalian...

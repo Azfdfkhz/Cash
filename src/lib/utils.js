@@ -142,9 +142,9 @@ export const STATUS_LABEL = {
 
 export const STATUS_STYLE = {
   pending: "bg-[#fef3c7] text-[#b45309] border-transparent",
-  approved: "bg-[#e8f8ee] text-[#1e824c] border-transparent",
+  approved: "bg-[#eff6ff] text-[#1d4ed8] border-transparent",
   rejected: "bg-[#fff0f2] text-[#e11d48] border-[#fccdd5]",
-  closed: "bg-[#f1f5f9] text-[#475569] border-transparent",
+  closed: "bg-[#e8f8ee] text-[#1e824c] border-transparent",
 };
 
 export const FUNDING_SOURCE_LABEL = {

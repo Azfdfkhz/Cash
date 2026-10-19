@@ -32,9 +32,12 @@
   --brand-dark: var(--primary-dark);
 
   /* ── WARNA LAIN ── */
-  --background: #f4f6f8;
-  --foreground:  #101828;
-  --dark-navy:   #0f172a;
+  --background: #f7f8fa;
+  --foreground:  #172033;
+  --dark-navy:   #172033;
+  --surface: #ffffff;
+  --border-subtle: #e7ebf0;
+  --text-muted: #667085;
 }
 
 @theme inline {
@@ -74,6 +77,47 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: hsl(var(--primary-h) var(--primary-s) 90% / 0.8);
+  color: #172033;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-ring);
+  outline-offset: 2px;
+}
+
+/* Shared interaction baseline: restrained feedback, no decorative motion. */
+a, button, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, [role="button"], a {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+input, select, textarea {
+  border-color: #d9e0e8;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #98a2b3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @supports (padding: max(0px)) {

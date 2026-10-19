@@ -121,38 +121,47 @@ export default function ReceiptCard({
     router.refresh();
   }
 
+  const previewTitle = `Kwitansi ${receipt.vendor || ""}`.trim();
+
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-3 space-y-2 lg:rounded-2xl lg:p-4">
+    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-slate-900 truncate">
-            {receipt.vendor || "Kwitansi"}
-          </p>
-          <p className="text-xs text-slate-500">
-            {formatDate(receipt.receipt_date || receipt.created_at)}
-            {split && ` · dibagi ${savedLines.length} rincian`}
-          </p>
+        {receipt.drive_view_url && (
+          <DriveInlinePreview url={receipt.drive_view_url} title={previewTitle} variant="thumb" />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-slate-900">
+                {receipt.vendor || "Kwitansi"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {formatDate(receipt.receipt_date || receipt.created_at)}
+                {split && ` · dibagi ${savedLines.length} rincian`}
+              </p>
+            </div>
+            <p className="shrink-0 text-[15px] font-bold text-slate-900">
+              {formatCurrency(receipt.amount)}
+            </p>
+          </div>
+
           {split ? (
-            <ul className="mt-1 space-y-0.5">
+            <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2">
               {savedLines.map((line) => (
-                <li key={line.id} className="text-xs flex justify-between gap-2">
-                  <span
-                    className={`truncate ${line.outside_rab ? "text-amber-700" : "text-brand"}`}
-                  >
+                <li key={line.id} className="flex justify-between gap-2 text-xs">
+                  <span className={`truncate ${line.outside_rab ? "text-amber-700" : "text-brand"}`}>
                     {lineLabel(line)}
                     {lineDetail(line) && ` · ${lineDetail(line)}`}
                     {line.notes ? ` · ${line.notes}` : ""}
                   </span>
-                  <span className="shrink-0 text-slate-600">
-                    {formatCurrency(line.amount)}
-                  </span>
+                  <span className="shrink-0 text-slate-600">{formatCurrency(line.amount)}</span>
                 </li>
               ))}
             </ul>
           ) : (
             lineLabel(savedLines[0]) && (
               <p
-                className={`text-xs mt-0.5 truncate ${
+                className={`mt-1.5 truncate text-xs ${
                   savedLines[0].outside_rab ? "text-amber-700" : "text-brand"
                 }`}
               >
@@ -162,38 +171,23 @@ export default function ReceiptCard({
             )
           )}
           {!split && savedLines[0].notes && (
-            <p className="text-xs text-slate-500 mt-0.5 truncate">
-              {savedLines[0].notes}
-            </p>
+            <p className="mt-0.5 truncate text-xs text-slate-500">{savedLines[0].notes}</p>
           )}
           {receipt.notes && receipt.notes !== savedLines[0].notes && (
-            <p className="text-xs text-slate-400 mt-0.5 truncate">
-              {receipt.notes}
-            </p>
+            <p className="mt-0.5 truncate text-xs text-slate-400">{receipt.notes}</p>
           )}
-        </div>
-        <div className="text-right shrink-0">
-          <p className="font-semibold text-slate-900">
-            {formatCurrency(receipt.amount)}
-          </p>
+
           {receipt.drive_view_url && (
             <FilePreviewLink
               url={receipt.drive_view_url}
-              title={`Kwitansi ${receipt.vendor || ""}`.trim()}
-              className="text-xs text-brand inline-flex items-center gap-1 mt-1"
+              title={previewTitle}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
             >
-              Layar penuh <Eye size={12} />
+              Lihat bukti <Eye size={12} />
             </FilePreviewLink>
           )}
         </div>
       </div>
-
-      {receipt.drive_view_url && (
-        <DriveInlinePreview
-          url={receipt.drive_view_url}
-          title={`Kwitansi ${receipt.vendor || ""}`.trim()}
-        />
-      )}
 
       {error && (
         <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">

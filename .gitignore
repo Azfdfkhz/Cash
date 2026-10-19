@@ -46,3 +46,7 @@ next-env.d.ts
 
 # service account (jangan di-commit)
 google-service-account*.json
+
+# Local Google OAuth/service credentials — never commit or distribute
+credentials.json
+google-service-account*.json
