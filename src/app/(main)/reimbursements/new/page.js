@@ -10,8 +10,12 @@ import RequestShell from "@/components/request/RequestShell";
 import ValidationSummary from "@/components/request/ValidationSummary";
 import SubmitSuccessModal from "@/components/request/SubmitSuccessModal";
 import BankAccountField from "@/components/request/BankAccountField";
+import DraftPrompt from "@/components/request/DraftPrompt";
+import LeaveDialog from "@/components/request/LeaveDialog";
 import { Field, SelectField, inputCls, maskedAccount } from "@/components/request/fields";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/draft";
+import { clearDraft, loadDraft, loadDraftFiles } from "@/lib/draft";
+import { useAutoDraft } from "@/lib/useAutoDraft";
+import { useLeaveGuard } from "@/lib/useLeaveGuard";
 import { formatCurrency, formatDateLong, formatDateShort } from "@/lib/utils";
 import ReceiptLinesEditor, { newLine, toLinesPayload } from "@/components/ReceiptLinesEditor";
 import { renderPdfPreview } from "@/lib/pdfPreview";
@@ -48,6 +52,8 @@ export default function NewReimbursementPage() {
   const [agreed, setAgreed] = useState(false);
   const [success, setSuccess] = useState(null);
   const [draftNotice, setDraftNotice] = useState("");
+  // Autosave baru aktif setelah draft lama selesai dipulihkan.
+  const [restored, setRestored] = useState(false);
   const errorRef = useRef(null);
 
   function fail(message) {
@@ -57,21 +63,84 @@ export default function NewReimbursementPage() {
     );
   }
 
+  // Ada draft tersimpan? Tanyakan dulu (pop up) -- jangan dipulihkan diam-diam.
+  // Autosave menunggu pilihan user (`restored`), supaya draft lama tidak tertimpa.
+  const [pendingDraft, setPendingDraft] = useState(null);
+  useEffect(() => {
+    const d = loadDraft(DRAFT_KIND);
+    if (d) setPendingDraft(d);
+    else setRestored(true);
+  }, []);
+
+  // Pulihkan draft: teks dari localStorage, file kwitansi dari IndexedDB.
+  async function continueDraft() {
+    const draft = pendingDraft;
+    setPendingDraft(null);
+    setPurpose(draft.purpose ?? "");
+    setObjective(draft.objective ?? "");
+    setFundingSource(draft.fundingSource ?? "");
+    setProgramRef(draft.programRef ?? "");
+    setBankName((prev) => draft.bankName || prev);
+    setBankAccountNumber((prev) => draft.bankAccountNumber || prev);
+    setBankAccountHolder((prev) => draft.bankAccountHolder || prev);
+    let missingFiles = 0;
+    if (draft.receipts?.length) {
+      let stored = {};
+      try {
+        stored = await loadDraftFiles(DRAFT_KIND);
+      } catch {
+        /* penyimpanan file tidak tersedia */
+      }
+      const restoredDrafts = [];
+      for (const m of draft.receipts) {
+        const file = stored[m.key];
+        if (!file) {
+          missingFiles += 1;
+          continue;
+        }
+        restoredDrafts.push({
+          key: m.key,
+          file,
+          isPdf: file.type === "application/pdf",
+          previewUrl: URL.createObjectURL(file),
+          pdfPages: null,
+          scanning: false,
+          amount: m.amount ?? "",
+          vendor: m.vendor ?? "",
+          receiptDate: m.receiptDate ?? "",
+          lines: m.lines?.length
+            ? m.lines.map(({ key: _k, ...rest }) => newLine(rest))
+            : [newLine()],
+          rawText: m.rawText ?? "",
+        });
+      }
+      setDrafts(restoredDrafts);
+      for (const d of restoredDrafts) {
+        if (d.isPdf) {
+          renderPdfPreview(d.file, { maxPages: 20 })
+            .then(({ pages }) => updateDraft(d.key, { pdfPages: pages }))
+            .catch(() => updateDraft(d.key, { pdfPages: [] }));
+        }
+      }
+    }
+    setDraftNotice(
+      missingFiles
+        ? `Draft dipulihkan, tetapi ${missingFiles} file kwitansi tidak ditemukan — lampirkan ulang.`
+        : "Draft sebelumnya dipulihkan, termasuk kwitansinya. Lanjutkan, lalu kirim."
+    );
+    setRestored(true);
+  }
+
+  function discardDraft() {
+    clearDraft(DRAFT_KIND);
+    setPendingDraft(null);
+    setRestored(true);
+  }
+
+  // Prefill rekening tujuan dari profil (tidak menimpa yang sudah terisi).
   useEffect(() => {
     let active = true;
     (async () => {
-      // Pulihkan draft teks (file kwitansi tidak bisa disimpan; lampirkan ulang).
-      const draft = loadDraft(DRAFT_KIND);
-      if (draft) {
-        setPurpose(draft.purpose ?? "");
-        setObjective(draft.objective ?? "");
-        setFundingSource(draft.fundingSource ?? "");
-        setProgramRef(draft.programRef ?? "");
-        setBankName(draft.bankName ?? "");
-        setBankAccountNumber(draft.bankAccountNumber ?? "");
-        setBankAccountHolder(draft.bankAccountHolder ?? "");
-        setDraftNotice("Draft sebelumnya dipulihkan. Kwitansi perlu dilampirkan ulang.");
-      }
       const supabase = createClient();
       const {
         data: { user },
@@ -108,7 +177,7 @@ export default function NewReimbursementPage() {
     for (const raw of rawFiles) {
       const file = await toJpegFile(raw, { onSlowConversion: () => setSlowHeic(true) });
       setPreparing((n) => n - 1);
-      const key = `rb-${++draftSeq}`;
+      const key = `rb-${Date.now().toString(36)}-${++draftSeq}`;
       const isPdf = file.type === "application/pdf";
       setDrafts((list) => [
         ...list,
@@ -156,6 +225,55 @@ export default function NewReimbursementPage() {
 
   const viewing = drafts.find((d) => d.key === viewingKey) ?? null;
   const total = drafts.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+
+  // Draft otomatis (teks + file kwitansi): tersimpan tiap perubahan, saat
+  // keluar/pindah halaman, saat koneksi putus, dan saat pengiriman gagal.
+  const draftData = {
+    purpose,
+    objective,
+    fundingSource,
+    programRef,
+    bankName,
+    bankAccountNumber,
+    bankAccountHolder,
+    receipts: drafts.map((d) => ({
+      key: d.key,
+      name: d.file.name,
+      type: d.file.type,
+      amount: d.amount,
+      vendor: d.vendor,
+      receiptDate: d.receiptDate,
+      lines: d.lines,
+      rawText: d.rawText,
+    })),
+  };
+  const { flush, finish, savedAt, meaningful } = useAutoDraft({
+    kind: DRAFT_KIND,
+    data: draftData,
+    files: drafts.map((d) => ({ key: d.key, file: d.file })),
+    enabled: restored,
+    isMeaningful: (d) =>
+      Boolean(
+        d.purpose.trim() ||
+          d.objective ||
+          d.fundingSource ||
+          d.programRef.trim() ||
+          d.receipts.length
+      ),
+  });
+
+  // Keluar dari formulir yang sudah terisi (menu, tautan, tombol kembali):
+  // tanya dulu mau disimpan ke draft atau tidak. Tutup tab / jaringan putus
+  // tetap otomatis tersimpan lewat autosave di atas.
+  const guard = useLeaveGuard(restored && meaningful && !success && !Boolean(submitting));
+  function leaveAndSave() {
+    flush("manual");
+    guard.confirmLeave();
+  }
+  function leaveWithoutSaving() {
+    finish();
+    guard.confirmLeave();
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -218,7 +336,7 @@ export default function NewReimbursementPage() {
       if (rpcError) throw new Error(rpcError.message);
 
       notifyOps(id);
-      clearDraft(DRAFT_KIND);
+      finish();
       setSubmitting("");
       setSuccess({
         id,
@@ -229,7 +347,11 @@ export default function NewReimbursementPage() {
         ],
       });
     } catch (err) {
-      fail(`Gagal mengajukan reimbursement: ${err.message}`);
+      // Gagal (server error / jaringan putus): isian + kwitansi dijadikan draft.
+      flush("error");
+      fail(
+        `Gagal mengajukan reimbursement: ${err.message}. Isian dan kwitansi Anda otomatis tersimpan sebagai draft, jadi bisa dilanjutkan.`
+      );
       setSubmitting("");
     }
   }
@@ -240,21 +362,17 @@ export default function NewReimbursementPage() {
   }
 
   function handleDraft() {
-    const ok = saveDraft(DRAFT_KIND, {
-      purpose,
-      objective,
-      fundingSource,
-      programRef,
-      bankName,
-      bankAccountNumber,
-      bankAccountHolder,
-    });
+    const ok = flush("manual");
     setDraftNotice(
       ok
-        ? "Draft tersimpan di perangkat ini (kwitansi tidak ikut tersimpan)."
-        : "Draft gagal disimpan (penyimpanan browser tidak tersedia)."
+        ? "Draft tersimpan di perangkat ini, termasuk kwitansinya."
+        : "Isi dulu sebagian formulir, atau penyimpanan browser tidak tersedia."
     );
   }
+
+  const notice = savedAt
+    ? `Draft tersimpan otomatis pukul ${savedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}.`
+    : draftNotice;
 
   // ── Validasi untuk ringkasan ──
   const receiptsReady =
@@ -273,6 +391,7 @@ export default function NewReimbursementPage() {
 
   return (
     <RequestShell
+      onBack={guard.requestBack}
       active="reimbursement"
       summary={
         <ValidationSummary
@@ -298,7 +417,7 @@ export default function NewReimbursementPage() {
           onDraft={handleDraft}
           loading={Boolean(submitting)}
           submitLabel={submitting || "Kirim Pengajuan"}
-          notice={draftNotice}
+          notice={notice}
         />
       }
     >
@@ -522,6 +641,18 @@ export default function NewReimbursementPage() {
         fallbackUrl={viewing?.previewUrl}
       />
 
+      <LeaveDialog
+        open={guard.pending}
+        onSave={leaveAndSave}
+        onDiscard={leaveWithoutSaving}
+        onCancel={guard.cancelLeave}
+      />
+      <DraftPrompt
+        draft={pendingDraft}
+        kindLabel="Reimbursement"
+        onContinue={continueDraft}
+        onDiscard={discardDraft}
+      />
       <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />
     </RequestShell>
   );

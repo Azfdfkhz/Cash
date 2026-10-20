@@ -3,13 +3,22 @@ import Link from "next/link";
 // Navigasi halaman berbasis query param `?page=`. Cukup dipakai di Server
 // Component — tidak butuh state klien.
 // `params`: query lain yang ikut dibawa saat pindah halaman (mis. filter).
-export default function Pagination({ page, total, pageSize, basePath, params = {} }) {
+// `pageParam`: nama query halaman (default `page`) -- dipakai kalau satu halaman
+// punya lebih dari satu daftar bernomor (mis. Persetujuan: `pencairan`).
+export default function Pagination({
+  page,
+  total,
+  pageSize,
+  basePath,
+  params = {},
+  pageParam = "page",
+}) {
   const href = (p) => {
     // basePath boleh sudah membawa query (mis. "/dashboard?filter=pending")
     const [path, existing = ""] = basePath.split("?");
     const q = new URLSearchParams(existing);
     for (const [k, v] of Object.entries(params)) if (v) q.set(k, v);
-    q.set("page", String(p));
+    q.set(pageParam, String(p));
     return `${path}?${q}`;
   };
   const totalPages = Math.max(1, Math.ceil((total ?? 0) / pageSize));

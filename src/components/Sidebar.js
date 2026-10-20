@@ -6,11 +6,16 @@ import { LogOut } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
 import { useLogout } from "@/components/useLogout";
 import { navFor, isActive } from "@/components/nav-items";
-import { getInitials, shortName } from "@/lib/utils";
+import { useApprovalBadge } from "@/components/useApprovalBadge";
+import { useHasDraft } from "@/lib/useHasDraft";
+import { shortName } from "@/lib/utils";
+import ProfileAvatar from "@/components/ProfileAvatar";
 
 // Sidebar desktop 256px (≥lg). Di mobile tidak dirender (pakai BottomNav).
-export default function Sidebar({ role, fullName, pendingCount = 0 }) {
+export default function Sidebar({ role, fullName, pendingCount = 0, userId }) {
   const pathname = usePathname();
+  const approvalCount = useApprovalBadge(pendingCount, userId, role === "operational");
+  const hasDraft = useHasDraft().any;
   const { requestLogout, dialog } = useLogout();
   const items = navFor(role);
 
@@ -22,7 +27,7 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
 
       <nav className="flex-1 px-3 py-5">
         <ul className="space-y-1.5">
-          {items.map(({ href, label, icon: Icon, badge, also }) => {
+          {items.map(({ href, label, icon: Icon, badge, draft, also }) => {
             const active = isActive(pathname, href, also);
             return (
               <li key={href}>
@@ -37,10 +42,15 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
                 >
                   <Icon size={20} strokeWidth={1.75} className="shrink-0" />
                   <span>{label}</span>
-                  {badge && pendingCount > 0 && (
+                  {draft && hasDraft && (
+                    <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                      Draft
+                    </span>
+                  )}
+                  {badge && approvalCount > 0 && (
                     <span
                       className="h-2 w-2 rounded-full bg-orange-500"
-                      aria-label={`${pendingCount} menunggu`}
+                      aria-label={`${approvalCount} perlu tindakan`}
                     />
                   )}
                 </Link>
@@ -51,9 +61,7 @@ export default function Sidebar({ role, fullName, pendingCount = 0 }) {
       </nav>
 
       <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-4">
-        <div className="h-9 w-9 shrink-0 rounded-full border border-slate-300 bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
-          {getInitials(fullName)}
-        </div>
+        <ProfileAvatar size={36} />
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-sm font-semibold text-slate-900">
             {shortName(fullName)}

@@ -14,12 +14,14 @@ import {
   FileSpreadsheet,
   Banknote,
   Eye,
+  Hourglass,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import StatusBadge from "@/components/StatusBadge";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import ReturnPopup from "@/components/ReturnPopup";
+import DisbursementSection from "@/components/DisbursementSection";
 import {
   formatCurrency,
   formatDateTimeFull,
@@ -28,6 +30,7 @@ import {
   formatLpjDeadline,
   FUNDING_SOURCE_LABEL,
   KIND_LABEL,
+  hasPendingReturn,
 } from "@/lib/utils";
 
 export default function CashAdvanceReviewModal(props) {
@@ -66,6 +69,7 @@ function CashAdvanceReviewModalContent({
   nextPendingCount = 0,
   onGoNext,
   startWithDetail = false,
+  onDisbursed,
 }) {
   const router = useRouter();
   const [note, setNote] = useState("");
@@ -93,6 +97,11 @@ function CashAdvanceReviewModalContent({
 
   const isReimbursement = ca.kind === "reimbursement";
   const awaitingTransfer = ca.status === "approved" && !ca.disbursed_at;
+  // Operasional (bukan pemilik) mencairkan langsung dari panel ini -- formulir
+  // pencairan tampil di dalam panel, bukan pop up lain.
+  const disburseInline = canReview && awaitingTransfer && !isOwner;
+  // Requester sudah mencatat pengembalian sisa saldo, belum dikonfirmasi operasional.
+  const pendingReturn = ca.status === "approved" && hasPendingReturn(ca);
   const holderName = ca.bank_account_holder || ca.profiles?.bank_account_holder || ca.profiles?.full_name || "-";
 
   const categoryLabel =
@@ -253,6 +262,14 @@ function CashAdvanceReviewModalContent({
                 : "Pengajuan ditolak."}
             </div>
           )}
+          {pendingReturn && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+              <Hourglass size={14} className="mt-px shrink-0" />
+              {canReview
+                ? "Ada pengembalian sisa saldo yang menunggu konfirmasi Anda."
+                : "Pengembalian sisa saldo menunggu konfirmasi tim operasional."}
+            </div>
+          )}
           {/* Plafon + tenggat (sebaris seperti desain) */}
           <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3">
             <div className="min-w-0">
@@ -349,6 +366,20 @@ function CashAdvanceReviewModalContent({
             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center text-[11px] text-slate-500">
               Kwitansi reimbursement dilihat di detail pengajuan.
             </div>
+          )}
+
+          {disburseInline && (
+            <DisbursementSection
+              cashAdvanceId={ca.id}
+              amount={ca.amount_requested}
+              bankName={ca.bank_name}
+              bankAccountNumber={ca.bank_account_number}
+              bankAccountHolder={holderName}
+              disbursedAt={ca.disbursed_at}
+              canDisburse
+              kind={ca.kind}
+              onDone={() => onDisbursed?.(ca.id)}
+            />
           )}
 
           {canDecide ? (
@@ -462,6 +493,24 @@ function CashAdvanceReviewModalContent({
                 Catat kwitansi
               </button>
             </div>
+          ) : disburseInline ? (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailOpen(true)}
+                className="flex items-center justify-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
+              >
+                <Eye size={14} strokeWidth={2.25} />
+                Lihat Detail
+              </button>
+            </div>
           ) : (
             <div className="flex items-center justify-end gap-2">
               <button
@@ -474,7 +523,13 @@ function CashAdvanceReviewModalContent({
               <button
                 type="button"
                 onClick={() => {
-                  setDetailFocus(canReview && awaitingTransfer ? "pencairan" : null);
+                  setDetailFocus(
+                    canReview && awaitingTransfer
+                      ? "pencairan"
+                      : canReview && pendingReturn
+                        ? "pengembalian"
+                        : null
+                  );
                   setDetailOpen(true);
                 }}
                 className="flex items-center justify-center rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
@@ -483,9 +538,11 @@ function CashAdvanceReviewModalContent({
                   ? isReimbursement
                     ? "Transfer Penggantian"
                     : "Cairkan Dana"
-                  : isOwner && ca.status === "rejected"
-                    ? "Revisi & Ajukan Ulang"
-                    : "Lihat Detail"}
+                  : canReview && pendingReturn
+                    ? "Konfirmasi Pengembalian"
+                    : isOwner && ca.status === "rejected"
+                      ? "Revisi & Ajukan Ulang"
+                      : "Lihat Detail"}
               </button>
             </div>
           )}
@@ -529,10 +586,8 @@ function CashAdvanceReviewModalContent({
           nextPendingCount={nextPendingCount}
           onLater={afterDisburseChoice}
           onDisburseNow={() => {
+            // Formulir pencairan sudah ada di panel ini; cukup tutup dialog.
             setResult(null);
-            setAskContinueAfterDetail(true);
-            setDetailFocus("pencairan");
-            setDetailOpen(true);
           }}
           onStay={() => setResult(null)}
           onGoNext={() => {
@@ -548,7 +603,7 @@ function CashAdvanceReviewModalContent({
 // Pop up hasil keputusan. Dua langkah, selalu menunggu pilihan user:
 //  1) disetujui -> cairkan/transfer sekarang atau nanti
 //  2) masih ada antrean -> lanjut ke pengajuan berikutnya atau tetap di sini
-function DecisionDialog({
+export function DecisionDialog({
   result,
   ca,
   isReimbursement,
@@ -557,6 +612,7 @@ function DecisionDialog({
   onDisburseNow,
   onStay,
   onGoNext,
+  standalone = false,
 }) {
   const account = formatBankAccount({
     bankName: ca.bank_name,
@@ -567,7 +623,9 @@ function DecisionDialog({
 
   return (
     <div
-      className="animate-fade-in absolute inset-0 z-10 flex items-center justify-center bg-slate-900/50 p-4"
+      className={`animate-fade-in inset-0 flex items-center justify-center bg-slate-900/50 p-4 ${
+        standalone ? "fixed z-[60]" : "absolute z-10"
+      }`}
       role="alertdialog"
       aria-modal="true"
     >

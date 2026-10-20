@@ -1,37 +1,41 @@
 import Image from "next/image";
-import { Check, Wallet } from "lucide-react";
+import { Check } from "lucide-react";
 
-// Logo Sharing Happiness (wordmark biru, jadi ditaruh di kartu putih supaya
-// terbaca di atas header navy) + nama aplikasi.
+// Logo Sharing Happiness tanpa kotak/latar. Wordmark aslinya biru, jadi di atas
+// panel navy dibuat putih lewat filter (brightness-0 + invert) supaya tetap
+// terbaca tanpa perlu kartu putih di belakangnya.
+function Logo({ className = "" }) {
+  return (
+    <Image
+      src="/brand/sharinghappiness.png"
+      alt="Sharing Happiness"
+      width={800}
+      height={417}
+      priority
+      className={`h-auto brightness-0 invert ${className}`}
+    />
+  );
+}
+
+// Header mobile: logo + nama aplikasi.
 function Brand() {
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-[0_6px_24px_-2px_rgba(37,99,235,0.45)] lg:h-16 lg:w-16">
-        <Image
-          src="/brand/sharinghappiness.png"
-          alt="Sharing Happiness"
-          width={800}
-          height={417}
-          priority
-          className="h-auto w-10 lg:w-12"
-        />
-      </div>
-      <span className="text-base font-semibold leading-tight tracking-tight lg:text-xl">
+    <div className="flex flex-col items-start gap-2">
+      <Logo className="w-36" />
+      <span className="text-sm font-medium leading-tight tracking-tight text-slate-300">
         CashAdvance &amp; Reimbursement
       </span>
     </div>
   );
 }
 
-// Brand panel kiri desktop (Figma): tile 48px #0f172a + nama "CashAdvance".
+// Brand panel kiri desktop: logo + nama aplikasi, tanpa tile/latar.
 function DesktopBrand() {
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-[#0f172a] drop-shadow-[0_4px_6px_rgba(37,99,235,0.25)]">
-        <Wallet size={26} strokeWidth={1.75} className="text-white" />
-      </div>
-      <span className="text-2xl font-bold tracking-[-0.32px] text-white">
-        CashAdvance
+    <div className="flex flex-col items-start gap-3">
+      <Logo className="w-48" />
+      <span className="text-lg font-semibold tracking-[-0.2px] text-slate-300">
+        CashAdvance &amp; Reimbursement
       </span>
     </div>
   );

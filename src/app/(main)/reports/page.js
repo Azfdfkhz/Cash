@@ -1,52 +1,32 @@
 import { redirect } from "next/navigation";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
-import { fetchAll, MAX_FETCH_ROWS } from "@/lib/pagination";
+import { getPage, pageRange, PAGE_SIZE } from "@/lib/pagination";
+import { fetchReportPage, getReportFilters } from "@/lib/reports";
 import ReportsTable from "@/components/ReportsTable";
-import { KIND_LABEL } from "@/lib/utils";
+import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({ searchParams }) {
   const { profile } = await getUserProfile();
   if (profile?.role !== "operational") redirect("/dashboard");
 
+  const params = await searchParams;
+  const filters = getReportFilters(params);
+  let page = getPage(params);
   const supabase = await createClient();
 
-  // Laporan butuh SEMUA kwitansi sekaligus (untuk pencarian, total, & export
-  // CSV di sisi klien). Ambil per potongan agar menembus plafon 1000 baris
-  // PostgREST, dibatasi MAX_FETCH_ROWS sebagai pengaman.
-  // Hanya ambil kolom yang benar-benar dipakai ReportsTable — "*" sebelumnya
-  // ikut menarik ocr_raw_text (blob teks OCR) untuk sampai 10.000 baris di
-  // setiap kunjungan halaman ini, salah satu query paling berat di aplikasi.
-  const receipts = await fetchAll(({ from, to }) =>
-    supabase
-      .from("receipts")
-      .select(
-        "id, receipt_date, vendor, amount, notes, drive_view_url, receipt_lines(position, category, outside_rab, rab_items(description)), cash_advances:cash_advance_id(purpose, kind, profiles:requester_id(full_name))"
-      )
-      .order("created_at", { ascending: false })
-      .range(from, to)
-  );
-
-  const rows = receipts.map((r) => ({
-    id: r.id,
-    receiptDate: r.receipt_date,
-    requesterName: r.cash_advances?.profiles?.full_name ?? "-",
-    purpose: r.cash_advances?.purpose ?? "-",
-    kind: KIND_LABEL[r.cash_advances?.kind] ?? "Cash Advance",
-    // Pos RAB / kategori dari rincian kwitansi (bisa lebih dari satu).
-    category: [...(r.receipt_lines ?? [])]
-      .sort((a, b) => a.position - b.position)
-      .map((l) => l.category ?? (l.outside_rab ? "Di luar RAB" : l.rab_items?.description))
-      .filter(Boolean)
-      .join(", "),
-    vendor: r.vendor,
-    amount: r.amount,
-    notes: r.notes,
-    driveUrl: r.drive_view_url,
-  }));
-
-  const capped = rows.length >= MAX_FETCH_ROWS;
+  // Hanya PAGE_SIZE kwitansi yang diambil per halaman -- pencarian, filter,
+  // urutan, dan total dihitung di database (fungsi report_receipts), bukan
+  // dengan memuat semua kwitansi ke browser.
+  let { from } = pageRange(page);
+  let result = await fetchReportPage(supabase, filters, { limit: PAGE_SIZE, offset: from });
+  // Halaman di luar jangkauan (mis. filter baru mempersempit hasil): mundur ke 1.
+  if (result.rows.length === 0 && page > 1) {
+    page = 1;
+    from = 0;
+    result = await fetchReportPage(supabase, filters, { limit: PAGE_SIZE, offset: 0 });
+  }
 
   return (
     <div className="space-y-4">
@@ -56,13 +36,25 @@ export default async function ReportsPage() {
           Rekap seluruh kwitansi Cash Advance dan Reimbursement.
         </p>
       </div>
-      {capped && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          Menampilkan {MAX_FETCH_ROWS.toLocaleString("id-ID")} kwitansi terbaru.
-          Untuk rekap lebih lama, export CSV per periode secara berkala.
-        </p>
-      )}
-      <ReportsTable rows={rows} />
+      <ReportsTable
+        rows={result.rows}
+        total={result.total}
+        totalAmount={result.totalAmount}
+        filters={filters}
+        pagination={
+          <Pagination
+            page={page}
+            total={result.total}
+            pageSize={PAGE_SIZE}
+            basePath="/reports"
+            params={{
+              q: filters.q,
+              tanggal: filters.date,
+              jenis: filters.kind,
+            }}
+          />
+        }
+      />
     </div>
   );
 }

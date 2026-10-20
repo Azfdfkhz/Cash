@@ -3,17 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navFor, isActive } from "@/components/nav-items";
+import { useApprovalBadge } from "@/components/useApprovalBadge";
+import { useHasDraft } from "@/lib/useHasDraft";
 
 // Navigasi bawah mobile (disembunyikan ≥lg, diganti Sidebar).
 // Item aktif: garis gelap 3px di tepi atas + ikon/label gelap.
-export default function BottomNav({ role, pendingCount = 0 }) {
+export default function BottomNav({ role, pendingCount = 0, userId }) {
   const pathname = usePathname();
+  const approvalCount = useApprovalBadge(pendingCount, userId, role === "operational");
+  const hasDraft = useHasDraft().any;
   const items = navFor(role);
 
   return (
     <nav className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom">
       <ul className="flex px-4 pt-2 pb-3">
-        {items.map(({ href, label, icon: Icon, badge, also }) => {
+        {items.map(({ href, label, icon: Icon, badge, draft, also }) => {
           const active = isActive(pathname, href, also);
           return (
             <li key={href} className="flex-1">
@@ -31,7 +35,13 @@ export default function BottomNav({ role, pendingCount = 0 }) {
                     strokeWidth={1.75}
                     className={active ? "text-[#0f172a]" : "text-slate-500"}
                   />
-                  {badge && pendingCount > 0 && (
+                  {draft && hasDraft && (
+                    <span
+                      className="absolute -right-1.5 -top-0.5 h-2 w-2 rounded-full bg-amber-500"
+                      aria-label="Ada draft pengajuan"
+                    />
+                  )}
+                  {badge && approvalCount > 0 && (
                     <span className="absolute -right-1.5 -top-0.5 h-2 w-2 rounded-full bg-orange-500" />
                   )}
                 </span>

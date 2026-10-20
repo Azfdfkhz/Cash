@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Clock, CreditCard, TrendingUp, TriangleAlert } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
+import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
@@ -16,6 +17,7 @@ import {
   formatDateTimeShort,
   formatNumber,
   KIND_LABEL,
+  hasPendingReturn,
 } from "@/lib/utils";
 import { RoleBadge, StatCard, FilterTabs, TH } from "./parts";
 
@@ -204,7 +206,10 @@ export default function OperationalDashboard({
           )}
           <div className="space-y-4">
             {list.map((ca) => {
-              const action = MOBILE_ACTION[ca.status] ?? MOBILE_ACTION.closed;
+              const action =
+                ca.status === "approved" && hasPendingReturn(ca)
+                  ? { label: "Konfirmasi Pengembalian", primary: true }
+                  : MOBILE_ACTION[ca.status] ?? MOBILE_ACTION.closed;
               return (
                 <article
                   key={ca.id}
@@ -226,6 +231,9 @@ export default function OperationalDashboard({
                         <span className="text-[11px] font-medium text-amber-700">
                           {pendingTransferLabel(ca)}
                         </span>
+                      )}
+                      {hasPendingReturn(ca) && (
+                        <ReturnPendingBadge operational className="" />
                       )}
                     </div>
                   </div>
@@ -358,6 +366,9 @@ export default function OperationalDashboard({
                         <p className="mt-1 text-[11px] font-medium text-amber-700">
                           {pendingTransferLabel(ca)}
                         </p>
+                      )}
+                      {hasPendingReturn(ca) && (
+                        <ReturnPendingBadge operational className="mt-1" />
                       )}
                     </td>
                     <td className="px-5 py-4 text-center">

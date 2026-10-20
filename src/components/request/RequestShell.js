@@ -8,14 +8,14 @@ import KindSwitch from "@/components/KindSwitch";
 //  Mobile  : header (tombol kembali + judul), form, lalu ringkasan validasi;
 //            tombol Draft / Kirim menempel di bawah (di dalam `summary`).
 //  Desktop : form di kiri, ringkasan validasi sticky di kanan.
-export default function RequestShell({ active, summary, children }) {
+export default function RequestShell({ active, summary, children, onBack }) {
   const router = useRouter();
   return (
     <div className="pb-28 lg:pb-0">
       <header className="relative mb-4 flex h-11 items-center justify-center lg:hidden">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => (onBack ? onBack() : router.back())}
           aria-label="Kembali"
           className="absolute left-0 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
         >

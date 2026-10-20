@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { Banknote, Eye, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toJpegFile } from "@/lib/imageConvert";
-import { LocalFilePreview } from "@/components/FilePreview";
-import { FilePreviewLink } from "@/components/FilePreview";
+import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
 import { formatBankAccount, formatCurrency, formatDate } from "@/lib/utils";
 
 // Pencairan dana CA yang sudah disetujui: Tim Operasional (bukan pemilik
@@ -24,6 +23,8 @@ export default function DisbursementSection({
   note: savedNote,
   canDisburse,
   kind,
+  // Dipanggil setelah pencairan tersimpan (sebelum data di-refresh).
+  onDone,
 }) {
   const isReimbursement = kind === "reimbursement";
   const router = useRouter();
@@ -54,6 +55,13 @@ export default function DisbursementSection({
               <p className="text-xs text-emerald-700/80 mt-0.5">
                 Catatan: {savedNote}
               </p>
+            )}
+            {proofUrl && (
+              <DriveInlinePreview
+                url={proofUrl}
+                title="Bukti transfer pencairan"
+                className="mt-2"
+              />
             )}
             {proofUrl && (
               <FilePreviewLink
@@ -127,6 +135,7 @@ export default function DisbursementSection({
         }).catch(() => {});
       }
 
+      onDone?.();
       router.refresh();
     } catch (err) {
       setError(err.message || "Gagal menyimpan pencairan. Coba lagi.");

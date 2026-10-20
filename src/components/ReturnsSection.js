@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, Download, Eye, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
-import { FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
+import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
 import {
   formatCurrency,
   formatDate,
@@ -526,6 +526,13 @@ export default function ReturnsSection({
                   key={r.id}
                   className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-3"
                 >
+                  {r.proof_drive_view_url && (
+                    <DriveInlinePreview
+                      url={r.proof_drive_view_url}
+                      title={`Bukti transfer ${formatCurrency(r.amount)}`}
+                      variant="thumb"
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-900">
                       {formatCurrency(r.amount)}
@@ -614,6 +621,13 @@ export default function ReturnsSection({
                   key={r.id}
                   className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-3"
                 >
+                  {r.proof_drive_view_url && (
+                    <DriveInlinePreview
+                      url={r.proof_drive_view_url}
+                      title={`Bukti transfer ${formatCurrency(r.amount)}`}
+                      variant="thumb"
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-900">
                       {formatCurrency(r.amount)}

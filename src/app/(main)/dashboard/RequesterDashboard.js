@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
+import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
@@ -15,6 +16,7 @@ import {
   formatDateShort,
   formatNumber,
   KIND_LABEL,
+  hasPendingReturn,
 } from "@/lib/utils";
 import { RoleBadge, StatCard, TH } from "./parts";
 
@@ -159,6 +161,9 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                         {pendingTransferLabel(ca)}
                       </span>
                     )}
+                    {hasPendingReturn(ca) && (
+                      <ReturnPendingBadge className="" />
+                    )}
                   </div>
                 </button>
               );
@@ -252,6 +257,9 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       <p className="mt-1 text-[11px] font-medium text-amber-700">
                         {pendingTransferLabel(ca)}
                       </p>
+                    )}
+                    {hasPendingReturn(ca) && (
+                      <ReturnPendingBadge className="mt-1" />
                     )}
                   </td>
                   <td className="px-6 py-4 text-center">

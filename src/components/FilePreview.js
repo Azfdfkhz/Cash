@@ -246,8 +246,28 @@ export function DriveInlinePreview({ url, title, className = "", variant = "full
   }, []);
 
   const file = useAppFile(url, { enabled: visible, maxPages: 1, width: 900 });
-  if (!driveFileId(url) || file.status === "error") return null;
   const thumb = variant === "thumb";
+  if (!driveFileId(url)) return null;
+  // Gagal dimuat: untuk thumbnail tetap tampilkan kotak file yang bisa diketuk
+  // (pop up menawarkan "Buka di Drive"), jangan hilang jadi teks saja.
+  if (file.status === "error") {
+    if (!thumb) return null;
+    return (
+      <>
+        <button
+          ref={ref}
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 ${className}`}
+          aria-label={`Lihat ${title || "file"}`}
+        >
+          <FileText size={20} />
+          <span className="text-[10px] font-medium">Buka</span>
+        </button>
+        <FilePreviewModal open={open} onClose={() => setOpen(false)} title={title} url={url} />
+      </>
+    );
+  }
 
   return (
     <>

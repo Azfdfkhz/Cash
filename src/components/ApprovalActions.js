@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function ApprovalActions({ cashAdvanceId, variant = "card" }) {
+// `onDecided(status, note)` dipanggil setelah keputusan tersimpan, sebelum
+// data di-refresh (dipakai Persetujuan untuk menampilkan pop up lanjutan).
+export default function ApprovalActions({ cashAdvanceId, variant = "card", onDecided }) {
   const router = useRouter();
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,7 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card" }) {
       }).catch(() => {});
     }
 
+    onDecided?.(status, note.trim() || null);
     router.refresh();
   }
 

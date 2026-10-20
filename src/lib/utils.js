@@ -211,3 +211,10 @@ export const REIMBURSEMENT_CATEGORIES = [
   "Cetak & Dokumentasi",
   "Lainnya",
 ];
+
+// Ada pengembalian sisa saldo yang sudah dicatat requester tapi belum
+// dikonfirmasi tim operasional. Butuh relasi `cash_advance_returns(confirmed_at)`
+// ikut di-select pada query daftar.
+export function hasPendingReturn(ca) {
+  return (ca?.cash_advance_returns ?? []).some((r) => !r.confirmed_at);
+}

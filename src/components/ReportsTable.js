@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
   Calendar,
@@ -11,7 +12,7 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import { formatCurrency, formatDate, toCsvValue, downloadCsv } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 // Ambil ID file dari URL Google Drive → URL pratinjau & unduh.
 function driveIds(url) {
@@ -25,69 +26,66 @@ function driveIds(url) {
     : { preview: null, download: null };
 }
 
+const KIND_OPTIONS = [
+  ["", "Semua"],
+  ["cash_advance", "Cash Advance"],
+  ["reimbursement", "Reimbursement"],
+];
+
 // Mobile: daftar kartu kwitansi (tombol membuka foto di Drive).
 // Desktop (≥lg): daftar di kiri + pratinjau kwitansi di kanan.
-export default function ReportsTable({ rows }) {
-  const [query, setQuery] = useState("");
-  const [date, setDate] = useState("");
+//
+// Data per halaman datang dari server (`rows` = satu halaman saja, `total` &
+// `totalAmount` = jumlah seluruh hasil filter). Pencarian, tanggal, dan jenis
+// disimpan di URL (?q=&tanggal=&jenis=) dan diterapkan di database; mengganti
+// filter kembali ke halaman 1. `pagination` hanya muncul kalau hasilnya lebih
+// dari satu halaman.
+export default function ReportsTable({
+  rows,
+  total,
+  totalAmount,
+  filters,
+  pagination,
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [pending, startTransition] = useTransition();
+  const [query, setQuery] = useState(filters.q);
   const [selectedId, setSelectedId] = useState(null);
-  // Filter jenis: "" = semua, atau label jenis ("Cash Advance"/"Reimbursement").
-  const [kind, setKind] = useState("");
+  const lastPushedQuery = useRef(filters.q);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (kind && r.kind !== kind) return false;
-      if (date && r.receiptDate?.slice(0, 10) !== date) return false;
-      if (!q) return true;
-      return (
-        r.requesterName?.toLowerCase().includes(q) ||
-        r.vendor?.toLowerCase().includes(q) ||
-        r.purpose?.toLowerCase().includes(q) ||
-        r.kind?.toLowerCase().includes(q) ||
-        r.category?.toLowerCase().includes(q)
-      );
+  function go(next) {
+    const merged = { ...filters, ...next };
+    const qs = new URLSearchParams();
+    if (merged.q) qs.set("q", merged.q);
+    if (merged.date) qs.set("tanggal", merged.date);
+    if (merged.kind) qs.set("jenis", merged.kind);
+    const str = qs.toString();
+    startTransition(() => {
+      router.replace(str ? `${pathname}?${str}` : pathname, { scroll: false });
     });
-  }, [rows, query, date, kind]);
-
-  const selected = filtered.find((r) => r.id === selectedId) ?? null;
-  const ids = driveIds(selected?.driveUrl);
-
-  function exportCsv() {
-    const header = [
-      "Tanggal Kwitansi",
-      "Requester",
-      "Jenis",
-      "Keperluan",
-      "Pos RAB / Kategori",
-      "Vendor",
-      "Nominal",
-      "Catatan",
-      "Link Foto",
-    ];
-    const lines = filtered.map((r) =>
-      [
-        r.receiptDate ? formatDate(r.receiptDate) : "-",
-        r.requesterName,
-        r.kind,
-        r.purpose,
-        r.category,
-        r.vendor,
-        r.amount,
-        r.notes,
-        r.driveUrl,
-      ]
-        .map(toCsvValue)
-        .join(",")
-    );
-    const kindSlug = kind ? `${kind.toLowerCase().replace(/\s+/g, "-")}-` : "";
-    downloadCsv(`laporan-kwitansi-${kindSlug}${new Date().toISOString().slice(0, 10)}.csv`, [
-      header.join(","),
-      ...lines,
-    ]);
   }
 
-  const total = filtered.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  // Pencarian ditunda sebentar supaya tidak meminta ke database di tiap ketikan.
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed === lastPushedQuery.current) return undefined;
+    const t = setTimeout(() => {
+      lastPushedQuery.current = trimmed;
+      go({ q: trimmed });
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  const selected = rows.find((r) => r.id === selectedId) ?? null;
+  const ids = driveIds(selected?.driveUrl);
+
+  const exportParams = new URLSearchParams();
+  if (filters.q) exportParams.set("q", filters.q);
+  if (filters.date) exportParams.set("tanggal", filters.date);
+  if (filters.kind) exportParams.set("jenis", filters.kind);
+  const exportHref = `/api/reports/export${exportParams.size ? `?${exportParams}` : ""}`;
 
   return (
     <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
@@ -100,8 +98,8 @@ export default function ReportsTable({ rows }) {
             />
             <input
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={filters.date}
+              onChange={(e) => go({ date: e.target.value })}
               aria-label="Filter tanggal kwitansi"
               className="w-[9.5rem] rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
             />
@@ -115,19 +113,15 @@ export default function ReportsTable({ rows }) {
         </div>
 
         <div className="flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Filter jenis pengajuan">
-          {[
-            ["", "Semua"],
-            ["Cash Advance", "Cash Advance"],
-            ["Reimbursement", "Reimbursement"],
-          ].map(([value, label]) => (
+          {KIND_OPTIONS.map(([value, label]) => (
             <button
               key={label}
               type="button"
               role="tab"
-              aria-selected={kind === value}
-              onClick={() => setKind(value)}
+              aria-selected={filters.kind === value}
+              onClick={() => value !== filters.kind && go({ kind: value })}
               className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                kind === value
+                filters.kind === value
                   ? "border-brand bg-brand text-white"
                   : "border-slate-300 bg-white text-slate-600 hover:border-brand hover:text-brand"
               }`}
@@ -137,27 +131,28 @@ export default function ReportsTable({ rows }) {
           ))}
         </div>
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <span className="text-sm text-slate-500">{filtered.length} kwitansi</span>
+          <span className="text-sm text-slate-500">{total} kwitansi</span>
           <div className="flex items-center gap-3">
             <span className="text-base font-bold text-slate-900">
-              {formatCurrency(total)}
+              {formatCurrency(totalAmount)}
             </span>
-            <button
-              onClick={exportCsv}
+            <a
+              href={exportHref}
+              download
               className="flex shrink-0 items-center gap-1.5 rounded-lg bg-dark-navy px-3 py-1.5 text-xs font-semibold text-white"
             >
               <Download size={14} /> CSV
-            </button>
+            </a>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {filtered.length === 0 && (
+        <div className={`space-y-3 transition-opacity ${pending ? "opacity-50" : ""}`} aria-busy={pending}>
+          {rows.length === 0 && (
             <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
               Tidak ada data.
             </p>
           )}
-          {filtered.map((r) => {
+          {rows.map((r) => {
             const active = r.id === selected?.id;
             return (
               <div
@@ -224,6 +219,8 @@ export default function ReportsTable({ rows }) {
             );
           })}
         </div>
+
+        {pagination}
       </div>
 
       <aside className="hidden lg:block lg:sticky lg:top-8">

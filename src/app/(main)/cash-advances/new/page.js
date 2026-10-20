@@ -10,6 +10,8 @@ import RequestShell from "@/components/request/RequestShell";
 import ValidationSummary from "@/components/request/ValidationSummary";
 import SubmitSuccessModal from "@/components/request/SubmitSuccessModal";
 import BankAccountField from "@/components/request/BankAccountField";
+import DraftPrompt from "@/components/request/DraftPrompt";
+import LeaveDialog from "@/components/request/LeaveDialog";
 import {
   Field,
   SelectField,
@@ -17,7 +19,9 @@ import {
   formatWeekdayDate,
   maskedAccount,
 } from "@/components/request/fields";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/draft";
+import { clearDraft, loadDraft } from "@/lib/draft";
+import { useAutoDraft } from "@/lib/useAutoDraft";
+import { useLeaveGuard } from "@/lib/useLeaveGuard";
 import { formatCurrency, formatDateLong } from "@/lib/utils";
 import { rabTotal } from "@/lib/rab";
 
@@ -44,6 +48,8 @@ export default function NewCashAdvancePage() {
   const [agreed, setAgreed] = useState(false);
   const [success, setSuccess] = useState(null);
   const [draftNotice, setDraftNotice] = useState("");
+  // Autosave baru aktif setelah draft lama selesai dipulihkan.
+  const [restored, setRestored] = useState(false);
   const errorRef = useRef(null);
 
   function fail(message) {
@@ -53,27 +59,44 @@ export default function NewCashAdvancePage() {
     );
   }
 
+  // Ada draft tersimpan? Tanyakan dulu (pop up) -- jangan dipulihkan diam-diam.
+  // Autosave menunggu pilihan user (`restored`), supaya draft lama tidak tertimpa.
+  const [pendingDraft, setPendingDraft] = useState(null);
+  useEffect(() => {
+    const d = loadDraft(DRAFT_KIND);
+    if (d) setPendingDraft(d);
+    else setRestored(true);
+  }, []);
+
+  function continueDraft() {
+    const draft = pendingDraft;
+    setPendingDraft(null);
+    setPurpose(draft.purpose ?? "");
+    setFundUsageDate(draft.fundUsageDate ?? "");
+    setFundingSource(draft.fundingSource ?? "");
+    setProgramRef(draft.programRef ?? "");
+    setObjective(draft.objective ?? "");
+    setRabUrl(draft.rabUrl ?? "");
+    if (draft.rabItems?.length) setRabItems(draft.rabItems.map((it) => newRabItem(it)));
+    setBankName((prev) => draft.bankName || prev);
+    setBankAccountNumber((prev) => draft.bankAccountNumber || prev);
+    setBankAccountHolder((prev) => draft.bankAccountHolder || prev);
+    setDraftNotice("Draft dilanjutkan. Lengkapi isian, lalu kirim.");
+    setRestored(true);
+  }
+
+  function discardDraft() {
+    clearDraft(DRAFT_KIND);
+    setPendingDraft(null);
+    setRestored(true);
+  }
+
   // Prefill rekening tujuan dari profil supaya tidak perlu diketik ulang tiap
   // pengajuan. Pakai functional updater + `prev ||` agar tidak menimpa kalau
   // user sudah sempat mengetik sebelum query selesai.
   useEffect(() => {
     let active = true;
     (async () => {
-      // Pulihkan draft (kalau ada) dulu; rekening profil hanya mengisi yang kosong.
-      const draft = loadDraft(DRAFT_KIND);
-      if (draft) {
-        setPurpose(draft.purpose ?? "");
-        setFundUsageDate(draft.fundUsageDate ?? "");
-        setFundingSource(draft.fundingSource ?? "");
-        setProgramRef(draft.programRef ?? "");
-        setObjective(draft.objective ?? "");
-        setRabUrl(draft.rabUrl ?? "");
-        if (draft.rabItems?.length) setRabItems(draft.rabItems.map((it) => newRabItem(it)));
-        setBankName(draft.bankName ?? "");
-        setBankAccountNumber(draft.bankAccountNumber ?? "");
-        setBankAccountHolder(draft.bankAccountHolder ?? "");
-        setDraftNotice("Draft sebelumnya dipulihkan dari perangkat ini.");
-      }
       const supabase = createClient();
       const {
         data: { user },
@@ -96,6 +119,57 @@ export default function NewCashAdvancePage() {
       active = false;
     };
   }, []);
+
+  // Draft otomatis: tersimpan tiap perubahan, saat keluar/pindah halaman, saat
+  // koneksi putus, dan saat pengiriman gagal. Rekening dari profil tidak ikut
+  // dihitung sebagai isian (terisi sendiri).
+  const draftData = {
+    purpose,
+    fundUsageDate,
+    fundingSource,
+    programRef,
+    objective,
+    rabUrl,
+    rabItems: rabItems.map(({ _key, ...rest }) => rest),
+    bankName,
+    bankAccountNumber,
+    bankAccountHolder,
+  };
+  const { flush, finish, savedAt, meaningful } = useAutoDraft({
+    kind: DRAFT_KIND,
+    data: draftData,
+    enabled: restored,
+    isMeaningful: (d) =>
+      Boolean(
+        d.purpose.trim() ||
+          d.fundUsageDate ||
+          d.fundingSource ||
+          d.programRef.trim() ||
+          d.objective ||
+          d.rabUrl.trim() ||
+          d.rabItems.some((it) => it.description?.trim() || Number(it.unit_price) > 0)
+      ),
+  });
+
+  // Keluar dari formulir yang sudah terisi (menu, tautan, tombol kembali):
+  // tanya dulu mau disimpan ke draft atau tidak. Tutup tab / jaringan putus
+  // tetap otomatis tersimpan lewat autosave di atas.
+  const guard = useLeaveGuard(restored && meaningful && !success && !loading);
+  function leaveAndSave() {
+    flush("manual");
+    guard.confirmLeave();
+  }
+  function leaveWithoutSaving() {
+    finish();
+    guard.confirmLeave();
+  }
+
+  // Pengiriman gagal (error server / jaringan putus): isian dijadikan draft
+  // supaya bisa dilanjutkan, bukan hilang.
+  function failAndKeepDraft(message) {
+    flush("error");
+    fail(`${message} Isian Anda otomatis tersimpan sebagai draft, jadi bisa dilanjutkan.`);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -138,39 +212,45 @@ export default function NewCashAdvancePage() {
     }
 
     setLoading(true);
-    const supabase = createClient();
+    let newId;
+    try {
+      const supabase = createClient();
 
-    // Pengajuan + RAB disimpan sekaligus (atomik) lewat RPC, karena RAB tidak
-    // bisa ditulis requester lagi setelah pengajuan berstatus pending.
-    const { data: newId, error } = await supabase.rpc("create_cash_advance", {
-      ca: {
-        purpose,
-        fund_usage_date: fundUsageDate,
-        funding_source: fundingSource,
-        program_ref: fundingSource === "program" ? programRef.trim() : null,
-        objective,
-        rab_url: rabUrl.trim() || null,
-        bank_name: bankName,
-        bank_account_number: bankAccountNumber,
-        bank_account_holder: bankAccountHolder.trim(),
-      },
-      rab: rabRows,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      console.error("Gagal mengajukan Cash Advance:", error);
-      fail(
-        `Gagal mengajukan Cash Advance: ${error.message}${
-          error.code ? ` (${error.code})` : ""
-        }`
-      );
+      // Pengajuan + RAB disimpan sekaligus (atomik) lewat RPC, karena RAB tidak
+      // bisa ditulis requester lagi setelah pengajuan berstatus pending.
+      const { data, error } = await supabase.rpc("create_cash_advance", {
+        ca: {
+          purpose,
+          fund_usage_date: fundUsageDate,
+          funding_source: fundingSource,
+          program_ref: fundingSource === "program" ? programRef.trim() : null,
+          objective,
+          rab_url: rabUrl.trim() || null,
+          bank_name: bankName,
+          bank_account_number: bankAccountNumber,
+          bank_account_holder: bankAccountHolder.trim(),
+        },
+        rab: rabRows,
+      });
+      if (error) {
+        console.error("Gagal mengajukan Cash Advance:", error);
+        setLoading(false);
+        failAndKeepDraft(
+          `Gagal mengajukan Cash Advance: ${error.message}${error.code ? ` (${error.code})` : ""}.`
+        );
+        return;
+      }
+      newId = data;
+    } catch (err) {
+      console.error("Gagal mengajukan Cash Advance:", err);
+      setLoading(false);
+      failAndKeepDraft("Pengajuan gagal terkirim (koneksi bermasalah?).");
       return;
     }
 
+    setLoading(false);
     notifyOps(newId);
-    clearDraft(DRAFT_KIND);
+    finish();
     setSuccess({
       rows: [
         { label: "Nominal pengajuan", value: formatCurrency(numericAmount) },
@@ -186,24 +266,17 @@ export default function NewCashAdvancePage() {
   }
 
   function handleDraft() {
-    const ok = saveDraft(DRAFT_KIND, {
-      purpose,
-      fundUsageDate,
-      fundingSource,
-      programRef,
-      objective,
-      rabUrl,
-      rabItems: rabItems.map(({ _key, ...rest }) => rest),
-      bankName,
-      bankAccountNumber,
-      bankAccountHolder,
-    });
+    const ok = flush("manual");
     setDraftNotice(
       ok
         ? "Draft tersimpan di perangkat ini."
-        : "Draft gagal disimpan (penyimpanan browser tidak tersedia)."
+        : "Isi dulu sebagian formulir, atau penyimpanan browser tidak tersedia."
     );
   }
+
+  const notice = savedAt
+    ? `Draft tersimpan otomatis pukul ${savedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}.`
+    : draftNotice;
 
   // ── Validasi untuk ringkasan ──
   const total = rabTotal(rabItems);
@@ -223,6 +296,7 @@ export default function NewCashAdvancePage() {
 
   return (
     <RequestShell
+      onBack={guard.requestBack}
       active="cash_advance"
       summary={
         <ValidationSummary
@@ -248,7 +322,7 @@ export default function NewCashAdvancePage() {
           onDraft={handleDraft}
           loading={loading}
           submitLabel="Mengirim..."
-          notice={draftNotice}
+          notice={notice}
         />
       }
     >
@@ -374,6 +448,18 @@ export default function NewCashAdvancePage() {
       </form>
 
       <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />
+      <LeaveDialog
+        open={guard.pending}
+        onSave={leaveAndSave}
+        onDiscard={leaveWithoutSaving}
+        onCancel={guard.cancelLeave}
+      />
+      <DraftPrompt
+        draft={pendingDraft}
+        kindLabel="Cash Advance"
+        onContinue={continueDraft}
+        onDiscard={discardDraft}
+      />
     </RequestShell>
   );
 }

@@ -168,11 +168,7 @@ export default function ProfileForm({
             label="Telegram Chat ID"
             trailing={
               <a
-                href={
-                  botUsername
-                    ? `https://web.telegram.org/a/@userinfobot`
-                    : "https://t.me/userinfobot"
-                }
+                href="https://t.me/userinfobot?start=start"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 rounded-full border border-brand px-4 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"

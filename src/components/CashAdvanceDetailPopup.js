@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Calendar, Camera, ExternalLink, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import StatusBadge from "@/components/StatusBadge";
+import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import RabSection from "@/components/RabSection";
 import ResubmitPanel from "@/components/ResubmitPanel";
 import DisbursementSection from "@/components/DisbursementSection";
@@ -57,7 +58,9 @@ function Title({ children, className = "" }) {
 // Detail pengajuan lengkap sebagai pop up mengambang (menggantikan halaman
 // /cash-advances/[id]). Di desktop muncul di area kosong sebelah kiri panel
 // tinjau; di mobile menutupi layar. `standalone`: dibuka sendiri (tanpa panel
-// tinjau), menutupi seluruh layar di halaman yang sedang dibuka. Dipakai oleh Operasional dan Requester:
+// tinjau), menutupi seluruh layar di halaman yang sedang dibuka. `inline`:
+// tanpa overlay, mengisi kotak induknya (dipakai panel Persetujuan desktop);
+// `headerActions` menggantikan tombol tutup di header. Dipakai oleh Operasional dan Requester:
 // aksi yang tampil mengikuti peran & status pengajuan.
 export default function CashAdvanceDetailPopup({
   ca,
@@ -66,6 +69,8 @@ export default function CashAdvanceDetailPopup({
   isOperational = false,
   initialFocus = null,
   standalone = false,
+  inline = false,
+  headerActions = null,
 }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -189,15 +194,25 @@ export default function CashAdvanceDetailPopup({
   return (
     <>
     <div
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      className={`animate-fade-in inset-0 flex items-center justify-center bg-slate-900/40 p-4 sm:p-6 ${
-        standalone ? "fixed z-50" : "absolute z-20 sm:right-[420px]"
-      }`}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Detail pengajuan"
+      onClick={inline ? undefined : (e) => e.target === e.currentTarget && onClose()}
+      className={
+        inline
+          ? "h-full min-h-0"
+          : `animate-fade-in inset-0 flex items-center justify-center bg-slate-900/40 p-4 sm:p-6 ${
+              standalone ? "fixed z-50" : "absolute z-20 sm:right-[420px]"
+            }`
+      }
+      role={inline ? undefined : "dialog"}
+      aria-modal={inline ? undefined : "true"}
+      aria-label={inline ? undefined : "Detail pengajuan"}
     >
-      <div className="animate-scale-up flex h-full max-h-[44rem] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
+      <div
+        className={
+          inline
+            ? "flex h-full min-h-0 w-full flex-col overflow-hidden"
+            : "animate-scale-up flex h-full max-h-[44rem] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200"
+        }
+      >
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div className="min-w-0">
@@ -209,20 +224,27 @@ export default function CashAdvanceDetailPopup({
                 {KIND_LABEL[c.kind] ?? "Cash Advance"}
               </span>
               <StatusBadge status={c.status} className="!px-2 !py-px !text-[11px]" />
+              {c.status === "approved" && hasPendingReturn && (
+                <ReturnPendingBadge operational={isOperational} />
+              )}
             </div>
             <h3 className="mt-2 break-words text-lg font-bold leading-snug text-slate-900">{c.purpose}</h3>
             <p className="mt-0.5 text-xs text-slate-500">
               Diajukan oleh {c.profiles?.full_name ?? "-"} · {formatDate(c.created_at)}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup detail"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
-          >
-            <X size={15} />
-          </button>
+          {inline ? (
+            headerActions
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup detail"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
         {/* ── Tab ── */}

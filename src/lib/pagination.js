@@ -1,4 +1,6 @@
-export const PAGE_SIZE = 20;
+// Jumlah baris per halaman untuk daftar Beranda & Persetujuan. Sengaja kecil:
+// hanya sebanyak itu yang diambil dari database; sisanya lewat tombol halaman.
+export const PAGE_SIZE = 6;
 
 // Batas aman jumlah baris yang diambil sekaligus untuk halaman yang butuh
 // seluruh data (cari + export CSV + total), mis. Laporan.

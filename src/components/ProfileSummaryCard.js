@@ -2,7 +2,7 @@
 
 import { Camera, LogOut } from "lucide-react";
 import { useLogout } from "@/components/useLogout";
-import { getInitials } from "@/lib/utils";
+import ProfileAvatar from "@/components/ProfileAvatar";
 
 // Kartu ringkasan profil — hanya tampil di desktop (≥lg), sesuai desain Figma.
 export default function ProfileSummaryCard({ fullName, email, role }) {
@@ -11,9 +11,7 @@ export default function ProfileSummaryCard({ fullName, email, role }) {
   return (
     <div className="hidden lg:block rounded-3xl border border-slate-200 bg-white p-6 text-center">
       <div className="relative mx-auto h-24 w-24">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-dark-navy text-2xl font-bold tracking-wide text-white">
-          {getInitials(fullName)}
-        </div>
+        <ProfileAvatar size={96} />
         <span
           aria-hidden="true"
           className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-600 shadow-sm"

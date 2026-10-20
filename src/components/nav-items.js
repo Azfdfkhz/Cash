@@ -2,14 +2,14 @@ import { House, Plus, ClipboardCheck, ChartColumn, User } from "lucide-react";
 
 export const REQUESTER_NAV = [
   { href: "/dashboard", label: "Beranda", icon: House },
-  { href: "/cash-advances/new", label: "Ajukan", icon: Plus, also: ["/reimbursements/new"] },
+  { href: "/cash-advances/new", label: "Ajukan", icon: Plus, draft: true, also: ["/reimbursements/new"] },
   { href: "/profile", label: "Profil", icon: User },
 ];
 
 export const OPERATIONAL_NAV = [
   { href: "/dashboard", label: "Beranda", icon: House },
   { href: "/approvals", label: "Persetujuan", icon: ClipboardCheck, badge: true },
-  { href: "/cash-advances/new", label: "Ajukan", icon: Plus, also: ["/reimbursements/new"] },
+  { href: "/cash-advances/new", label: "Ajukan", icon: Plus, draft: true, also: ["/reimbursements/new"] },
   { href: "/reports", label: "Laporan", icon: ChartColumn },
   { href: "/profile", label: "Profil", icon: User },
 ];

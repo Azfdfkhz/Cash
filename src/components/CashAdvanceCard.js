@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { formatCurrency, formatDate, KIND_LABEL } from "@/lib/utils";
+import { formatCurrency, formatDate, hasPendingReturn, KIND_LABEL } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
+import ReturnPendingBadge from "./ReturnPendingBadge";
 
 // Tanpa `onClick`: tautan ke /cash-advances/<id> (membuka pop up di Beranda).
 // Dengan `onClick`: tombol yang membuka pop up di halaman yang sedang dibuka.
@@ -31,6 +32,7 @@ export default function CashAdvanceCard({ ca, showRequester = false, onClick }) 
               {ca.kind === "reimbursement" ? "Belum ditransfer" : "Belum dicairkan"}
             </span>
           )}
+          {hasPendingReturn(ca) && <ReturnPendingBadge operational={showRequester} />}
         </div>
       </div>
 

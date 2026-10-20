@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import ProfileAvatar from "@/components/ProfileAvatar";
 
 // Header profil khusus mobile (<lg): judul, avatar, nama, email dan badge
 // peran — sesuai desain Figma.
@@ -12,9 +12,7 @@ export default function ProfileMobileHeader({ fullName, email, role }) {
 
       <div className="mt-6 flex flex-col items-center text-center">
         <div className="relative h-[84px] w-[84px]">
-          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-dark-navy text-2xl font-bold tracking-wide text-white">
-            {getInitials(fullName)}
-          </div>
+          <ProfileAvatar size={84} />
           <span
             aria-hidden="true"
             className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-700 shadow-sm"

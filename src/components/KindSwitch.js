@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Briefcase, ReceiptText } from "lucide-react";
+import { useHasDraft } from "@/lib/useHasDraft";
 
 // Pilihan jenis pengajuan di atas form "Ajukan" (kartu + radio, sesuai Figma).
 export default function KindSwitch({ active }) {
+  const drafts = useHasDraft();
   const items = [
     { kind: "cash_advance", href: "/cash-advances/new", label: "Cash Advance", hint: "Minta dana sebelum belanja", icon: Briefcase },
     { kind: "reimbursement", href: "/reimbursements/new", label: "Reimbursement", hint: "Klaim uang pribadi yang sudah terpakai", icon: ReceiptText },
@@ -28,7 +32,14 @@ export default function KindSwitch({ active }) {
               <Icon size={22} strokeWidth={1.75} />
             </span>
             <span className="min-w-0 flex-1 pr-7 lg:pr-9">
-              <span className="block text-sm font-bold text-slate-900 lg:text-base">{label}</span>
+              <span className="flex items-center gap-1.5 text-sm font-bold text-slate-900 lg:text-base">
+                {label}
+                {drafts[kind] && (
+                  <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-bold text-amber-700">
+                    Draft
+                  </span>
+                )}
+              </span>
               <span className="mt-0.5 block text-xs leading-snug text-slate-500 lg:text-sm">{hint}</span>
             </span>
             <span
