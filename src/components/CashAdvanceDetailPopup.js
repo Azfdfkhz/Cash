@@ -177,6 +177,33 @@ export default function CashAdvanceDetailPopup({
       : 0;
   const canScan = isOwner && c.status === (isReimbursement ? "rejected" : "approved");
 
+  // Satu baris "apa yang harus dilakukan sekarang" untuk pemilik pengajuan.
+  // Status di badge hanya menyebut keadaan; baris ini menyebut langkahnya.
+  let nextStep = null;
+  if (loaded && isOwner) {
+    if (c.status === "pending") {
+      nextStep = {
+        title: "Menunggu persetujuan",
+        body: "Tidak ada yang perlu Anda lakukan sekarang. Anda akan mendapat notifikasi setelah pengajuan diputuskan.",
+      };
+    } else if (c.status === "approved" && !c.disbursed_at) {
+      nextStep = {
+        title: "Disetujui, menunggu pencairan",
+        body: "Dana sedang disiapkan untuk ditransfer ke rekening tujuan.",
+      };
+    } else if (
+      c.status === "approved" &&
+      c.disbursed_at &&
+      receipts.length === 0 &&
+      !isReimbursement
+    ) {
+      nextStep = {
+        title: "Dana sudah dicairkan",
+        body: `Unggah kwitansi sebelum tenggat ${formatLpjDeadline(c)} lewat tombol Scan Kwitansi di bawah.`,
+      };
+    }
+  }
+
   const tabs = [
     { id: "ringkasan", label: "Ringkasan" },
     ...(!isReimbursement ? [{ id: "rab", label: "RAB", count: rabItems.length }] : []),
@@ -287,6 +314,13 @@ export default function CashAdvanceDetailPopup({
 
           {tab === "ringkasan" && (
             <>
+              {nextStep && (
+                <p className="rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600 ring-1 ring-slate-100">
+                  <span className="font-semibold text-slate-800">{nextStep.title}.</span>{" "}
+                  {nextStep.body}
+                </p>
+              )}
+
               {/* Catatan penolakan paling atas supaya requester langsung tahu apa yang direvisi */}
               {c.status === "rejected" && c.review_note && (
                 <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">

@@ -6,6 +6,9 @@ export default function CurrencyInput({
   className,
   placeholder = "0",
   required,
+  id,
+  ariaInvalid,
+  ariaDescribedBy,
 }) {
   function handleChange(e) {
     const digits = e.target.value.replace(/\D/g, "");
@@ -16,6 +19,7 @@ export default function CurrencyInput({
 
   return (
     <input
+      id={id}
       type="text"
       inputMode="numeric"
       required={required}
@@ -23,6 +27,8 @@ export default function CurrencyInput({
       onChange={handleChange}
       className={className}
       placeholder={placeholder}
+      aria-invalid={ariaInvalid || undefined}
+      aria-describedby={ariaDescribedBy}
     />
   );
 }

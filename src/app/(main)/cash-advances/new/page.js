@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, Info } from "lucide-react";
+import { AlertCircle, Briefcase, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { notifyOps } from "@/lib/receiptScan";
 import RabEditor, { newRabItem, toRabRows } from "@/components/RabEditor";
@@ -28,6 +28,29 @@ import { rabTotal } from "@/lib/rab";
 const FORM_ID = "new-cash-advance-form";
 const DRAFT_KIND = "cash_advance";
 
+// Tanggal hari ini menurut WIB (bukan UTC) — kalau pakai toISOString(), antara
+// 00.00–07.00 WIB batas minimal tanggal masih menunjukkan hari kemarin.
+function todayJakarta() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
+}
+
+// Pengelompokan isian supaya formulir panjang tetap mudah dipindai.
+function Section({ id, title, description, className = "", children }) {
+  return (
+    <section aria-labelledby={id} className={`space-y-5 ${className}`}>
+      <div>
+        <h2 id={id} className="text-base font-bold text-slate-900">
+          {title}
+        </h2>
+        {description && (
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">{description}</p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function NewCashAdvancePage() {
   const router = useRouter();
   const [purpose, setPurpose] = useState("");
@@ -47,7 +70,9 @@ export default function NewCashAdvancePage() {
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [success, setSuccess] = useState(null);
-  const [draftNotice, setDraftNotice] = useState("");
+  // Pesan singkat yang muncul dekat tombol (di mobile kartu ringkasan jauh di
+  // bawah, jadi konfirmasi simpan draft harus tampil di area yang terlihat).
+  const [toast, setToast] = useState(null);
   // Autosave baru aktif setelah draft lama selesai dipulihkan.
   const [restored, setRestored] = useState(false);
   const errorRef = useRef(null);
@@ -68,6 +93,12 @@ export default function NewCashAdvancePage() {
     else setRestored(true);
   }, []);
 
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   function continueDraft() {
     const draft = pendingDraft;
     setPendingDraft(null);
@@ -81,7 +112,7 @@ export default function NewCashAdvancePage() {
     setBankName((prev) => draft.bankName || prev);
     setBankAccountNumber((prev) => draft.bankAccountNumber || prev);
     setBankAccountHolder((prev) => draft.bankAccountHolder || prev);
-    setDraftNotice("Draft dilanjutkan. Lengkapi isian, lalu kirim.");
+    setToast({ tone: "ok", text: "Draft dilanjutkan. Lengkapi isian, lalu kirim." });
     setRestored(true);
   }
 
@@ -173,6 +204,8 @@ export default function NewCashAdvancePage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    // Cegah pengiriman ganda (mis. Enter ditekan dua kali sebelum tombol disable).
+    if (loading) return;
     setError("");
 
     // RAB wajib; nominal diajukan = total RAB (dijaga juga oleh trigger
@@ -267,31 +300,58 @@ export default function NewCashAdvancePage() {
 
   function handleDraft() {
     const ok = flush("manual");
-    setDraftNotice(
+    setToast(
       ok
-        ? "Draft tersimpan di perangkat ini."
-        : "Isi dulu sebagian formulir, atau penyimpanan browser tidak tersedia."
+        ? {
+            tone: "ok",
+            text: "Draft tersimpan di perangkat ini. Anda bisa melanjutkannya kapan saja.",
+          }
+        : { tone: "error", text: "Isi dulu sebagian formulir sebelum menyimpan draft." }
     );
   }
 
   const notice = savedAt
     ? `Draft tersimpan otomatis pukul ${savedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}.`
-    : draftNotice;
+    : "";
 
   // ── Validasi untuk ringkasan ──
+  // Aturan sama dengan yang dipakai saat kirim: uraian wajib, jumlah &
+  // frekuensi > 0, dan total RAB > 0.
   const total = rabTotal(rabItems);
-  const rabFilled =
-    rabItems.length > 0 && rabItems.every((it) => it.description?.trim()) && total > 0;
+  const rabRowsValid =
+    rabItems.length > 0 &&
+    rabItems.every(
+      (it) => it.description?.trim() && Number(it.quantity) > 0 && Number(it.frequency) > 0
+    );
+  const rabFilled = rabRowsValid && total > 0;
   const sourceOk = Boolean(fundingSource) && (fundingSource !== "program" || programRef.trim());
   const bankOk = Boolean(bankName && bankAccountNumber && bankAccountHolder.trim());
+  // `target` = id elemen yang dituju saat poin diklik (lihat ValidationSummary).
   const checks = [
-    { label: "Judul kegiatan diisi", ok: Boolean(purpose.trim()) },
-    { label: "Tujuan dipilih", ok: Boolean(objective) },
-    { label: "Sumber dana dipilih", ok: Boolean(sourceOk) },
-    { label: `RAB terisi (${rabItems.length} baris)`, ok: rabFilled },
-    { label: "Tanggal kebutuhan valid", ok: Boolean(fundUsageDate) },
-    { label: "Rekening tujuan terisi", ok: bankOk },
-    { label: "Kebijakan SPJ disetujui", ok: agreed },
+    { label: "Judul kegiatan diisi", ok: Boolean(purpose.trim()), target: "purpose" },
+    { label: "Jenis kegiatan dipilih", ok: Boolean(objective), target: "objective" },
+    {
+      label: "Sumber dana dipilih",
+      ok: Boolean(sourceOk),
+      target: fundingSource === "program" ? "program-ref" : "funding-source",
+    },
+    {
+      label: rabItems.length > 1 ? `RAB terisi (${rabItems.length} baris)` : "RAB terisi",
+      ok: rabFilled,
+      target: "rab-editor",
+    },
+    {
+      label: "Tanggal kebutuhan dana diisi",
+      ok: Boolean(fundUsageDate),
+      target: "fund-date",
+    },
+    { label: "Rekening tujuan terisi", ok: bankOk, target: "bank-account" },
+    {
+      label: "Kebijakan SPJ disetujui",
+      ok: agreed,
+      target: "spj-declaration",
+      isDeclaration: true,
+    },
   ];
 
   return (
@@ -334,155 +394,193 @@ export default function NewCashAdvancePage() {
         {error && (
           <div
             ref={errorRef}
+            role="alert"
             className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
           >
             {error}
           </div>
         )}
 
-        <Field label="Keperluan / judul kegiatan" required hint={`${purpose.length}/80`} htmlFor="purpose">
-          <input
-            id="purpose"
-            type="text"
-            required
-            maxLength={80}
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            className={inputCls}
-            placeholder="Contoh: Operasional perjalanan dinas ke Surabaya"
-          />
-        </Field>
-
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
-          <Field label="Tujuan pengajuan" required htmlFor="objective">
-            <SelectField id="objective" required value={objective} onChange={(e) => setObjective(e.target.value)}>
-              <option value="" disabled>
-                Pilih tujuan
-              </option>
-              <option value="penyaluran">Penyaluran</option>
-              <option value="event">Event</option>
-              <option value="lainnya">Lainnya</option>
-            </SelectField>
-          </Field>
-          <Field label="Sumber dana" required htmlFor="funding-source">
-            <SelectField
-              id="funding-source"
-              required
-              value={fundingSource}
-              onChange={(e) => {
-                setFundingSource(e.target.value);
-                if (e.target.value !== "program") setProgramRef("");
-              }}
-            >
-              <option value="" disabled>
-                Pilih sumber dana
-              </option>
-              <option value="program">Program</option>
-              <option value="marketing_operasional">Marketing / Operasional</option>
-              <option value="program_lainnya">Program Lainnya</option>
-            </SelectField>
-          </Field>
-        </div>
-
-        {fundingSource && (
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">
-            {fundingSource === "program" &&
-              "Dana dari campaign yang sudah terdaftar di sistem. Anda wajib mencantumkan ID campaign di bawah ini."}
-            {fundingSource === "program_lainnya" &&
-              "Kegiatan program di luar campaign terdaftar — tidak perlu ID campaign."}
-            {fundingSource === "marketing_operasional" &&
-              "Dana rutin non-program untuk kebutuhan pemasaran atau operasional harian."}
-          </p>
-        )}
-
-        {fundingSource === "program" && (
+        <Section id="section-info" title="Informasi pengajuan">
           <Field
-            label="ID campaign / dana program"
+            label="Judul kegiatan"
             required
-            htmlFor="program-ref"
+            hint={`${purpose.length}/80`}
+            htmlFor="purpose"
             helper={
-              <p className="mt-2 text-xs text-slate-500">
-                ID campaign tertera di halaman detail campaign (contoh:{" "}
-                <span className="font-mono">CMP-2026-014</span>). Tidak tahu ID-nya? Tuliskan saja
-                nama dananya, mis. &quot;Dana Beasiswa Semester Ganjil&quot;.
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                Dipakai sebagai nama pengajuan di daftar, laporan, dan notifikasi.
               </p>
             }
           >
             <input
-              id="program-ref"
+              id="purpose"
               type="text"
               required
-              value={programRef}
-              onChange={(e) => setProgramRef(e.target.value)}
+              maxLength={80}
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
               className={inputCls}
-              placeholder="Contoh: CMP-2026-014 atau nama dana program"
+              placeholder="Contoh: Operasional perjalanan dinas ke Surabaya"
             />
           </Field>
-        )}
 
-        <div>
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3">
-            <h2 className="text-base font-bold text-slate-900">
-              Rencana Anggaran Biaya (RAB) <span className="text-rose-500">*</span>
-            </h2>
-            <span className="text-xs text-slate-500">Nominal pengajuan mengikuti total RAB</span>
-          </div>
-          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-3 text-xs leading-relaxed text-sky-800">
-            <Info size={16} className="mt-0.5 shrink-0" />
-            <p>
-              <strong>Tidak ada kolom nominal terpisah.</strong> Nominal pengajuan dihitung otomatis
-              dari total RAB di bawah — satu baris per jenis pengeluaran, lalu sistem
-              menjumlahkannya untuk Anda ({formatCurrency(total)}).
-            </p>
-          </div>
-          <RabEditor
-            items={rabItems}
-            onItemsChange={setRabItems}
-            sourceUrl={rabUrl}
-            onSourceUrlChange={setRabUrl}
-            onImported={({ title }) => setPurpose((prev) => prev || title)}
-          />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
-          <Field
-            label="Tanggal kebutuhan dana"
-            required
-            htmlFor="fund-date"
-            helper={
-              fundUsageDate ? (
-                <p className="mt-2 text-xs text-slate-400">
-                  {formatWeekdayDate(fundUsageDate)} — paling cepat hari ini, supaya tim punya
-                  waktu memproses pencairan.
-                </p>
-              ) : (
-                <p className="mt-2 text-xs text-slate-400">
-                  Tanggal dana minimal harus dipakai — bukan tanggal pengajuan ini.
-                </p>
-              )
-            }
-          >
-            <input
-              id="fund-date"
-              type="date"
+          <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
+            <Field
+              label="Jenis kegiatan"
               required
-              min={new Date().toISOString().slice(0, 10)}
-              value={fundUsageDate}
-              onChange={(e) => setFundUsageDate(e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-        </div>
+              htmlFor="objective"
+              helper={
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  Menentukan kategori laporan. Pilih &quot;Lainnya&quot; jika kegiatan bukan
+                  penyaluran atau event.
+                </p>
+              }
+            >
+              <SelectField
+                id="objective"
+                required
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+              >
+                <option value="" disabled>
+                  Pilih jenis kegiatan
+                </option>
+                <option value="penyaluran">Penyaluran</option>
+                <option value="event">Event</option>
+                <option value="lainnya">Lainnya</option>
+              </SelectField>
+            </Field>
+            <Field
+              label="Sumber dana"
+              required
+              htmlFor="funding-source"
+              helper={
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  {!fundingSource && "Pilih dana yang menanggung pengeluaran ini."}
+                  {fundingSource === "program" &&
+                    "Dana dari campaign yang sudah terdaftar. ID campaign wajib diisi di bawah."}
+                  {fundingSource === "program_lainnya" &&
+                    "Kegiatan program di luar campaign terdaftar — tanpa ID campaign."}
+                  {fundingSource === "marketing_operasional" &&
+                    "Dana rutin non-program untuk pemasaran atau operasional harian."}
+                </p>
+              }
+            >
+              <SelectField
+                id="funding-source"
+                required
+                value={fundingSource}
+                onChange={(e) => {
+                  setFundingSource(e.target.value);
+                  if (e.target.value !== "program") setProgramRef("");
+                }}
+              >
+                <option value="" disabled>
+                  Pilih sumber dana
+                </option>
+                <option value="program">Program</option>
+                <option value="marketing_operasional">Marketing / Operasional</option>
+                <option value="program_lainnya">Program Lainnya</option>
+              </SelectField>
+            </Field>
+          </div>
 
-        <BankAccountField
-          bankName={bankName}
-          onBankName={setBankName}
-          accountNumber={bankAccountNumber}
-          onAccountNumber={setBankAccountNumber}
-          accountHolder={bankAccountHolder}
-          onAccountHolder={setBankAccountHolder}
-          profileBankMissing={profileBankMissing}
-        />
+          {fundingSource === "program" && (
+            <Field
+              label="ID campaign / dana program"
+              required
+              htmlFor="program-ref"
+              helper={
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  ID campaign tertera di halaman detail campaign (contoh:{" "}
+                  <span className="font-mono">CMP-2026-014</span>). Tidak tahu ID-nya? Tuliskan saja
+                  nama dananya, mis. &quot;Dana Beasiswa Semester Ganjil&quot;.
+                </p>
+              }
+            >
+              <input
+                id="program-ref"
+                type="text"
+                required
+                value={programRef}
+                onChange={(e) => setProgramRef(e.target.value)}
+                className={inputCls}
+                placeholder="Contoh: CMP-2026-014 atau nama dana program"
+              />
+            </Field>
+          )}
+        </Section>
+
+        <Section
+          id="section-rab"
+          className="border-t border-slate-100 pt-6"
+          title={
+            <>
+              Rencana Anggaran Biaya (RAB) <span className="text-rose-500">*</span>
+            </>
+          }
+          description="Nominal pengajuan dihitung otomatis dari total RAB — tidak ada kolom nominal terpisah."
+        >
+          <div id="rab-editor">
+            <RabEditor
+              items={rabItems}
+              onItemsChange={setRabItems}
+              sourceUrl={rabUrl}
+              onSourceUrlChange={setRabUrl}
+              onImported={({ title }) => setPurpose((prev) => prev || title)}
+            />
+          </div>
+        </Section>
+
+        <Section
+          id="section-pencairan"
+          className="border-t border-slate-100 pt-6"
+          title="Jadwal & pencairan dana"
+          description="Kapan dana dibutuhkan dan ke rekening mana dana dikirim."
+        >
+          <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
+            <Field
+              label="Tanggal kebutuhan dana"
+              required
+              htmlFor="fund-date"
+              helper={
+                fundUsageDate ? (
+                  <p className="mt-2 text-xs text-slate-400">
+                    {formatWeekdayDate(fundUsageDate)} — paling cepat hari ini, supaya tim punya
+                    waktu memproses pencairan.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Tanggal dana akan dipakai — bukan tanggal pengajuan ini.
+                  </p>
+                )
+              }
+            >
+              <input
+                id="fund-date"
+                type="date"
+                required
+                min={todayJakarta()}
+                value={fundUsageDate}
+                onChange={(e) => setFundUsageDate(e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+          </div>
+
+          <div id="bank-account">
+            <BankAccountField
+              bankName={bankName}
+              onBankName={setBankName}
+              accountNumber={bankAccountNumber}
+              onAccountNumber={setBankAccountNumber}
+              accountHolder={bankAccountHolder}
+              onAccountHolder={setBankAccountHolder}
+              profileBankMissing={profileBankMissing}
+            />
+          </div>
+        </Section>
       </form>
 
       <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />
@@ -498,6 +596,22 @@ export default function NewCashAdvancePage() {
         onContinue={continueDraft}
         onDiscard={discardDraft}
       />
+
+      {toast && (
+        <div
+          role="status"
+          className={`animate-fade-in fixed inset-x-4 bottom-32 z-40 mx-auto flex max-w-sm items-start gap-2 rounded-xl px-4 py-3 text-sm shadow-[0_12px_32px_-8px_rgba(15,23,42,0.45)] lg:bottom-8 ${
+            toast.tone === "error" ? "bg-rose-600 text-white" : "bg-slate-900 text-white"
+          }`}
+        >
+          {toast.tone === "error" ? (
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          ) : (
+            <Check size={16} className="mt-0.5 shrink-0" />
+          )}
+          <span className="leading-relaxed">{toast.text}</span>
+        </div>
+      )}
     </RequestShell>
   );
 }

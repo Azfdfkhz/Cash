@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { STATUS_LABEL } from "@/lib/utils";
 
 // Popup setelah pengajuan terkirim (sesuai Figma "Pop Up pengajuan").
 export default function SubmitSuccessModal({ open, rows = [], onDone }) {
@@ -35,8 +36,9 @@ export default function SubmitSuccessModal({ open, rows = [], onDone }) {
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between gap-2 border-b border-dashed border-slate-300 pb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Pengajuan</span>
+            {/* Label status harus sama dengan badge status di daftar & detail. */}
             <span className="rounded-full border border-emerald-200 bg-[#e8f8ee] px-3 py-1 text-xs font-bold text-[#047857]">
-              Menunggu Verifikasi
+              {STATUS_LABEL.pending}
             </span>
           </div>
           <dl className="mt-3 space-y-3 text-sm">

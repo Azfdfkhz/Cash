@@ -52,6 +52,34 @@ function Metric({ value, label, divider }) {
   );
 }
 
+// Keadaan kosong yang membedakan antrean "menunggu" dari daftar umum, supaya
+// pengguna tahu apakah memang tidak ada tugas atau filternya terlalu sempit.
+function EmptyState({ filter, kind }) {
+  const pendingOnly = filter === "pending";
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+      <p className="text-sm font-semibold text-slate-700">
+        {pendingOnly ? "Tidak ada pengajuan yang menunggu" : "Belum ada pengajuan"}
+      </p>
+      <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
+        {pendingOnly
+          ? "Antrean persetujuan sedang kosong. Semua pengajuan sudah diproses."
+          : kind
+            ? "Tidak ada pengajuan dengan jenis ini."
+            : "Pengajuan baru dari tim akan muncul di sini."}
+      </p>
+      {(pendingOnly || kind) && (
+        <Link
+          href="/dashboard"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          Lihat semua pengajuan
+        </Link>
+      )}
+    </div>
+  );
+}
+
 function QuickTile({ href, icon: Icon, tone, title, caption }) {
   return (
     <Link
@@ -171,7 +199,7 @@ export default function OperationalDashboard({
           </p>
           <div className="flex gap-4 border-t border-slate-100 pt-4">
             <Metric value={stats.pendingCount} label="Perlu Disetujui" />
-            <Metric value={stats.activeCount} label="CA Berjalan" divider />
+            <Metric value={stats.activeCount} label="Pengajuan berjalan" divider />
             <Metric value={stats.needsSpjCount} label="Perlu SPJ/Laporan" divider />
           </div>
         </section>
@@ -181,15 +209,15 @@ export default function OperationalDashboard({
             href="/approvals"
             icon={Clock}
             tone="bg-[#fff4dc] text-[#d98a0b]"
-            title="Approval Antrean"
+            title="Antrean persetujuan"
             caption={`${stats.pendingCount} pengajuan menunggu`}
           />
           <QuickTile
             href="/reports"
             icon={CreditCard}
             tone="bg-[#e8f0fe] text-brand"
-            title="Rekap Pencairan"
-            caption="Pencairan & pengeluaran"
+            title="Laporan kwitansi"
+            caption="Rekap kwitansi & pencairan"
           />
         </div>
 
@@ -201,9 +229,7 @@ export default function OperationalDashboard({
           <KindFilter />
 
           <KindFilterContent>
-          {list.length === 0 && (
-            <p className="text-sm text-slate-500">Belum ada pengajuan.</p>
-          )}
+          {list.length === 0 && <EmptyState filter={filter} kind={kind} />}
           <div className="space-y-4">
             {list.map((ca) => {
               const action =
@@ -325,8 +351,8 @@ export default function OperationalDashboard({
             <tbody>
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">
-                    Belum ada pengajuan.
+                  <td colSpan={6} className="px-4 py-6">
+                    <EmptyState filter={filter} kind={kind} />
                   </td>
                 </tr>
               )}

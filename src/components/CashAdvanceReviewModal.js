@@ -30,6 +30,7 @@ import {
   formatLpjDeadline,
   FUNDING_SOURCE_LABEL,
   KIND_LABEL,
+  STATUS_LABEL,
   hasPendingReturn,
 } from "@/lib/utils";
 
@@ -203,7 +204,7 @@ function CashAdvanceReviewModalContent({
               {isPending ? (
                 <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-[10px] font-semibold text-[#b45309]">
                   <span className="h-1 w-1 rounded-full bg-[#f59e0b]" />
-                  Menunggu Verifikasi
+                  {STATUS_LABEL.pending}
                 </span>
               ) : (
                 <StatusBadge status={ca.status} className="!px-2 !py-px !text-[10px] whitespace-nowrap" />
