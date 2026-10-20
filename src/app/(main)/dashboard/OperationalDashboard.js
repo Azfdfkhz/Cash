@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Clock, CreditCard, TrendingUp, TriangleAlert } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
+import NextAction from "@/components/NextAction";
 import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
@@ -36,12 +37,6 @@ function KindTag({ kind }) {
       {KIND_LABEL[kind] ?? "Cash Advance"}
     </p>
   );
-}
-
-// Disetujui tapi dana belum dicairkan/ditransfer = tugas tim operasional.
-function pendingTransferLabel(ca) {
-  if (ca.status !== "approved" || ca.disbursed_at) return null;
-  return ca.kind === "reimbursement" ? "Belum ditransfer" : "Belum dicairkan";
 }
 
 function Metric({ value, label, divider }) {
@@ -228,11 +223,7 @@ export default function OperationalDashboard({
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <StatusBadge status={ca.status} />
-                      {pendingTransferLabel(ca) && (
-                        <span className="text-[11px] font-medium text-amber-700">
-                          {pendingTransferLabel(ca)}
-                        </span>
-                      )}
+                      <NextAction ca={ca} operational={true} className="" />
                       {hasPendingReturn(ca) && (
                         <ReturnPendingBadge operational className="" />
                       )}
@@ -363,15 +354,13 @@ export default function OperationalDashboard({
                       {formatNumber(ca.amount_requested)}
                     </td>
                     <td className="px-5 py-4 text-center">
-                      <StatusBadge status={ca.status} />
-                      {pendingTransferLabel(ca) && (
-                        <p className="mt-1 text-[11px] font-medium text-amber-700">
-                          {pendingTransferLabel(ca)}
-                        </p>
-                      )}
-                      {hasPendingReturn(ca) && (
-                        <ReturnPendingBadge operational className="mt-1" />
-                      )}
+                      <div className="flex flex-col items-center gap-1">
+<StatusBadge status={ca.status} />
+<NextAction ca={ca} operational={true} as="p" className="!text-center" />
+{hasPendingReturn(ca) && (
+<ReturnPendingBadge operational className="" />
+)}
+</div>
                     </td>
                     <td className="px-5 py-4 text-center">
                       <button

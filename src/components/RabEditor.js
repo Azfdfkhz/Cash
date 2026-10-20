@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Download, Loader2, Plus, Trash2 } from "lucide-react";
 import CurrencyInput from "@/components/CurrencyInput";
 import UnitSelect from "@/components/UnitSelect";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, LARGE_AMOUNT_WARNING, terbilangRupiah } from "@/lib/utils";
 import { rabItemTotal, rabTotal } from "@/lib/rab";
 
 const inputClass =
@@ -209,11 +209,27 @@ export default function RabEditor({
       </button>
 
       {items.length > 0 && (
-        <div className="flex items-center justify-between rounded-2xl bg-[#f1f5f9] px-5 py-4">
-          <span className="text-sm text-slate-600">Total RAB</span>
-          <span className="text-lg font-bold text-slate-900">
-            {formatCurrency(rabTotal(items))}
-          </span>
+        <div className="rounded-2xl bg-[#f1f5f9] px-5 py-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-600">Total RAB</span>
+            <span className="text-lg font-bold text-slate-900">
+              {formatCurrency(rabTotal(items))}
+            </span>
+          </div>
+          {terbilangRupiah(rabTotal(items)) && (
+            <p className="mt-1 text-right text-xs text-slate-500">
+              {terbilangRupiah(rabTotal(items))}
+            </p>
+          )}
+          {rabTotal(items) >= LARGE_AMOUNT_WARNING && (
+            <p
+              role="alert"
+              className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+            >
+              Nominal besar. Periksa lagi jumlah, frekuensi, dan harga satuan — pastikan tidak ada
+              angka nol yang berlebih.
+            </p>
+          )}
         </div>
       )}
     </div>

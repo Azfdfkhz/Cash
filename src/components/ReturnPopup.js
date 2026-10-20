@@ -181,6 +181,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
           </p>
         ) : (
           <ReturnsSection
+          disbursed={Boolean(c.disbursed_at)}
             cashAdvanceId={c.id}
             kind={c.kind}
             reportUrl={c.report_drive_url}

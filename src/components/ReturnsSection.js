@@ -167,6 +167,8 @@ export default function ReturnsSection({
   bankAccountNumber,
   bankAccountHolder,
   kind,
+  // false = dana belum dicairkan: belum ada sisa saldo yang bisa dikembalikan.
+  disbursed = true,
   amountRequested = 0,
   totalSpent = 0,
   // Dipanggil setelah pengembalian tersimpan (dipakai ReturnPopup untuk
@@ -196,7 +198,7 @@ export default function ReturnsSection({
   const [reimburseNote, setReimburseNote] = useState("");
   const [reimbursing, setReimbursing] = useState(false);
 
-  const remaining = balance - totalReturned;
+  const remaining = disbursed ? balance - totalReturned : 0;
   // Reimbursement tidak punya sisa/kekurangan: selesai lewat transfer
   // reimbursement (DisbursementSection), jadi form-form ini tidak berlaku.
   const isCashAdvance = kind !== "reimbursement";

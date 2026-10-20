@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
+import NextAction from "@/components/NextAction";
 import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
@@ -27,12 +28,6 @@ const STATUS_TILE = {
   closed: { bg: "bg-[#eef2f6]", icon: CheckCheck, color: "text-slate-500" },
   rejected: { bg: "bg-[#fff0f2]", icon: X, color: "text-[#e11d48]" },
 };
-
-// Penanda status pencairan untuk pengajuan yang sudah disetujui.
-function pendingTransferLabel(ca) {
-  if (ca.status !== "approved" || ca.disbursed_at) return null;
-  return ca.kind === "reimbursement" ? "Belum ditransfer" : "Belum dicairkan";
-}
 
 function KindTag({ kind }) {
   return (
@@ -157,11 +152,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       {formatCurrency(ca.amount_requested)}
                     </p>
                     <StatusBadge status={ca.status} />
-                    {pendingTransferLabel(ca) && (
-                      <span className="text-[11px] font-medium text-amber-700">
-                        {pendingTransferLabel(ca)}
-                      </span>
-                    )}
+                    <NextAction ca={ca} operational={false} className="" />
                     {hasPendingReturn(ca) && (
                       <ReturnPendingBadge className="" />
                     )}
@@ -254,15 +245,13 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                     {formatNumber(ca.amount_requested)}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <StatusBadge status={ca.status} />
-                    {pendingTransferLabel(ca) && (
-                      <p className="mt-1 text-[11px] font-medium text-amber-700">
-                        {pendingTransferLabel(ca)}
-                      </p>
-                    )}
-                    {hasPendingReturn(ca) && (
-                      <ReturnPendingBadge className="mt-1" />
-                    )}
+                    <div className="flex flex-col items-center gap-1">
+<StatusBadge status={ca.status} />
+<NextAction ca={ca} operational={false} as="p" className="!text-center" />
+{hasPendingReturn(ca) && (
+<ReturnPendingBadge className="" />
+)}
+</div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="inline-block rounded-lg bg-[#eef2f6] px-4 py-1.5 text-xs font-medium text-[#334155]">

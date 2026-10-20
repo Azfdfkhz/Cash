@@ -434,6 +434,7 @@ export default function CashAdvanceDetailPopup({
 
                   <div ref={returnsRef} className="scroll-mt-2 empty:hidden">
                     <ReturnsSection
+                    disbursed={Boolean(c.disbursed_at)}
                       cashAdvanceId={c.id}
                       kind={c.kind}
                       reportUrl={c.report_drive_url}

@@ -113,12 +113,15 @@ export function formatNumber(value) {
   );
 }
 
-// 1850000 -> "Rp 1,85 jt"; di bawah 1 juta pakai format biasa
+// 1850000 -> "Rp 1,85 jt"; 17000000000 -> "Rp 17 M"; di bawah 1 juta pakai format biasa
 export function formatCompactIdr(value) {
   const n = Number(value ?? 0);
-  if (Math.abs(n) < 1_000_000) return formatCurrency(n);
-  const jt = (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
-  return `Rp ${jt} jt`;
+  const abs = Math.abs(n);
+  if (abs < 1_000_000) return formatCurrency(n);
+  const [div, unit] =
+    abs >= 1_000_000_000_000 ? [1e12, "T"] : abs >= 1_000_000_000 ? [1e9, "M"] : [1e6, "jt"];
+  const num = (n / div).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
+  return `Rp ${num} ${unit}`;
 }
 
 // "Rina Wulandari" -> "RW"; "Rina Wulandari" -> "Rina W"
@@ -246,4 +249,73 @@ export function maskChatId(id) {
   const digits = String(id ?? "");
   if (!digits) return "";
   return `••••${digits.slice(-3)}`;
+}
+
+
+// ── Terbilang: 17000000000 -> "Tujuh belas miliar rupiah" ──
+const SATUAN = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+function terbilang(n) {
+  if (n < 12) return SATUAN[n];
+  if (n < 20) return `${terbilang(n - 10)} belas`;
+  if (n < 100) return `${terbilang(Math.floor(n / 10))} puluh${n % 10 ? ` ${terbilang(n % 10)}` : ""}`;
+  if (n < 200) return `seratus${n - 100 ? ` ${terbilang(n - 100)}` : ""}`;
+  if (n < 1000) return `${terbilang(Math.floor(n / 100))} ratus${n % 100 ? ` ${terbilang(n % 100)}` : ""}`;
+  if (n < 2000) return `seribu${n - 1000 ? ` ${terbilang(n - 1000)}` : ""}`;
+  for (const [div, name] of [[1e12, "triliun"], [1e9, "miliar"], [1e6, "juta"], [1e3, "ribu"]]) {
+    if (n >= div) {
+      const rest = n % div;
+      return `${terbilang(Math.floor(n / div))} ${name}${rest ? ` ${terbilang(rest)}` : ""}`;
+    }
+  }
+  return "";
+}
+export function terbilangRupiah(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n <= 0 || n >= 1e15) return "";
+  const words = terbilang(n);
+  return words ? `${words.charAt(0).toUpperCase()}${words.slice(1)} rupiah` : "";
+}
+
+// Nominal di atas ini diberi peringatan "pastikan angka benar" di form.
+export const LARGE_AMOUNT_WARNING = 100_000_000;
+
+function ageDays(iso) {
+  if (!iso) return null;
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  return d < 0 ? 0 : d;
+}
+function ageText(iso) {
+  const d = ageDays(iso);
+  if (d === null) return "";
+  return d === 0 ? "hari ini" : `${d} hari`;
+}
+
+// Satu baris "apa langkah berikutnya" untuk kartu pengajuan.
+// tone: "act" = ada yang harus dilakukan pembaca; "wait" = menunggu pihak lain.
+export function nextAction(ca, operational = false) {
+  if (!ca) return null;
+  const reim = ca.kind === "reimbursement";
+  if (ca.status === "pending") {
+    return operational
+      ? { tone: "act", text: `Menunggu keputusan Anda · ${ageText(ca.created_at)}` }
+      : { tone: "wait", text: "Menunggu persetujuan Operasional" };
+  }
+  if (ca.status === "rejected") {
+    return operational ? null : { tone: "act", text: "Ditolak — baca catatan, lalu ajukan ulang" };
+  }
+  if (ca.status === "approved") {
+    if (!ca.disbursed_at) {
+      const age = ageText(ca.reviewed_at ?? ca.created_at);
+      return operational
+        ? { tone: "act", text: `${reim ? "Siap ditransfer" : "Siap dicairkan"} · disetujui ${age}` }
+        : { tone: "wait", text: reim ? "Menunggu transfer dari Operasional" : "Menunggu pencairan dana" };
+    }
+    if (!reim && !operational) {
+      const bal = Number(ca.balance ?? 0);
+      if (bal > 0) {
+        return { tone: "act", text: `Unggah kwitansi atau kembalikan sisa ${formatCompactIdr(bal)}` };
+      }
+    }
+  }
+  return null;
 }

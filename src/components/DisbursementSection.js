@@ -2,11 +2,51 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, Eye, FileText, Upload } from "lucide-react";
+import { Banknote, Check, Copy, Eye, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toJpegFile } from "@/lib/imageConvert";
 import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
 import { formatBankAccount, formatCurrency, formatDate } from "@/lib/utils";
+
+// Baris "label — nilai — [Salin]" supaya operasional tidak perlu mengetik ulang
+// di aplikasi bank.
+function CopyRow({ label, value, copyValue, strong = false }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(String(copyValue ?? value));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard tidak tersedia: nilai tetap bisa diseleksi manual */
+    }
+  }
+  return (
+    <div className="flex items-center gap-3 border-t border-slate-100 px-3 py-2.5 first:border-t-0">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-slate-500">{label}</p>
+        <p
+          className={`select-all break-words text-sm text-slate-900 ${
+            strong ? "font-bold tabular-nums tracking-wide" : "font-semibold"
+          }`}
+        >
+          {value || "-"}
+        </p>
+      </div>
+      {value ? (
+        <button
+          type="button"
+          onClick={copy}
+          aria-label={`Salin ${label}`}
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+        >
+          {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+          {copied ? "Tersalin" : "Salin"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 // Pencairan dana CA yang sudah disetujui: Tim Operasional (bukan pemilik
 // pengajuan) mengunggah bukti transfer ke rekening requester, lalu requester
@@ -33,6 +73,7 @@ export default function DisbursementSection({
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   if (disbursedAt) {
     return (
@@ -89,14 +130,18 @@ export default function DisbursementSection({
     );
   }
 
-  async function handleSubmit(e) {
+  // Klik pertama hanya membuka konfirmasi; pencairan tidak bisa dibatalkan.
+  function handleSubmit(e) {
     e.preventDefault();
     setError("");
     if (!file) {
       setError("Unggah bukti transfer pencairan terlebih dahulu.");
       return;
     }
+    setConfirming(true);
+  }
 
+  async function doDisburse() {
     setSaving(true);
     try {
       const formData = new FormData();
@@ -139,6 +184,7 @@ export default function DisbursementSection({
       router.refresh();
     } catch (err) {
       setError(err.message || "Gagal menyimpan pencairan. Coba lagi.");
+      setConfirming(false);
     } finally {
       setSaving(false);
     }
@@ -153,12 +199,18 @@ export default function DisbursementSection({
         <p className="text-sm font-semibold text-slate-700">
           {isReimbursement ? "Transfer Reimbursement" : "Cairkan Dana"}
         </p>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Transfer {formatCurrency(amount)} ke{" "}
-          {formatBankAccount({ bankName, bankAccountNumber, bankAccountHolder })},
-          lalu unggah bukti transfernya. Requester akan mendapat notifikasi.
+        <p className="mt-0.5 text-xs text-slate-500">
+          Transfer ke rekening di bawah, unggah bukti transfer, lalu konfirmasi. Requester akan
+          mendapat notifikasi.
           {isReimbursement && " Pengajuan otomatis selesai setelah dikonfirmasi."}
         </p>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
+        <CopyRow label="Jumlah transfer" value={formatCurrency(amount)} copyValue={Math.round(Number(amount))} strong />
+        <CopyRow label="Bank" value={bankName} />
+        <CopyRow label="No. rekening" value={bankAccountNumber} strong />
+        <CopyRow label="Atas nama" value={bankAccountHolder} />
       </div>
 
       {error && (
@@ -206,8 +258,9 @@ export default function DisbursementSection({
 
       <button
         type="submit"
-        disabled={saving}
-        className="w-full flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-dark disabled:opacity-60 text-white text-sm font-medium rounded-lg py-2.5 lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
+        disabled={saving || !file}
+        title={!file ? "Unggah bukti transfer dulu" : undefined}
+        className="w-full flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg py-2.5 lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
       >
         <Banknote size={16} />
         {saving
@@ -216,6 +269,47 @@ export default function DisbursementSection({
             ? "Konfirmasi Transfer"
             : "Konfirmasi Pencairan"}
       </button>
+
+      {confirming && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Konfirmasi pencairan"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900">
+              {isReimbursement ? "Konfirmasi transfer?" : "Konfirmasi pencairan?"}
+            </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Anda sudah mentransfer{" "}
+              <span className="font-bold text-slate-900">{formatCurrency(amount)}</span> ke{" "}
+              <span className="font-semibold">{bankName}</span> a.n.{" "}
+              <span className="font-semibold">{bankAccountHolder}</span>. Setelah dikonfirmasi,
+              status berubah dan requester langsung diberi tahu. Tindakan ini tidak bisa
+              dibatalkan.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                disabled={saving}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Periksa lagi
+              </button>
+              <button
+                type="button"
+                onClick={doDisburse}
+                disabled={saving}
+                className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+              >
+                {saving ? "Menyimpan..." : "Ya, sudah ditransfer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatCurrency, formatDate, hasPendingReturn, KIND_LABEL } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
 import ReturnPendingBadge from "./ReturnPendingBadge";
+import NextAction from "./NextAction";
 
 // Tanpa `onClick`: tautan ke /cash-advances/<id> (membuka pop up di Beranda).
 // Dengan `onClick`: tombol yang membuka pop up di halaman yang sedang dibuka.
@@ -21,17 +22,13 @@ export default function CashAdvanceCard({ ca, showRequester = false, onClick }) 
               {ca.profiles?.full_name}
             </p>
           )}
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             {formatDate(ca.created_at)}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <StatusBadge status={ca.status} />
-          {ca.status === "approved" && !ca.disbursed_at && (
-            <span className="text-[11px] font-medium text-amber-700">
-              {ca.kind === "reimbursement" ? "Belum ditransfer" : "Belum dicairkan"}
-            </span>
-          )}
+          <NextAction ca={ca} operational={showRequester} />
           {hasPendingReturn(ca) && <ReturnPendingBadge operational={showRequester} />}
         </div>
       </div>

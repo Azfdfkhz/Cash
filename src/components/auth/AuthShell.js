@@ -12,7 +12,7 @@ function Logo({ className = "" }) {
       width={800}
       height={417}
       priority
-      className={`h-auto brightness-0 invert ${className}`}
+      className={`h-auto brightness-100 ${className}`}
     />
   );
 }
@@ -22,8 +22,8 @@ function Brand() {
   return (
     <div className="flex flex-col items-start gap-2">
       <Logo className="w-36" />
-      <span className="text-sm font-medium leading-tight tracking-tight text-slate-300">
-        CashAdvance &amp; Reimbursement
+      <span className="text-sm font-medium leading-tight tracking-tight text-slate-200">
+        Cash Advance &amp; Reimbursement
       </span>
     </div>
   );
@@ -34,8 +34,8 @@ function DesktopBrand() {
   return (
     <div className="flex flex-col items-start gap-3">
       <Logo className="w-48" />
-      <span className="text-lg font-semibold tracking-[-0.2px] text-slate-300">
-        CashAdvance &amp; Reimbursement
+      <span className="text-lg font-semibold tracking-[-0.2px] text-slate-200">
+        Cash Advance &amp; Reimbursement
       </span>
     </div>
   );

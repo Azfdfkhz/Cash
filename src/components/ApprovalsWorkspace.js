@@ -6,7 +6,7 @@ import { DetailPanelSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import CashAdvanceCard from "@/components/CashAdvanceCard";
-import StatusBadge from "@/components/StatusBadge";
+import NextAction from "@/components/NextAction";
 import ApprovalActions from "@/components/ApprovalActions";
 import CashAdvanceReviewModal, { DecisionDialog } from "@/components/CashAdvanceReviewModal";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
@@ -304,14 +304,15 @@ function ApprovalsWorkspaceInner({
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
                   {KIND_LABEL[ca.kind] ?? "Cash Advance"}
                 </p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">
-                  {ca.purpose} · {formatCompactIdr(ca.amount_requested).replace("Rp ", "")}
+                <p className="mt-0.5 truncate text-xs text-slate-500">{ca.purpose}</p>
+                <p className="mt-1.5 text-base font-bold text-slate-900">
+                  {formatCompactIdr(ca.amount_requested)}
                 </p>
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-                  <span className="text-[11px] text-slate-400">
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                  <span className="text-xs text-slate-500">
                     {formatDateTimeShort(ca.created_at)}
                   </span>
-                  <StatusBadge status={ca.status} />
+                  <NextAction ca={ca} operational className="text-right" />
                 </div>
               </button>
             );
