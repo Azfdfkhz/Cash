@@ -6,6 +6,7 @@ import {
   buildApprovalMessage,
   buildRejectionMessage,
 } from "@/lib/telegram/send";
+import { checkRateLimit, isUuid, tooManyRequests } from "@/lib/security";
 
 export async function POST(request, { params }) {
   const { id } = await params;
@@ -15,7 +16,19 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Pengajuan tidak valid." }, { status: 400 });
+  }
+
   const supabase = await createClient();
+  const allowed = await checkRateLimit(supabase, "notify_decision", {
+    max: 60,
+    windowSeconds: 600,
+    subject: id,
+    subjectMax: 2,
+  });
+  if (!allowed) return tooManyRequests("Notifikasi untuk pengajuan ini sudah dikirim.", 300);
+
   const { data: ca } = await supabase
     .from("cash_advances")
     .select(

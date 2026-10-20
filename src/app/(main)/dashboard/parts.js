@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PendingLink } from "@/components/PendingNav";
 
 export function RoleBadge({ children, dot = false, dark = false }) {
   return (
@@ -57,15 +57,16 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
     }`;
   return (
     <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1">
-      <Link href={jenis ? `/dashboard?${jenis}` : "/dashboard"} className={tab(filter !== "pending")}>
+      <PendingLink scroll={false} href={jenis ? `/dashboard?${jenis}` : "/dashboard"} className={tab(filter !== "pending")}>
         Semua
-      </Link>
-      <Link
+      </PendingLink>
+      <PendingLink
+        scroll={false}
         href={`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`}
         className={tab(filter === "pending")}
       >
         Menunggu ({pendingCount})
-      </Link>
+      </PendingLink>
     </div>
   );
 }

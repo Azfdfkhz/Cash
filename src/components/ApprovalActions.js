@@ -11,9 +11,6 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
   const router = useRouter();
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
-  // Aksi yang sedang diproses, supaya tombol yang ditekan bisa menunjukkan
-  // status "Memproses..." dan tombol lain tidak terlihat sama-sama jalan.
-  const [pendingAction, setPendingAction] = useState(null);
   const [error, setError] = useState("");
 
   async function decide(status) {
@@ -22,17 +19,6 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
       setError("Catatan wajib diisi jika menolak pengajuan.");
       return;
     }
-    // Menolak bersifat final untuk pengajuan ini -- minta konfirmasi dulu.
-    if (
-      status === "rejected" &&
-      !window.confirm(
-        "Tolak pengajuan ini? Status berubah menjadi Ditolak dan catatan Anda dikirim ke requester."
-      )
-    ) {
-      return;
-    }
-
-    setPendingAction(status);
     setLoading(true);
 
     const supabase = createClient();
@@ -51,10 +37,9 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
       .eq("id", cashAdvanceId);
 
     setLoading(false);
-    setPendingAction(null);
 
     if (error) {
-      setError("Gagal memperbarui status. Periksa koneksi lalu coba lagi.");
+      setError("Gagal memperbarui status.");
       return;
     }
 
@@ -91,21 +76,18 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
         </div>
         <div className="mt-5 flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
           <button
-            type="button"
             onClick={() => decide("rejected")}
             disabled={loading}
             className="flex items-center gap-1.5 rounded-full border border-rose-300 px-6 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
           >
-            <X size={16} /> {pendingAction === "rejected" ? "Menolak..." : "Tolak"}
+            <X size={16} /> Tolak
           </button>
           <button
-            type="button"
             onClick={() => decide("approved")}
             disabled={loading}
             className="flex items-center gap-1.5 rounded-full bg-dark-navy px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
           >
-            <Check size={16} />{" "}
-            {pendingAction === "approved" ? "Menyetujui..." : "Setujui Pengajuan"}
+            <Check size={16} /> Setujui Pengajuan
           </button>
         </div>
       </>
@@ -131,20 +113,18 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
       />
       <div className="flex gap-2">
         <button
-          type="button"
           onClick={() => decide("approved")}
           disabled={loading}
           className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg py-2.5"
         >
-          <Check size={16} /> {pendingAction === "approved" ? "Menyetujui..." : "Setujui"}
+          <Check size={16} /> Setujui
         </button>
         <button
-          type="button"
           onClick={() => decide("rejected")}
           disabled={loading}
           className="flex-1 flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg py-2.5"
         >
-          <X size={16} /> {pendingAction === "rejected" ? "Menolak..." : "Tolak"}
+          <X size={16} /> Tolak
         </button>
       </div>
     </div>

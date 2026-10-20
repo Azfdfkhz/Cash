@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 import { sendTelegramMessage, buildDisbursementMessage } from "@/lib/telegram/send";
+import { checkRateLimit, isUuid, tooManyRequests } from "@/lib/security";
 
 // Kirim notifikasi Telegram ke requester bahwa dana sudah dicairkan,
 // dipanggil oleh Tim Operasional setelah mark_cash_advance_disbursed.
@@ -13,7 +14,19 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Pengajuan tidak valid." }, { status: 400 });
+  }
+
   const supabase = await createClient();
+  const allowed = await checkRateLimit(supabase, "notify_disbursed", {
+    max: 60,
+    windowSeconds: 600,
+    subject: id,
+    subjectMax: 2,
+  });
+  if (!allowed) return tooManyRequests("Notifikasi untuk pengajuan ini sudah dikirim.", 300);
+
   const { data: ca } = await supabase
     .from("cash_advances")
     .select(

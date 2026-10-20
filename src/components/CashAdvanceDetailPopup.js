@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Calendar, Camera, ExternalLink, Loader2, X } from "lucide-react";
+import { Calendar, Camera, ExternalLink, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import StatusBadge from "@/components/StatusBadge";
 import ReturnPendingBadge from "@/components/ReturnPendingBadge";
@@ -12,6 +12,10 @@ import ReturnsSection from "@/components/ReturnsSection";
 import ReceiptCard from "@/components/ReceiptCard";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import { flattenReceiptLines } from "@/lib/rab";
+import {
+  DetailTabSkeleton,
+  MoneyFlowSkeleton,
+} from "@/components/skeletons/ListSkeletons";
 import {
   formatCaCode,
   formatCurrency,
@@ -177,33 +181,6 @@ export default function CashAdvanceDetailPopup({
       : 0;
   const canScan = isOwner && c.status === (isReimbursement ? "rejected" : "approved");
 
-  // Satu baris "apa yang harus dilakukan sekarang" untuk pemilik pengajuan.
-  // Status di badge hanya menyebut keadaan; baris ini menyebut langkahnya.
-  let nextStep = null;
-  if (loaded && isOwner) {
-    if (c.status === "pending") {
-      nextStep = {
-        title: "Menunggu persetujuan",
-        body: "Tidak ada yang perlu Anda lakukan sekarang. Anda akan mendapat notifikasi setelah pengajuan diputuskan.",
-      };
-    } else if (c.status === "approved" && !c.disbursed_at) {
-      nextStep = {
-        title: "Disetujui, menunggu pencairan",
-        body: "Dana sedang disiapkan untuk ditransfer ke rekening tujuan.",
-      };
-    } else if (
-      c.status === "approved" &&
-      c.disbursed_at &&
-      receipts.length === 0 &&
-      !isReimbursement
-    ) {
-      nextStep = {
-        title: "Dana sudah dicairkan",
-        body: `Unggah kwitansi sebelum tenggat ${formatLpjDeadline(c)} lewat tombol Scan Kwitansi di bawah.`,
-      };
-    }
-  }
-
   const tabs = [
     { id: "ringkasan", label: "Ringkasan" },
     ...(!isReimbursement ? [{ id: "rab", label: "RAB", count: rabItems.length }] : []),
@@ -306,21 +283,14 @@ export default function CashAdvanceDetailPopup({
         {/* ── Konten ── */}
         <div ref={scrollRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
           {!loaded && (
-            <p className="flex items-center gap-2 text-xs text-slate-500">
-              <Loader2 size={14} className="animate-spin" /> Memuat rincian...
+            <p className="sr-only" role="status">
+              Memuat rincian...
             </p>
           )}
           {error && <p className="text-xs text-rose-600">{error}</p>}
 
           {tab === "ringkasan" && (
             <>
-              {nextStep && (
-                <p className="rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600 ring-1 ring-slate-100">
-                  <span className="font-semibold text-slate-800">{nextStep.title}.</span>{" "}
-                  {nextStep.body}
-                </p>
-              )}
-
               {/* Catatan penolakan paling atas supaya requester langsung tahu apa yang direvisi */}
               {c.status === "rejected" && c.review_note && (
                 <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
@@ -351,7 +321,8 @@ export default function CashAdvanceDetailPopup({
                   )}
                 </div>
 
-                {showMoneyFlow && !isReimbursement && (
+                {showMoneyFlow && !isReimbursement && !loaded && <MoneyFlowSkeleton />}
+                {showMoneyFlow && !isReimbursement && loaded && (
                   <>
                     <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-200">
                       <div
@@ -429,6 +400,8 @@ export default function CashAdvanceDetailPopup({
                 </section>
               )}
 
+              {!loaded && <DetailTabSkeleton rows={2} />}
+
               {loaded && (
                 <>
                   {isOwner && c.status === "rejected" && (
@@ -483,6 +456,8 @@ export default function CashAdvanceDetailPopup({
               )}
             </>
           )}
+
+          {(tab === "rab" || tab === "kwitansi") && !loaded && <DetailTabSkeleton />}
 
           {tab === "rab" && loaded && !isReimbursement && (
             <RabSection

@@ -2,7 +2,8 @@ function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export async function sendTelegramMessage(chatId, text) {
@@ -19,9 +20,12 @@ export async function sendTelegramMessage(chatId, text) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
-      text,
+      // Batas Telegram 4096 karakter; sisakan ruang.
+      text: String(text).slice(0, 4000),
       parse_mode: "HTML",
     }),
+    // Telegram macet tidak boleh menahan fungsi serverless sampai timeout.
+    signal: AbortSignal.timeout(8000),
   });
 
   const data = await res.json();
@@ -193,6 +197,7 @@ export async function getBotUsername() {
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/getMe`, {
       next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(3000),
     });
     const data = await res.json();
     return data.ok ? data.result.username : null;

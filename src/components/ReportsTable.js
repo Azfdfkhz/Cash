@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   Building2,
   Calendar,
@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { PendingNavProvider, usePendingNav } from "@/components/PendingNav";
+import { ReceiptListSkeleton } from "@/components/skeletons/ListSkeletons";
 
 // Ambil ID file dari URL Google Drive → URL pratinjau & unduh.
 function driveIds(url) {
@@ -40,16 +42,23 @@ const KIND_OPTIONS = [
 // disimpan di URL (?q=&tanggal=&jenis=) dan diterapkan di database; mengganti
 // filter kembali ke halaman 1. `pagination` hanya muncul kalau hasilnya lebih
 // dari satu halaman.
-export default function ReportsTable({
+export default function ReportsTable(props) {
+  return (
+    <PendingNavProvider>
+      <ReportsTableInner {...props} />
+    </PendingNavProvider>
+  );
+}
+
+function ReportsTableInner({
   rows,
   total,
   totalAmount,
   filters,
   pagination,
 }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const [pending, startTransition] = useTransition();
+  const { pending, navigate } = usePendingNav();
   const [query, setQuery] = useState(filters.q);
   const [selectedId, setSelectedId] = useState(null);
   const lastPushedQuery = useRef(filters.q);
@@ -61,9 +70,7 @@ export default function ReportsTable({
     if (merged.date) qs.set("tanggal", merged.date);
     if (merged.kind) qs.set("jenis", merged.kind);
     const str = qs.toString();
-    startTransition(() => {
-      router.replace(str ? `${pathname}?${str}` : pathname, { scroll: false });
-    });
+    navigate(str ? `${pathname}?${str}` : pathname, { replace: true, scroll: false });
   }
 
   // Pencarian ditunda sebentar supaya tidak meminta ke database di tiap ketikan.
@@ -86,14 +93,6 @@ export default function ReportsTable({
   if (filters.date) exportParams.set("tanggal", filters.date);
   if (filters.kind) exportParams.set("jenis", filters.kind);
   const exportHref = `/api/reports/export${exportParams.size ? `?${exportParams}` : ""}`;
-  const hasFilter = Boolean(filters.q || filters.date || filters.kind);
-
-  // Kembali ke daftar penuh: bersihkan URL sekaligus isian pencarian lokal.
-  function resetFilters() {
-    setQuery("");
-    lastPushedQuery.current = "";
-    go({ q: "", date: "", kind: "" });
-  }
 
   return (
     <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
@@ -113,10 +112,8 @@ export default function ReportsTable({
             />
           </label>
           <input
-            type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Cari kwitansi berdasarkan requester, vendor, keperluan, atau jenis"
             placeholder="Cari requester, vendor, keperluan, jenis..."
             className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
           />
@@ -140,59 +137,30 @@ export default function ReportsTable({
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="whitespace-nowrap text-sm text-slate-500">{total} kwitansi</span>
-            {hasFilter && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="whitespace-nowrap text-xs font-semibold text-brand hover:underline"
-              >
-                Reset filter
-              </button>
-            )}
-          </div>
+        <div className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-opacity ${pending ? "opacity-50" : ""}`}>
+          <span className="text-sm text-slate-500">{total} kwitansi</span>
           <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                Total nilai
-              </p>
-              <p className="text-base font-bold leading-tight text-slate-900">
-                {formatCurrency(totalAmount)}
-              </p>
-            </div>
+            <span className="text-base font-bold text-slate-900">
+              {formatCurrency(totalAmount)}
+            </span>
             <a
               href={exportHref}
               download
-              className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-dark-navy px-3 py-1.5 text-xs font-semibold text-white"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-dark-navy px-3 py-1.5 text-xs font-semibold text-white"
             >
-              <Download size={14} /> Ekspor CSV
+              <Download size={14} /> CSV
             </a>
           </div>
         </div>
 
-        <div className={`space-y-3 transition-opacity ${pending ? "opacity-50" : ""}`} aria-busy={pending}>
+        {pending ? (
+          <ReceiptListSkeleton rows={4} />
+        ) : (
+        <div className="space-y-3">
           {rows.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-              <p className="text-sm font-semibold text-slate-700">
-                Tidak ada kwitansi yang cocok
-              </p>
-              <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
-                {hasFilter
-                  ? "Coba ubah kata kunci atau tanggal, atau tampilkan semua kwitansi."
-                  : "Kwitansi yang sudah diunggah untuk pengajuan akan muncul di sini."}
-              </p>
-              {hasFilter && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Tampilkan semua
-                </button>
-              )}
-            </div>
+            <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
+              Tidak ada data.
+            </p>
           )}
           {rows.map((r) => {
             const active = r.id === selected?.id;
@@ -261,8 +229,9 @@ export default function ReportsTable({
             );
           })}
         </div>
+        )}
 
-        {pagination}
+        {!pending && pagination}
       </div>
 
       <aside className="hidden lg:block lg:sticky lg:top-8">

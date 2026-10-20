@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadDisplayFile } from "@/lib/google/displayImage";
+import { checkRateLimit, tooManyRequests } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -22,6 +23,12 @@ export async function GET(request, { params }) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+
+  // Longgar (foto cukup banyak per pengajuan, dan browser meng-cache 1 jam),
+  // tapi menahan skrip yang menghujani server & kuota Drive.
+  if (!(await checkRateLimit(supabase, "file_view", { max: 300, windowSeconds: 300 }))) {
+    return tooManyRequests("Terlalu banyak permintaan file.", 60);
+  }
 
   const checks = await Promise.all([
     supabase.from("receipts").select("id").eq("drive_file_id", fileId).limit(1),

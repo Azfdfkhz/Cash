@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/security";
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next");
+  const next = safeNextPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();
@@ -29,7 +30,7 @@ export async function GET(request) {
           return NextResponse.redirect(`${origin}/register/complete-profile`);
         }
       }
-      return NextResponse.redirect(`${origin}${next || "/dashboard"}`);
+      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 

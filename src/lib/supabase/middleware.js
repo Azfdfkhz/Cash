@@ -29,8 +29,12 @@ export async function updateSession(request) {
 
   let user = null;
   try {
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
+    // getClaims memverifikasi tanda tangan JWT secara lokal (kunci publik
+    // JWKS di-cache) -- tidak ada round-trip ke server Auth di setiap
+    // navigasi. Bila project masih memakai secret HS256 lama, otomatis
+    // jatuh ke pemanggilan getUser().
+    const { data } = await supabase.auth.getClaims();
+    user = data?.claims ? { id: data.claims.sub } : null;
   } catch {
     // Supabase unreachable/misconfigured; treat as unauthenticated.
   }

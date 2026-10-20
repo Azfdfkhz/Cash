@@ -32,9 +32,18 @@ export async function createClient() {
 // page) hanya ada satu auth.getUser() + satu query profiles, bukan dua kali.
 export const getUserProfile = cache(async function getUserProfile() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Lihat catatan di middleware.js: verifikasi JWT lokal, tanpa round-trip.
+  // Operasi tulis di API route tetap memakai auth.getUser() (otoritatif).
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  const user = claims
+    ? {
+        id: claims.sub,
+        email: claims.email,
+        user_metadata: claims.user_metadata ?? {},
+        app_metadata: claims.app_metadata ?? {},
+      }
+    : null;
 
   if (!user) return { user: null, profile: null };
 

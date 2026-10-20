@@ -3,6 +3,7 @@
 import { createContext, useContext, useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import CashAdvanceCardSkeleton from "@/components/skeletons/CashAdvanceCardSkeleton";
+import { PendingNavContext } from "@/components/PendingNav";
 
 const OPTIONS = [
   { value: null, label: "Semua" },
@@ -21,6 +22,15 @@ export function KindFilterProvider({ basePath, active, children }) {
   const [pending, startTransition] = useTransition();
   const [kind, setOptimisticKind] = useOptimistic(active ?? null);
 
+  // Tab / paginasi / filter lain di halaman yang sama ikut memakai transition
+  // ini lewat <PendingLink>, jadi skeleton tampil untuk SEMUA perpindahan.
+  const navigate = (href, { replace = false, scroll } = {}) =>
+    startTransition(() => {
+      const options = scroll === undefined ? undefined : { scroll };
+      if (replace) router.replace(href, options);
+      else router.push(href, options);
+    });
+
   function select(value) {
     if (value === kind) return;
     startTransition(() => {
@@ -35,7 +45,9 @@ export function KindFilterProvider({ basePath, active, children }) {
 
   return (
     <FilterContext.Provider value={{ kind, pending, select }}>
-      {children}
+      <PendingNavContext.Provider value={{ pending, navigate }}>
+        {children}
+      </PendingNavContext.Provider>
     </FilterContext.Provider>
   );
 }
@@ -69,9 +81,10 @@ export default function KindFilter() {
 
 // Isi yang ikut berganti saat filter diganti: selama data baru dimuat,
 // tampilkan skeleton.
-export function KindFilterContent({ children, skeletons = 3 }) {
+export function KindFilterContent({ children, skeletons = 3, fallback = null }) {
   const { pending } = useContext(FilterContext);
   if (!pending) return children;
+  if (fallback) return fallback;
   return (
     <div className="space-y-3" aria-busy="true">
       {Array.from({ length: skeletons }, (_, i) => (

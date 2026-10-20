@@ -28,7 +28,23 @@ export default function MainLayout({ children }) {
         {children}
       </main>
 
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <nav
+            aria-hidden="true"
+            className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom"
+          >
+            <div className="flex animate-pulse justify-around px-4 pb-4 pt-3">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <div className="h-5 w-5 rounded bg-slate-200" />
+                  <div className="h-2.5 w-10 rounded bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          </nav>
+        }
+      >
         <BottomNavData />
       </Suspense>
     </div>

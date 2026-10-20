@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateClosureReport, ReportError } from "@/lib/report/closureReport";
 import { uploadReceiptToDrive } from "@/lib/google/drive";
 import { caDriveFilename, caDriveFolder } from "@/lib/google/driveNames";
+import { checkRateLimit, isUuid, tooManyRequests } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,9 +27,14 @@ function errorResponse(err) {
 // Akses mengikuti RLS: requester pemilik atau Tim Operasional.
 export async function GET(request, { params }) {
   const { id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "Pengajuan tidak valid." }, { status: 404 });
   const supabase = await createClient();
   if (!(await requireUser(supabase))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Pembuatan PDF mengunduh semua foto dari Drive: mahal, jadi dibatasi.
+  if (!(await checkRateLimit(supabase, "report_get", { max: 15, windowSeconds: 600 }))) {
+    return tooManyRequests("Terlalu sering membuat laporan. Coba lagi beberapa menit lagi.", 120);
   }
 
   try {
@@ -53,9 +59,13 @@ export async function GET(request, { params }) {
 // (tidak membuat duplikat) kecuali `?force=1`.
 export async function POST(request, { params }) {
   const { id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "Pengajuan tidak valid." }, { status: 404 });
   const supabase = await createClient();
   if (!(await requireUser(supabase))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await checkRateLimit(supabase, "report_save", { max: 15, windowSeconds: 600 }))) {
+    return tooManyRequests("Terlalu sering menyimpan laporan. Coba lagi beberapa menit lagi.", 120);
   }
   const force = new URL(request.url).searchParams.get("force") === "1";
 

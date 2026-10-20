@@ -3,20 +3,25 @@ import { google } from "googleapis";
 import { createClient } from "@/lib/supabase/server";
 import { getGoogleAuth } from "@/lib/google/auth";
 import { parseRabCsv, parseSheetUrl } from "@/lib/rab";
+import { checkRateLimit, fetchWithTimeout, tooManyRequests } from "@/lib/security";
+
+const MAX_CSV_CHARS = 1_000_000;
 
 export const runtime = "nodejs";
 
 // Spreadsheet dengan akses "siapa saja yang memiliki link" bisa diekspor
 // langsung sebagai CSV per tab (gid).
 async function fetchPublicCsv({ spreadsheetId, gid }) {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`,
-    { redirect: "follow", cache: "no-store" }
+    { redirect: "follow", cache: "no-store" },
+    10000
   );
   if (!res.ok || !res.headers.get("content-type")?.includes("text/csv")) {
     return null;
   }
-  return res.text();
+  const text = await res.text();
+  return text.length > MAX_CSV_CHARS ? text.slice(0, MAX_CSV_CHARS) : text;
 }
 
 // Spreadsheet privat yang di-share ke service account. Ekspor Drive hanya
@@ -27,7 +32,7 @@ async function fetchViaServiceAccount({ spreadsheetId }) {
     { fileId: spreadsheetId, mimeType: "text/csv" },
     { responseType: "text" }
   );
-  return res.data;
+  return typeof res.data === "string" ? res.data.slice(0, MAX_CSV_CHARS) : res.data;
 }
 
 export async function POST(request) {
@@ -40,7 +45,11 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { url } = await request.json();
+  if (!(await checkRateLimit(supabase, "rab_import", { max: 20, windowSeconds: 600 }))) {
+    return tooManyRequests("Terlalu sering mengimpor spreadsheet. Coba lagi beberapa menit lagi.", 120);
+  }
+
+  const { url } = await request.json().catch(() => ({}));
   const sheet = parseSheetUrl(url);
   if (!sheet) {
     return NextResponse.json(

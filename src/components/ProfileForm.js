@@ -60,16 +60,6 @@ export default function ProfileForm({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  // Rekening dipakai bertiga saat mengajukan; beri tahu kalau baru sebagian diisi.
-  const bankValues = [bankName, bankAccountNumber, bankAccountHolder];
-  const bankIncomplete =
-    bankValues.some((v) => v.trim()) && !bankValues.every((v) => v.trim());
-
-  function markChanged() {
-    if (saved) setSaved(false);
-    if (error) setError("");
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -95,6 +85,7 @@ export default function ProfileForm({
     }
 
     setSaved(true);
+    router.back();
     router.refresh();
   }
 
@@ -105,10 +96,16 @@ export default function ProfileForm({
           {error}
         </div>
       )}
+      {saved && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          Tersimpan.
+        </div>
+      )}
+
       <section>
         <h2 className={sectionLabel}>Informasi Akun</h2>
         <div className={cardCls}>
-          <Row icon={User} label="Nama lengkap">
+          <Row icon={User} label="Username">
             <input
               type="text"
               value={fullName || ""}
@@ -126,15 +123,12 @@ export default function ProfileForm({
               className={readOnlyCls}
             />
           </Row>
-          <Row icon={Landmark} label="Nama bank">
+          <Row icon={Landmark} label="Bank tujuan transfer (dengan atas nama)">
             <BankInput
               value={bankName}
-              onChange={(v) => {
-                markChanged();
-                setBankName(v);
-              }}
+              onChange={setBankName}
               className={valueCls}
-              placeholder="Contoh: BCA, Mandiri, BRI"
+              placeholder="Contoh: BCA, Mandiri, BRI (atas nama)"
             />
           </Row>
           <Row icon={CreditCard} label="No. rekening">
@@ -142,10 +136,9 @@ export default function ProfileForm({
               type="text"
               inputMode="numeric"
               value={bankAccountNumber}
-              onChange={(e) => {
-                markChanged();
-                setBankAccountNumber(e.target.value.replace(/\D/g, ""));
-              }}
+              onChange={(e) =>
+                setBankAccountNumber(e.target.value.replace(/\D/g, ""))
+              }
               className={valueCls}
               placeholder="Nomor rekening penerima"
             />
@@ -154,29 +147,17 @@ export default function ProfileForm({
             <input
               type="text"
               value={bankAccountHolder}
-              onChange={(e) => {
-                markChanged();
-                setBankAccountHolder(e.target.value);
-              }}
+              onChange={(e) => setBankAccountHolder(e.target.value)}
               className={valueCls}
               placeholder="Nama pemilik rekening sesuai buku tabungan"
             />
           </Row>
         </div>
         <p className="mt-2 px-1 text-xs leading-relaxed text-slate-500">
-          Nama lengkap dan email mengikuti akun Anda dan tidak dapat diubah di halaman ini.
+          Rekening ini otomatis terisi saat mengajukan Cash Advance atau
+          Reimbursement, jadi tidak perlu diketik ulang. Tetap bisa diubah per
+          pengajuan.
         </p>
-        <p className="mt-2 px-1 text-xs leading-relaxed text-slate-500">
-          Cukup tulis nama banknya (mis. BCA), nama pemilik diisi terpisah di baris
-          &quot;Atas nama rekening&quot;. Rekening ini otomatis terisi saat mengajukan Cash
-          Advance atau Reimbursement, dan tetap bisa diubah per pengajuan.
-        </p>
-        {bankIncomplete && (
-          <p className="mt-2 px-1 text-xs font-medium text-amber-700">
-            Rekening belum lengkap. Isi nama bank, nomor rekening, dan atas nama supaya
-            otomatis terpakai saat mengajukan.
-          </p>
-        )}
       </section>
 
       <section>
@@ -192,7 +173,7 @@ export default function ProfileForm({
                 rel="noopener noreferrer"
                 className="shrink-0 rounded-full border border-brand px-4 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"
               >
-                Buka Telegram
+                Open Telegram
               </a>
             }
           >
@@ -200,10 +181,7 @@ export default function ProfileForm({
               type="text"
               inputMode="numeric"
               value={chatId}
-              onChange={(e) => {
-                markChanged();
-                setChatId(e.target.value.replace(/\D/g, ""));
-              }}
+              onChange={(e) => setChatId(e.target.value.replace(/\D/g, ""))}
               className={valueCls}
               placeholder="Contoh: 123456789"
             />
@@ -245,18 +223,13 @@ export default function ProfileForm({
         </div>
       </section>
 
-      <div className="lg:flex lg:items-center lg:justify-end lg:gap-3">
-        {saved && (
-          <p role="status" className="mb-2 text-sm font-medium text-emerald-600 lg:mb-0">
-            Perubahan tersimpan.
-          </p>
-        )}
+      <div className="lg:flex lg:justify-end">
         <button
           type="submit"
           disabled={saving}
           className="w-full rounded-xl bg-brand py-3 font-medium text-white transition-colors hover:bg-brand-dark disabled:opacity-60 lg:w-auto lg:px-8 lg:py-2.5"
         >
-          {saving ? "Menyimpan..." : "Simpan perubahan"}
+          {saving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
     </form>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { PendingLink, usePendingNav } from "@/components/PendingNav";
+import { DetailPanelSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import CashAdvanceCard from "@/components/CashAdvanceCard";
@@ -29,7 +30,18 @@ const TABS = [
 // (menyetujui/menolak, atau form pencairan langsung di dalamnya).
 // Desktop (≥lg): daftar di kiri + panel detail & aksi di kanan.
 // Semua dibuka langsung di halaman ini -- tidak pindah ke Beranda.
-export default function ApprovalsWorkspace({
+export default function ApprovalsWorkspace(props) {
+  return (
+    <KindFilterProvider
+      basePath={props.tab === "pencairan" ? "/approvals?tab=pencairan" : "/approvals"}
+      active={props.kind ?? null}
+    >
+      <ApprovalsWorkspaceInner {...props} />
+    </KindFilterProvider>
+  );
+}
+
+function ApprovalsWorkspaceInner({
   items,
   tab = "persetujuan",
   counts = { persetujuan: 0, pencairan: 0 },
@@ -39,6 +51,7 @@ export default function ApprovalsWorkspace({
   currentUserId,
 }) {
   const router = useRouter();
+  const { pending: navPending } = usePendingNav();
   const isDisburseTab = tab === "pencairan";
   const count = counts[tab] ?? 0;
   const [selectedId, setSelectedId] = useState(focusId ?? items[0]?.id ?? null);
@@ -159,10 +172,6 @@ export default function ApprovalsWorkspace({
 
 
   return (
-    <KindFilterProvider
-      basePath={isDisburseTab ? "/approvals?tab=pencairan" : "/approvals"}
-      active={kind}
-    >
     <div className="space-y-4 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <section className="space-y-3">
         <div>
@@ -183,7 +192,7 @@ export default function ApprovalsWorkspace({
             const active = t.id === tab;
             const n = counts[t.id] ?? 0;
             return (
-              <Link
+              <PendingLink
                 key={t.id}
                 href={tabHref(t.id)}
                 scroll={false}
@@ -207,7 +216,7 @@ export default function ApprovalsWorkspace({
                 >
                   {n}
                 </span>
-              </Link>
+              </PendingLink>
             );
           })}
         </div>
@@ -281,7 +290,9 @@ export default function ApprovalsWorkspace({
       </section>
 
       <aside className="hidden lg:block lg:sticky lg:top-8">
-        {selected ? (
+        {navPending ? (
+          <DetailPanelSkeleton />
+        ) : selected ? (
           <div className="flex h-[calc(100vh-4.5rem)] min-h-[32rem] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white">
             <div className="min-h-0 flex-1">
               <CashAdvanceDetailPopup
@@ -386,6 +397,5 @@ export default function ApprovalsWorkspace({
       )}
 
     </div>
-    </KindFilterProvider>
   );
 }

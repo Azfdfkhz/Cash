@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/security";
 import AuthShell, { SideHeadline, SideChecklist } from "@/components/auth/AuthShell";
 import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
@@ -46,7 +47,7 @@ function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("next") || "/dashboard");
+    router.push(safeNextPath(searchParams.get("next")));
     router.refresh();
   }
 
@@ -55,7 +56,7 @@ function LoginForm() {
     setGoogleLoading(true);
 
     const supabase = createClient();
-    const next = searchParams.get("next") || "/dashboard";
+    const next = safeNextPath(searchParams.get("next"));
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

@@ -32,8 +32,8 @@ Supabase, siap deploy ke Vercel.
 ## 1. Setup Supabase
 
 1. Buat project baru di [supabase.com](https://supabase.com).
-2. Buka **SQL Editor**, jalankan isi file
-   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
+2. Buka **SQL Editor**, jalankan SEMUA file di `supabase/migrations/` berurutan
+   (0001 … 0030). Lihat `PRODUCTION_CHECKLIST.md` sebelum go-live.
    Ini akan membuat tabel `profiles`, `cash_advances`, `receipts`, view saldo,
    dan seluruh RLS policy.
 3. Ambil **Project URL** dan **anon public key** dari

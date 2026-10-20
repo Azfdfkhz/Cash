@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 import { sendTelegramMessage, buildReimbursementMessage } from "@/lib/telegram/send";
+import { checkRateLimit, isUuid, tooManyRequests } from "@/lib/security";
 
 // Kirim notifikasi Telegram ke requester bahwa Tim Operasional sudah
 // mentransfer penggantian kelebihan belanja (beserta bukti transfernya).
@@ -18,7 +19,19 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "reimbursementId wajib diisi." }, { status: 400 });
   }
 
+  if (!isUuid(id) || !isUuid(reimbursementId)) {
+    return NextResponse.json({ error: "ID tidak valid." }, { status: 400 });
+  }
+
   const supabase = await createClient();
+  const allowed = await checkRateLimit(supabase, "notify_reimbursed", {
+    max: 60,
+    windowSeconds: 600,
+    subject: reimbursementId,
+    subjectMax: 2,
+  });
+  if (!allowed) return tooManyRequests("Notifikasi penggantian ini sudah dikirim.", 300);
+
   const [{ data: ca }, { data: reimbursement }] = await Promise.all([
     supabase
       .from("cash_advances")

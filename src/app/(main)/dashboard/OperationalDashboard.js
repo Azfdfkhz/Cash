@@ -10,6 +10,7 @@ import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { TableBodySkeleton } from "@/components/skeletons/ListSkeletons";
 import {
   formatCurrency,
   formatCompactIdr,
@@ -48,34 +49,6 @@ function Metric({ value, label, divider }) {
     <div className={`flex-1 ${divider ? "border-l border-slate-100 pl-4" : ""}`}>
       <p className="text-xl font-bold text-slate-900">{value}</p>
       <p className="mt-0.5 text-xs font-medium leading-snug text-slate-500">{label}</p>
-    </div>
-  );
-}
-
-// Keadaan kosong yang membedakan antrean "menunggu" dari daftar umum, supaya
-// pengguna tahu apakah memang tidak ada tugas atau filternya terlalu sempit.
-function EmptyState({ filter, kind }) {
-  const pendingOnly = filter === "pending";
-  return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-      <p className="text-sm font-semibold text-slate-700">
-        {pendingOnly ? "Tidak ada pengajuan yang menunggu" : "Belum ada pengajuan"}
-      </p>
-      <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
-        {pendingOnly
-          ? "Antrean persetujuan sedang kosong. Semua pengajuan sudah diproses."
-          : kind
-            ? "Tidak ada pengajuan dengan jenis ini."
-            : "Pengajuan baru dari tim akan muncul di sini."}
-      </p>
-      {(pendingOnly || kind) && (
-        <Link
-          href="/dashboard"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          Lihat semua pengajuan
-        </Link>
-      )}
     </div>
   );
 }
@@ -199,7 +172,7 @@ export default function OperationalDashboard({
           </p>
           <div className="flex gap-4 border-t border-slate-100 pt-4">
             <Metric value={stats.pendingCount} label="Perlu Disetujui" />
-            <Metric value={stats.activeCount} label="Pengajuan berjalan" divider />
+            <Metric value={stats.activeCount} label="CA Berjalan" divider />
             <Metric value={stats.needsSpjCount} label="Perlu SPJ/Laporan" divider />
           </div>
         </section>
@@ -209,15 +182,15 @@ export default function OperationalDashboard({
             href="/approvals"
             icon={Clock}
             tone="bg-[#fff4dc] text-[#d98a0b]"
-            title="Antrean persetujuan"
+            title="Approval Antrean"
             caption={`${stats.pendingCount} pengajuan menunggu`}
           />
           <QuickTile
             href="/reports"
             icon={CreditCard}
             tone="bg-[#e8f0fe] text-brand"
-            title="Laporan kwitansi"
-            caption="Rekap kwitansi & pencairan"
+            title="Rekap Pencairan"
+            caption="Pencairan & pengeluaran"
           />
         </div>
 
@@ -229,7 +202,9 @@ export default function OperationalDashboard({
           <KindFilter />
 
           <KindFilterContent>
-          {list.length === 0 && <EmptyState filter={filter} kind={kind} />}
+          {list.length === 0 && (
+            <p className="text-sm text-slate-500">Belum ada pengajuan.</p>
+          )}
           <div className="space-y-4">
             {list.map((ca) => {
               const action =
@@ -348,11 +323,12 @@ export default function OperationalDashboard({
                 <th className={`${TH} text-center`}>Aksi</th>
               </tr>
             </thead>
+            <KindFilterContent fallback={<TableBodySkeleton rows={4} cols={6} />}>
             <tbody>
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6">
-                    <EmptyState filter={filter} kind={kind} />
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">
+                    Belum ada pengajuan.
                   </td>
                 </tr>
               )}
@@ -417,6 +393,7 @@ export default function OperationalDashboard({
                 );
               })}
             </tbody>
+            </KindFilterContent>
           </table>
           <div className="px-6 pb-4 empty:hidden">
             <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath={basePath} params={filterParams} />

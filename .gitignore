@@ -50,3 +50,6 @@ google-service-account*.json
 # Local Google OAuth/service credentials — never commit or distribute
 credentials.json
 google-service-account*.json
+
+# CLI Supabase (berisi project-ref)
+supabase/.temp/

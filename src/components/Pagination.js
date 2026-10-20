@@ -1,7 +1,9 @@
-import Link from "next/link";
+"use client";
 
-// Navigasi halaman berbasis query param `?page=`. Cukup dipakai di Server
-// Component — tidak butuh state klien.
+import { PendingLink } from "@/components/PendingNav";
+
+// Navigasi halaman berbasis query param `?page=`. Memakai <PendingLink> supaya
+// daftar menampilkan skeleton selama halaman berikutnya dimuat.
 // `params`: query lain yang ikut dibawa saat pindah halaman (mis. filter).
 // `pageParam`: nama query halaman (default `page`) -- dipakai kalau satu halaman
 // punya lebih dari satu daftar bernomor (mis. Persetujuan: `pencairan`).
@@ -35,9 +37,9 @@ export default function Pagination({
   return (
     <div className="flex items-center justify-between pt-1">
       {canPrev ? (
-        <Link href={href(page - 1)} className={linkCls}>
+        <PendingLink href={href(page - 1)} className={linkCls}>
           Sebelumnya
-        </Link>
+        </PendingLink>
       ) : (
         <span className={disabledCls}>Sebelumnya</span>
       )}
@@ -47,9 +49,9 @@ export default function Pagination({
       </span>
 
       {canNext ? (
-        <Link href={href(page + 1)} className={linkCls}>
+        <PendingLink href={href(page + 1)} className={linkCls}>
           Berikutnya
-        </Link>
+        </PendingLink>
       ) : (
         <span className={disabledCls}>Berikutnya</span>
       )}

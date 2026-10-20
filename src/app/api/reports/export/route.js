@@ -2,6 +2,7 @@ import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { fetchReportPage, getReportFilters } from "@/lib/reports";
 import { MAX_FETCH_ROWS } from "@/lib/pagination";
 import { formatDate, toCsvValue } from "@/lib/utils";
+import { checkRateLimit, tooManyRequests } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,11 @@ export async function GET(request) {
   const { profile } = await getUserProfile();
   if (profile?.role !== "operational") {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  const guard = await createClient();
+  if (!(await checkRateLimit(guard, "report_get", { max: 15, windowSeconds: 600 }))) {
+    return tooManyRequests("Terlalu sering mengekspor. Coba lagi beberapa menit lagi.", 120);
   }
 
   const params = Object.fromEntries(new URL(request.url).searchParams);

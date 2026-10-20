@@ -386,7 +386,7 @@ export default function NewReimbursementPage() {
     { label: `Kwitansi terlampir (${drafts.length})`, ok: drafts.length > 0 },
     { label: "Total sesuai kwitansi", ok: receiptsReady },
     { label: "Rekening tujuan terisi", ok: bankOk },
-    { label: "Pernyataan disetujui", ok: agreed, isDeclaration: true },
+    { label: "Pernyataan disetujui", ok: agreed },
   ];
 
   return (

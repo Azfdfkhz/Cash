@@ -134,7 +134,7 @@ export function shortName(name = "") {
 }
 
 export const STATUS_LABEL = {
-  pending: "Menunggu Persetujuan",
+  pending: "Menunggu",
   approved: "Disetujui",
   rejected: "Ditolak",
   closed: "Selesai",
@@ -159,8 +159,13 @@ export const OBJECTIVE_LABEL = {
   lainnya: "Lainnya",
 };
 
+// Sel yang diawali = + - @ (atau tab/CR) dieksekusi sebagai rumus oleh Excel /
+// Google Sheets ("CSV injection"). Nama vendor / catatan berasal dari input
+// user & OCR, jadi diberi awalan ' agar dibaca sebagai teks. Angka murni
+// (termasuk negatif) dibiarkan.
 export function toCsvValue(value) {
-  const str = String(value ?? "");
+  let str = String(value ?? "");
+  if (/^[=+\-@\t\r]/.test(str) && !/^-?\d+(\.\d+)?$/.test(str)) str = `'${str}`;
   if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
   return str;
 }

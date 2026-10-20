@@ -30,8 +30,7 @@ function MenuRow({ href, icon: Icon, title, subtitle }) {
 }
 
 export default async function ProfilePage() {
-  const botUsername = await getBotUsername();
-  const { profile } = await getUserProfile();
+  const [botUsername, { profile }] = await Promise.all([getBotUsername(), getUserProfile()]);
 
   return (
     <div className="space-y-4 lg:space-y-6">

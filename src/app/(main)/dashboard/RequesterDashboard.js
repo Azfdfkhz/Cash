@@ -9,6 +9,7 @@ import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import CashAdvanceReviewModal from "@/components/CashAdvanceReviewModal";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { TableBodySkeleton } from "@/components/skeletons/ListSkeletons";
 import {
   formatCurrency,
   formatCompactIdr,
@@ -45,28 +46,7 @@ function Metric({ value, label }) {
   return (
     <div className="flex-1">
       <p className="text-lg font-bold text-slate-900">{value}</p>
-      <p className="text-xs font-medium leading-snug text-slate-400">{label}</p>
-    </div>
-  );
-}
-
-// Keadaan kosong: beri tahu kenapa kosong dan langkah berikutnya, bukan hanya
-// satu kalimat tanpa aksi.
-function EmptyState({ kind }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-      <p className="text-sm font-semibold text-slate-700">Belum ada pengajuan</p>
-      <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
-        {kind
-          ? "Tidak ada pengajuan dengan jenis ini. Coba lihat semua jenis pengajuan."
-          : "Mulai dari pengajuan pertama Anda: isi kegiatan dan RAB, lalu kirim untuk disetujui."}
-      </p>
-      <Link
-        href={kind ? "/dashboard" : "/cash-advances/new"}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-      >
-        {kind ? "Lihat semua jenis" : "Buat pengajuan"}
-      </Link>
+      <p className="text-xs font-medium text-slate-400">{label}</p>
     </div>
   );
 }
@@ -84,6 +64,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
     viewIndex >= 0 ? list[viewIndex] : focusCa && focusCa.id === viewCaId ? focusCa : null;
 
   const filterParams = { jenis: kind };
+  const emptyText = `Belum ada pengajuan${kind ? " dengan jenis ini" : ""}.`;
   const hasMore = (count ?? 0) > PAGE_SIZE;
   const viewAll = hasMore ? (
     <Link
@@ -117,7 +98,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
             {formatCurrency(stats.totalOutstanding)}
           </p>
           <div className="flex gap-2 border-t border-slate-100 pt-4">
-            <Metric value={stats.activeCount} label="Pengajuan aktif" />
+            <Metric value={stats.activeCount} label="CA aktif" />
             <Metric value={stats.pendingCount} label="Menunggu" />
             <Metric value={formatCompactIdr(stats.totalReturned)} label="Dikembalikan" />
           </div>
@@ -141,7 +122,9 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           <KindFilter />
 
           <KindFilterContent>
-          {list.length === 0 && <EmptyState kind={kind} />}
+          {list.length === 0 && (
+            <p className="text-sm text-slate-500">{emptyText}</p>
+          )}
           <div className="space-y-3.5">
             {list.map((ca) => {
               const tile = STATUS_TILE[ca.status] ?? STATUS_TILE.closed;
@@ -194,35 +177,23 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
 
       {/* ───────── Desktop ───────── */}
       <div className="hidden lg:block">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
+        <div className="flex items-start justify-between">
+          <div>
             <p className="text-xl font-light text-slate-500">Selamat Datang</p>
-            <h1 className="mt-1 truncate text-3xl leading-tight font-bold tracking-tight text-slate-900 2xl:text-4xl">
+            <h1 className="mt-1 text-3xl leading-tight font-bold tracking-tight text-slate-900 2xl:text-4xl">
               {name}
             </h1>
           </div>
-          <div className="flex shrink-0 items-center gap-4 pt-1">
-            <Link
-              href="/cash-advances/new"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-            >
-              <Plus size={16} strokeWidth={2} /> Buat pengajuan
-            </Link>
+          <div className="flex items-center gap-4 pt-1">
             <RoleBadge dot>Requester</RoleBadge>
-            <span className="hidden px-3.5 text-xs font-medium text-slate-600 xl:inline">
+            <span className="text-xs font-medium text-slate-600 px-3.5">
               Hari Ini, {formatDateLong()}
             </span>
           </div>
         </div>
 
         <div className="mt-7 grid grid-cols-4 gap-4 xl:gap-5">
-          <StatCard
-            dark
-            label="Sisa saldo aktif"
-            value={formatCurrency(stats.totalOutstanding)}
-            caption="Dana cair yang belum dipertanggungjawabkan"
-            valueClass="text-xl mt-8 whitespace-nowrap"
-          />
+          <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
           <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
           <StatCard label="Menunggu" value={stats.pendingCount} caption="Menunggu persetujuan" icon={Info} />
           <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
@@ -252,11 +223,12 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                 <th className={`${TH} text-center`}>Aksi</th>
               </tr>
             </thead>
+            <KindFilterContent fallback={<TableBodySkeleton rows={4} cols={5} />}>
             <tbody>
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6">
-                    <EmptyState kind={kind} />
+                  <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-500">
+                    {emptyText}
                   </td>
                 </tr>
               )}
@@ -300,6 +272,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                 </tr>
               ))}
             </tbody>
+            </KindFilterContent>
           </table>
           <div className="px-6 pb-4 empty:hidden">
             <Pagination page={page} total={count} pageSize={PAGE_SIZE} basePath="/dashboard" params={filterParams} />
