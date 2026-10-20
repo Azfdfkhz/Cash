@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/security";
+import { loginErrorMessage } from "@/lib/authErrors";
 import AuthShell, { SideHeadline, SideChecklist } from "@/components/auth/AuthShell";
 import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
@@ -25,7 +26,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => loginErrorMessage(searchParams.get("error")));
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -191,9 +192,9 @@ function LoginForm() {
       </p>
 
       <div className="flex items-center justify-center gap-5 mt-8 pt-6 border-t border-slate-100">
-        <button type="button" className="text-sm text-brand hover:underline">
+        <Link href="/bantuan" className="text-sm text-brand hover:underline">
           Pusat bantuan
-        </button>
+        </Link>
         <button type="button" className="text-sm text-brand hover:underline">
           Kebijakan &amp; ketentuan
         </button>

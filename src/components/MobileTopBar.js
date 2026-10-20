@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { CircleHelp, LogOut } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
 import { useLogout } from "@/components/useLogout";
 
@@ -16,14 +17,23 @@ export default function MobileTopBar() {
   return (
     <header className="lg:hidden flex items-center justify-between px-5 pt-8 pb-1 safe-top">
       <BrandMark size="lg" />
-      <button
-        type="button"
-        onClick={requestLogout}
-        aria-label="Keluar"
-        className="h-11 w-11 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
-      >
-        <LogOut size={18} strokeWidth={1.75} />
-      </button>
+      <div className="flex items-center gap-2">
+        <Link
+          href="/help"
+          aria-label="Pusat bantuan"
+          className="h-11 w-11 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          <CircleHelp size={18} strokeWidth={1.75} />
+        </Link>
+        <button
+          type="button"
+          onClick={requestLogout}
+          aria-label="Keluar"
+          className="h-11 w-11 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          <LogOut size={18} strokeWidth={1.75} />
+        </button>
+      </div>
       {dialog}
     </header>
   );

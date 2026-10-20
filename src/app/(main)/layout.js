@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import SidebarData from "./SidebarData";
 import BottomNavData from "./BottomNavData";
+import OnboardingData from "./OnboardingData";
 import MobileTopBar from "@/components/MobileTopBar";
 
 // Layout ini sengaja TIDAK async / TIDAK await getUserProfile() langsung --
@@ -46,6 +47,10 @@ export default function MainLayout({ children }) {
         }
       >
         <BottomNavData />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <OnboardingData />
       </Suspense>
     </div>
   );

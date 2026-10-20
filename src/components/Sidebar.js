@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { LogOut } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
 import { useLogout } from "@/components/useLogout";
-import { navFor, isActive } from "@/components/nav-items";
+import { navFor, isActive, HELP_NAV } from "@/components/nav-items";
 import { useApprovalBadge } from "@/components/useApprovalBadge";
 import { useHasDraft } from "@/lib/useHasDraft";
 import { shortName } from "@/lib/utils";
@@ -96,6 +96,21 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
           })}
         </ul>
       </nav>
+
+      <div className="px-3 pb-3">
+        <Link
+          href={HELP_NAV.href}
+          aria-current={isActive(pathname, HELP_NAV.href) ? "page" : undefined}
+          className={`flex items-center gap-3.5 rounded-xl px-4 py-3 text-[13px] transition-colors ${
+            isActive(pathname, HELP_NAV.href)
+              ? "bg-blue-50 font-semibold text-blue-800 ring-1 ring-inset ring-blue-100"
+              : "font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          }`}
+        >
+          <HELP_NAV.icon size={20} strokeWidth={1.75} className="shrink-0" />
+          <span>{HELP_NAV.label}</span>
+        </Link>
+      </div>
 
       <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-4">
         <ProfileAvatar size={36} />

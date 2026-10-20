@@ -82,7 +82,7 @@ export default async function ProfilePage() {
                 href="/help"
                 icon={CircleHelp}
                 title="Pusat bantuan"
-                subtitle="FAQ & panduan pengajuan"
+                subtitle="Panduan, glosarium & pengenalan"
               />
               <MenuRow
                 href="/terms"

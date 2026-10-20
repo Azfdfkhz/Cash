@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/security";
+import { callbackErrorCode, hasUnverifiedOAuthEmail } from "@/lib/authErrors";
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = safeNextPath(searchParams.get("next"));
+
+  // Penyedia (Google) / Supabase mengembalikan error alih-alih code, mis.
+  // pendaftaran ditolak oleh kebijakan domain di database. Tampilkan pesan
+  // yang jelas di halaman login, tanpa meneruskan teks mentah.
+  if (!code) {
+    return NextResponse.redirect(`${origin}/login?error=${callbackErrorCode(searchParams)}`);
+  }
 
   if (code) {
     const supabase = await createClient();
@@ -17,6 +25,12 @@ export async function GET(request) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      // Akun dari penyedia OAuth wajib berisi email yang terverifikasi.
+      // Diperiksa di server; bila tidak, sesi dibatalkan sebelum dipakai.
+      if (user && hasUnverifiedOAuthEmail(user)) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${origin}/login?error=unverified`);
+      }
       if (user) {
         const { data: profile, error: profileError } = await supabase
           .from("profiles")

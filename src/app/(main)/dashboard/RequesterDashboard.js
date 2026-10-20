@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import NextAction from "@/components/NextAction";
+import CompactIdr from "@/components/CompactIdr";
 import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
@@ -13,7 +14,6 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { TableBodySkeleton } from "@/components/skeletons/ListSkeletons";
 import {
   formatCurrency,
-  formatCompactIdr,
   formatDateLong,
   formatDateShort,
   formatNumber,
@@ -39,8 +39,8 @@ function KindTag({ kind }) {
 
 function Metric({ value, label }) {
   return (
-    <div className="flex-1">
-      <p className="text-lg font-bold text-slate-900">{value}</p>
+    <div className="min-w-0 flex-1">
+      <p className="break-words text-lg font-bold leading-tight text-slate-900">{value}</p>
       <p className="text-xs font-medium text-slate-400">{label}</p>
     </div>
   );
@@ -95,7 +95,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           <div className="flex gap-2 border-t border-slate-100 pt-4">
             <Metric value={stats.activeCount} label="CA aktif" />
             <Metric value={stats.pendingCount} label="Belum disetujui" />
-            <Metric value={formatCompactIdr(stats.totalReturned)} label="Dikembalikan" />
+            <Metric value={<CompactIdr value={stats.totalReturned} />} label="Dikembalikan" />
           </div>
         </section>
 
@@ -187,7 +187,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
           <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
           <StatCard label="Belum Disetujui" value={stats.pendingCount} caption="Menunggu keputusan Operasional" icon={Info} />
-          <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
+          <StatCard label="Dikembalikan" value={<CompactIdr value={stats.totalReturned} />} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
         </div>
 
         <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/30">

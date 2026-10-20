@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { mapSignupError } from "@/lib/authErrors";
 import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell";
 import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
@@ -61,15 +62,7 @@ export default function RegisterPage() {
     setLoading(false);
 
     if (error) {
-      const rateLimited =
-        error.status === 429 ||
-        error.code === "over_email_send_rate_limit" ||
-        /rate limit/i.test(error.message || "");
-      setError(
-        rateLimited
-          ? "Terlalu sering mendaftar. Tunggu beberapa saat lalu coba lagi."
-          : error.message
-      );
+      setError(mapSignupError(error));
       return;
     }
 

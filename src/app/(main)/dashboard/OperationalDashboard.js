@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Clock, CreditCard, TrendingUp, TriangleAlert } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import NextAction from "@/components/NextAction";
+import CompactIdr from "@/components/CompactIdr";
 import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import Pagination from "@/components/Pagination";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
@@ -14,7 +15,6 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { TableBodySkeleton } from "@/components/skeletons/ListSkeletons";
 import {
   formatCurrency,
-  formatCompactIdr,
   formatDateLong,
   formatDateTimeShort,
   formatNumber,
@@ -279,7 +279,7 @@ export default function OperationalDashboard({
           <StatCard dark dot label="Belum Disetujui" value={stats.pendingCount} caption="Butuh verifikasi dokumen" />
           <StatCard
             label="Saldo berjalan"
-            value={formatCompactIdr(stats.totalOutstanding).replace("Rp ", "")}
+            value={<CompactIdr value={stats.totalOutstanding} prefix={false} />}
             caption="Total sisa saldo CA berjalan"
             valueClass="text-2xl mt-6"
             icon={TrendingUp}

@@ -1,4 +1,4 @@
-import { House, Plus, ClipboardCheck, ChartColumn, User } from "lucide-react";
+import { House, Plus, ClipboardCheck, ChartColumn, User, CircleHelp } from "lucide-react";
 
 export const REQUESTER_NAV = [
   { href: "/dashboard", label: "Beranda", icon: House },
@@ -13,6 +13,10 @@ export const OPERATIONAL_NAV = [
   { href: "/reports", label: "Laporan", icon: ChartColumn },
   { href: "/profile", label: "Profil", icon: User },
 ];
+
+// Bantuan tampil di sidebar desktop dan top bar mobile (bukan di bottom nav,
+// supaya bar bawah tidak sesak).
+export const HELP_NAV = { href: "/help", label: "Bantuan", icon: CircleHelp };
 
 export function navFor(role) {
   return role === "operational" ? OPERATIONAL_NAV : REQUESTER_NAV;

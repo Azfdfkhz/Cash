@@ -131,15 +131,47 @@ export function formatNumber(value) {
   );
 }
 
-// 1850000 -> "Rp 1,85 jt"; 17000000000 -> "Rp 17 M"; di bawah 1 juta pakai format biasa
-export function formatCompactIdr(value) {
+// Format ringkas HANYA untuk tampilan (kartu, metrik). Nilai asli tidak berubah.
+//   1850000        -> "Rp 1,85 jt"
+//   17000000000    -> "Rp 17 miliar"
+//   2500000000000  -> "Rp 2,5 triliun"
+//   950000         -> "Rp 950.000" (di bawah 1 juta pakai format penuh)
+// Satuan "M" sengaja dihindari karena ambigu (dibaca "juta" di sebagian
+// kalangan, "miliar" di lainnya).
+// Opsi:
+//   long: true    -> "17 miliar rupiah" (tanpa "Rp", untuk ruang lega / teks)
+//   prefix: false -> tanpa "Rp " di depan (untuk kartu yang sudah memberi label)
+// Selalu sertakan nominal penuh (formatCurrency) di title / teks sr-only saat
+// memakai fungsi ini -- lihat komponen CompactIdr.
+const COMPACT_UNITS = [
+  { div: 1e12, name: "triliun" },
+  { div: 1e9, name: "miliar" },
+  { div: 1e6, name: "jt" },
+];
+
+export function formatCompactIdr(value, { long = false, prefix = true } = {}) {
   const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return formatCurrency(0);
   const abs = Math.abs(n);
   if (abs < 1_000_000) return formatCurrency(n);
-  const [div, unit] =
-    abs >= 1_000_000_000_000 ? [1e12, "T"] : abs >= 1_000_000_000 ? [1e9, "M"] : [1e6, "jt"];
-  const num = (n / div).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
-  return `Rp ${num} ${unit}`;
+
+  // Pilih satuan terbesar yang nilainya >= 1, lalu bulatkan 2 desimal. Bila
+  // pembulatan menembus 1.000 satuan (mis. 999.999.999 -> "1.000 jt"),
+  // naik satu satuan supaya tidak tampil "1.000 jt".
+  let idx = COMPACT_UNITS.findIndex((u) => abs >= u.div);
+  let scaled = Math.round((abs / COMPACT_UNITS[idx].div) * 100) / 100;
+  if (scaled >= 1000 && idx > 0) {
+    idx -= 1;
+    scaled = Math.round((abs / COMPACT_UNITS[idx].div) * 100) / 100;
+  }
+  const unit = COMPACT_UNITS[idx].name;
+  const num = String(scaled).replace(".", ",");
+  const sign = n < 0 ? "-" : "";
+  if (long) {
+    const word = unit === "jt" ? "juta" : unit;
+    return `${sign}${num} ${word} rupiah`;
+  }
+  return `${sign}${prefix ? "Rp " : ""}${num} ${unit}`;
 }
 
 // "Rina Wulandari" -> "RW"; "Rina Wulandari" -> "Rina W"
@@ -331,7 +363,11 @@ export function nextAction(ca, operational = false) {
     if (!reim && !operational) {
       const bal = Number(ca.balance ?? 0);
       if (bal > 0) {
-        return { tone: "act", text: `Unggah kwitansi atau kembalikan sisa ${formatCompactIdr(bal)}` };
+        return {
+          tone: "act",
+          text: `Unggah kwitansi atau kembalikan sisa ${formatCompactIdr(bal)}`,
+          title: `Sisa saldo ${formatCurrency(bal)}`,
+        };
       }
     }
   }

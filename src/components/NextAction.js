@@ -7,8 +7,12 @@ export default function NextAction({ ca, operational = false, as: Tag = "span", 
   if (!action) return null;
   const tone = action.tone === "act" ? "font-semibold text-brand" : "font-medium text-amber-700";
   return (
-    <Tag className={`max-w-[11rem] text-right text-xs leading-snug ${tone} ${className}`}>
+    <Tag
+      title={action.title}
+      className={`max-w-[11rem] text-right text-xs leading-snug ${tone} ${className}`}
+    >
       {action.text}
+      {action.title && <span className="sr-only"> ({action.title})</span>}
     </Tag>
   );
 }

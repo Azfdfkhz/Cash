@@ -34,7 +34,7 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
         {dot && <span className="h-2 w-2 rounded-full bg-white" />}
         {Icon && <Icon size={16} strokeWidth={1.75} className={iconClass} />}
       </div>
-      <p className={`font-bold tracking-tight ${valueClass}`}>{value}</p>
+      <p className={`break-words font-bold tracking-tight ${valueClass}`}>{value}</p>
       <p className={`mt-2.5 text-xs leading-relaxed ${dark ? "text-slate-300" : "text-slate-500"}`}>
         {caption}
       </p>
