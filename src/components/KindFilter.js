@@ -52,12 +52,13 @@ export function KindFilterProvider({ basePath, active, children }) {
   );
 }
 
-export default function KindFilter() {
+export default function KindFilter({ counts = null }) {
   const { kind, select } = useContext(FilterContext);
   return (
     <div className="flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Filter jenis pengajuan">
       {OPTIONS.map((opt) => {
         const selected = kind === opt.value;
+        const n = counts ? counts[opt.value ?? "all"] : undefined;
         return (
           <button
             key={opt.label}
@@ -72,6 +73,9 @@ export default function KindFilter() {
             }`}
           >
             {opt.label}
+            {n !== undefined && (
+              <span className={`ml-1.5 ${selected ? "text-white/80" : "text-slate-400"}`}>{n}</span>
+            )}
           </button>
         );
       })}

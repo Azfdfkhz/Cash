@@ -17,9 +17,24 @@ import {
   KIND_LABEL,
 } from "@/lib/utils";
 
+// Label dibuat pendek supaya tidak terpotong di kolom daftar (22rem); nama
+// lengkap ada di title/aria-label. Persetujuan dan pencairan adalah dua tahap
+// operasional yang berbeda, jadi diberi nomor tahap + penjelasan singkat.
 const TABS = [
-  { id: "persetujuan", label: "Menunggu Persetujuan" },
-  { id: "pencairan", label: "Menunggu Pencairan" },
+  {
+    id: "persetujuan",
+    step: 1,
+    label: "Persetujuan",
+    full: "Menunggu Persetujuan",
+    hint: "Tahap 1 · Tinjau pengajuan, lalu setujui atau tolak.",
+  },
+  {
+    id: "pencairan",
+    step: 2,
+    label: "Pencairan",
+    full: "Menunggu Pencairan",
+    hint: "Tahap 2 · Transfer dana ke rekening requester, lalu unggah bukti transfer.",
+  },
 ];
 
 // Dua tab -- Menunggu Persetujuan & Menunggu Pencairan -- dengan cara kerja yang
@@ -46,6 +61,7 @@ function ApprovalsWorkspaceInner({
   tab = "persetujuan",
   counts = { persetujuan: 0, pencairan: 0 },
   kind = null,
+  kindCounts = null,
   focusId = null,
   pagination,
   currentUserId,
@@ -198,12 +214,22 @@ function ApprovalsWorkspaceInner({
                 scroll={false}
                 role="tab"
                 aria-selected={active}
+                title={t.full}
+                aria-label={`${t.full}, ${n} pengajuan`}
                 className={`-mb-px flex flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-2.5 text-[13px] font-semibold transition-colors ${
                   active
                     ? "border-brand text-brand"
                     : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
+                <span
+                  aria-hidden="true"
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
+                    active ? "bg-brand text-white" : "bg-slate-200 text-slate-600"
+                  }`}
+                >
+                  {t.step}
+                </span>
                 <span className="truncate">{t.label}</span>
                 <span
                   className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
@@ -221,7 +247,14 @@ function ApprovalsWorkspaceInner({
           })}
         </div>
 
-        <KindFilter />
+        <p className="text-xs text-slate-500">{TABS.find((t) => t.id === tab)?.hint}</p>
+
+        <div>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            Jenis pengajuan
+          </p>
+          <KindFilter counts={kindCounts} />
+        </div>
 
         <KindFilterContent skeletons={4}>
         {items.length === 0 && (

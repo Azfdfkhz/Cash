@@ -2,6 +2,7 @@
 
 import { Camera } from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import { maskEmail } from "@/lib/utils";
 
 // Header profil khusus mobile (<lg): judul, avatar, nama, email dan badge
 // peran — sesuai desain Figma.
@@ -22,7 +23,7 @@ export default function ProfileMobileHeader({ fullName, email, role }) {
         </div>
 
         <p className="mt-4 text-lg font-bold text-slate-900">{fullName}</p>
-        <p className="mt-0.5 break-all text-sm text-slate-500">{email}</p>
+        <p className="mt-0.5 break-all text-sm text-slate-500">{maskEmail(email)}</p>
         <span className="mt-3 inline-block rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-700">
           {role === "operational" ? "Operasional" : "Requester"}
         </span>

@@ -23,12 +23,12 @@ export default async function ApprovalsPage({ searchParams }) {
 
   // Filter tiap tab. Menunggu persetujuan = pending; menunggu pencairan =
   // sudah disetujui tapi dananya belum ditransfer ke requester.
-  const forTab = (query, which) => {
+  const forTab = (query, which, k = kind) => {
     const q =
       which === "pencairan"
         ? query.eq("status", "approved").is("disbursed_at", null)
         : query.eq("status", "pending");
-    return q.neq("requester_id", profile.id).match(kind ? { kind } : {});
+    return q.neq("requester_id", profile.id).match(k ? { kind: k } : {});
   };
 
   const listSelect =
@@ -39,7 +39,7 @@ export default async function ApprovalsPage({ searchParams }) {
 
   // Hanya PAGE_SIZE baris dari tab aktif yang diambil; tab lainnya cukup
   // dihitung (head count, tanpa baris).
-  const [{ data: list, count: activeCount }, { count: otherCount }, focus] = await Promise.all([
+  const [{ data: list, count: activeCount }, { count: otherCount }, focus, caCount, reimCount] = await Promise.all([
     forTab(supabase.from("cash_advances").select(listSelect, { count: "exact" }), tab)
       .order("created_at", { ascending: true })
       .range(from, to),
@@ -55,7 +55,15 @@ export default async function ApprovalsPage({ searchParams }) {
           "pencairan"
         ).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Jumlah per jenis di tab aktif (tanpa filter jenis) untuk sub-button.
+    forTab(supabase.from("cash_advances").select("id", { count: "exact", head: true }), tab, "cash_advance"),
+    forTab(supabase.from("cash_advances").select("id", { count: "exact", head: true }), tab, "reimbursement"),
   ]);
+  const kindCounts = {
+    all: (caCount.count ?? 0) + (reimCount.count ?? 0),
+    cash_advance: caCount.count ?? 0,
+    reimbursement: reimCount.count ?? 0,
+  };
 
   let items = list ?? [];
   if (focus?.data && !items.some((i) => i.id === focus.data.id)) {
@@ -73,6 +81,7 @@ export default async function ApprovalsPage({ searchParams }) {
       tab={tab}
       counts={counts}
       kind={kind}
+      kindCounts={kindCounts}
       focusId={focus?.data?.id ?? null}
       currentUserId={profile.id}
       pagination={

@@ -223,3 +223,27 @@ export const REIMBURSEMENT_CATEGORIES = [
 export function hasPendingReturn(ca) {
   return (ca?.cash_advance_returns ?? []).some((r) => !r.confirmed_at);
 }
+
+// "azfdf@gmail.com" -> "az•••@gmail.com" (tetap dikenali, tidak terbaca penuh)
+export function maskEmail(email) {
+  const value = String(email ?? "");
+  const at = value.lastIndexOf("@");
+  if (at <= 0) return value;
+  const local = value.slice(0, at);
+  const shown = local.slice(0, Math.min(2, Math.max(1, local.length - 1)));
+  return `${shown}•••${value.slice(at)}`;
+}
+
+// "123456789" -> "••••• 6789"; hanya 4 digit terakhir yang tampil.
+export function maskAccountNumber(number) {
+  const digits = String(number ?? "");
+  if (!digits) return "";
+  return `••••• ${digits.slice(-4)}`;
+}
+
+// Chat ID Telegram: hanya 3 digit terakhir.
+export function maskChatId(id) {
+  const digits = String(id ?? "");
+  if (!digits) return "";
+  return `••••${digits.slice(-3)}`;
+}

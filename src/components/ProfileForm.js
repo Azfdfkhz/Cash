@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Bell,
   CreditCard,
+  Eye,
+  EyeOff,
   Landmark,
   Mail,
+  Pencil,
   Send,
   User,
   UserRound,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BankInput from "@/components/BankInput";
+import { maskAccountNumber, maskChatId, maskEmail } from "@/lib/utils";
+
+const REVEAL_SECONDS = 30;
 
 // Satu baris isian: kotak ikon + label kecil + nilai (sesuai desain Figma).
 function Row({ icon: Icon, label, children, trailing }) {
@@ -20,10 +27,10 @@ function Row({ icon: Icon, label, children, trailing }) {
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">
         <Icon size={20} strokeWidth={1.75} />
       </span>
-      <label className="block min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <span className="block text-xs text-slate-400">{label}</span>
         {children}
-      </label>
+      </div>
       {trailing}
     </div>
   );
@@ -31,11 +38,32 @@ function Row({ icon: Icon, label, children, trailing }) {
 
 const valueCls =
   "mt-0.5 block w-full bg-transparent text-[15px] font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-500 focus:outline-none";
-const readOnlyCls = `${valueCls} truncate`;
+const textCls = `${valueCls} truncate`;
 const sectionLabel =
   "mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500";
-const cardCls =
-  "overflow-hidden rounded-2xl border border-slate-200 bg-white";
+const cardCls = "overflow-hidden rounded-2xl border border-slate-200 bg-white";
+
+function Dialog({ title, children, actions }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center"
+    >
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+        <h3 className="text-base font-bold text-slate-900">{title}</h3>
+        <div className="mt-2 text-sm text-slate-600">{children}</div>
+        <div className="mt-5 flex justify-end gap-2">{actions}</div>
+      </div>
+    </div>
+  );
+}
+
+const ghostBtn =
+  "rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60";
+const primaryBtn =
+  "rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60";
 
 export default function ProfileForm({
   profileId,
@@ -46,192 +74,450 @@ export default function ProfileForm({
   initialBankAccountNumber,
   initialBankAccountHolder,
   botUsername,
+  canReauthWithPassword = true,
 }) {
   const router = useRouter();
-  const [chatId, setChatId] = useState(initialChatId || "");
-  const [bankName, setBankName] = useState(initialBankName || "");
-  const [bankAccountNumber, setBankAccountNumber] = useState(
-    initialBankAccountNumber || ""
-  );
-  const [bankAccountHolder, setBankAccountHolder] = useState(
-    initialBankAccountHolder || ""
-  );
+
+  // Nilai tersimpan (dipakai tampilan baca). Draft hanya ada saat mode edit.
+  const [saved, setSaved] = useState({
+    chatId: initialChatId || "",
+    bankName: initialBankName || "",
+    accountNumber: initialBankAccountNumber || "",
+    accountHolder: initialBankAccountHolder || "",
+  });
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(saved);
+  // Nomor rekening di mode edit dikosongkan: kosong = pakai nomor lama, jadi
+  // nomor lengkap tidak terbuka hanya karena membuka form edit.
+  const [newAccountNumber, setNewAccountNumber] = useState("");
+  const [errors, setErrors] = useState({});
+  const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [justSaved, setJustSaved] = useState(false);
 
-  async function handleSubmit(e) {
+  // Lihat nomor rekening lengkap (butuh autentikasi ulang).
+  const [revealed, setRevealed] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const hideTimer = useRef(null);
+
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
+
+  function hideAccount() {
+    clearTimeout(hideTimer.current);
+    setRevealed(false);
+  }
+
+  function showAccount() {
+    setRevealed(true);
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setRevealed(false), REVEAL_SECONDS * 1000);
+  }
+
+  function startReveal() {
+    if (!saved.accountNumber) return;
+    setPassword("");
+    setAuthError("");
+    setAuthOpen(true);
+  }
+
+  async function submitReauth(e) {
+    e?.preventDefault();
+    setAuthError("");
+    if (canReauthWithPassword) {
+      if (!password) {
+        setAuthError("Masukkan password Anda.");
+        return;
+      }
+      setAuthBusy(true);
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      setAuthBusy(false);
+      if (error) {
+        setAuthError("Password salah.");
+        return;
+      }
+    }
+    setPassword("");
+    setAuthOpen(false);
+    showAccount();
+  }
+
+  function startEdit() {
+    setDraft(saved);
+    setNewAccountNumber("");
+    setErrors({});
+    setServerError("");
+    setJustSaved(false);
+    hideAccount();
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setErrors({});
+    setServerError("");
+  }
+
+  function validate() {
+    const next = {};
+    const bank = draft.bankName.trim();
+    const holder = draft.accountHolder.trim();
+    const number = newAccountNumber || saved.accountNumber;
+    const anyBank = bank || holder || number;
+
+    if (anyBank) {
+      if (!bank) next.bankName = "Nama bank wajib diisi.";
+      if (!number) next.accountNumber = "Nomor rekening wajib diisi.";
+      else if (number.length < 6 || number.length > 20)
+        next.accountNumber = "Nomor rekening 6–20 digit.";
+      if (!holder) next.accountHolder = "Atas nama rekening wajib diisi.";
+    }
+    if (draft.chatId && !/^-?\d{5,15}$/.test(draft.chatId)) {
+      next.chatId = "Chat ID berupa angka (5–15 digit).";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
+  function handleSubmit(e) {
     e.preventDefault();
-    setError("");
-    setSaved(false);
-    setSaving(true);
+    setServerError("");
+    if (validate()) setConfirming(true);
+  }
 
+  async function confirmSave() {
+    setSaving(true);
+    setServerError("");
+    const accountNumber = newAccountNumber || saved.accountNumber;
     const supabase = createClient();
-    const { error: updateError } = await supabase
+    const { error } = await supabase
       .from("profiles")
       .update({
-        telegram_chat_id: chatId || null,
-        bank_name: bankName.trim() || null,
-        bank_account_number: bankAccountNumber.trim() || null,
-        bank_account_holder: bankAccountHolder.trim() || null,
+        telegram_chat_id: draft.chatId || null,
+        bank_name: draft.bankName.trim() || null,
+        bank_account_number: accountNumber.trim() || null,
+        bank_account_holder: draft.accountHolder.trim() || null,
       })
       .eq("id", profileId);
-
     setSaving(false);
+    setConfirming(false);
 
-    if (updateError) {
-      setError("Gagal menyimpan. Coba lagi.");
+    if (error) {
+      setServerError("Gagal menyimpan. Coba lagi.");
       return;
     }
 
-    setSaved(true);
-    router.back();
+    setSaved({
+      chatId: draft.chatId,
+      bankName: draft.bankName.trim(),
+      accountNumber: accountNumber.trim(),
+      accountHolder: draft.accountHolder.trim(),
+    });
+    setEditing(false);
+    setJustSaved(true);
     router.refresh();
   }
 
+  const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
+  const fieldError = (key) =>
+    errors[key] ? <p className="mt-1 text-xs text-rose-600">{errors[key]}</p> : null;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      {serverError && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {error}
+          {serverError}
         </div>
       )}
-      {saved && (
+      {justSaved && !editing && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          Tersimpan.
+          Profil tersimpan.
         </div>
       )}
 
       <section>
-        <h2 className={sectionLabel}>Informasi Akun</h2>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Informasi Akun
+          </h2>
+          {!editing && (
+            <button
+              type="button"
+              onClick={startEdit}
+              className="flex items-center gap-1.5 rounded-full border border-brand px-3 py-1 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"
+            >
+              <Pencil size={13} strokeWidth={2} />
+              Edit profil
+            </button>
+          )}
+        </div>
+
         <div className={cardCls}>
           <Row icon={User} label="Username">
-            <input
-              type="text"
-              value={fullName || ""}
-              readOnly
-              tabIndex={-1}
-              className={readOnlyCls}
-            />
+            <p className={textCls}>{fullName || "-"}</p>
           </Row>
           <Row icon={Mail} label="Email">
-            <input
-              type="text"
-              value={email || ""}
-              readOnly
-              tabIndex={-1}
-              className={readOnlyCls}
-            />
+            <p className={textCls}>{maskEmail(email) || "-"}</p>
           </Row>
-          <Row icon={Landmark} label="Bank tujuan transfer (dengan atas nama)">
-            <BankInput
-              value={bankName}
-              onChange={setBankName}
-              className={valueCls}
-              placeholder="Contoh: BCA, Mandiri, BRI (atas nama)"
-            />
+
+          <Row icon={Landmark} label="Bank tujuan transfer">
+            {editing ? (
+              <>
+                <BankInput
+                  value={draft.bankName}
+                  onChange={set("bankName")}
+                  className={valueCls}
+                  placeholder="Contoh: BCA, Mandiri, BRI"
+                />
+                {fieldError("bankName")}
+              </>
+            ) : (
+              <p className={textCls}>{saved.bankName || "Belum diisi"}</p>
+            )}
           </Row>
-          <Row icon={CreditCard} label="No. rekening">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={bankAccountNumber}
-              onChange={(e) =>
-                setBankAccountNumber(e.target.value.replace(/\D/g, ""))
-              }
-              className={valueCls}
-              placeholder="Nomor rekening penerima"
-            />
+
+          <Row
+            icon={CreditCard}
+            label="No. rekening"
+            trailing={
+              !editing && saved.accountNumber ? (
+                <button
+                  type="button"
+                  onClick={revealed ? hideAccount : startReveal}
+                  aria-label={revealed ? "Sembunyikan nomor rekening" : "Lihat nomor rekening lengkap"}
+                  aria-pressed={revealed}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                >
+                  {revealed ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              ) : null
+            }
+          >
+            {editing ? (
+              <>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={newAccountNumber}
+                  onChange={(e) => setNewAccountNumber(e.target.value.replace(/\D/g, ""))}
+                  className={valueCls}
+                  placeholder={
+                    saved.accountNumber
+                      ? `${maskAccountNumber(saved.accountNumber)} — ketik untuk mengganti`
+                      : "Nomor rekening penerima"
+                  }
+                />
+                {fieldError("accountNumber")}
+              </>
+            ) : (
+              <p className={`${textCls} tabular-nums`}>
+                {saved.accountNumber
+                  ? revealed
+                    ? saved.accountNumber
+                    : maskAccountNumber(saved.accountNumber)
+                  : "Belum diisi"}
+              </p>
+            )}
           </Row>
+
           <Row icon={UserRound} label="Atas nama rekening">
-            <input
-              type="text"
-              value={bankAccountHolder}
-              onChange={(e) => setBankAccountHolder(e.target.value)}
-              className={valueCls}
-              placeholder="Nama pemilik rekening sesuai buku tabungan"
-            />
+            {editing ? (
+              <>
+                <input
+                  type="text"
+                  value={draft.accountHolder}
+                  onChange={(e) => set("accountHolder")(e.target.value)}
+                  className={valueCls}
+                  placeholder="Nama pemilik rekening sesuai buku tabungan"
+                />
+                {fieldError("accountHolder")}
+              </>
+            ) : (
+              <p className={textCls}>{saved.accountHolder || "Belum diisi"}</p>
+            )}
           </Row>
         </div>
         <p className="mt-2 px-1 text-xs leading-relaxed text-slate-500">
-          Rekening ini otomatis terisi saat mengajukan Cash Advance atau
-          Reimbursement, jadi tidak perlu diketik ulang. Tetap bisa diubah per
+          Rekening ini otomatis terisi saat mengajukan Cash Advance atau Reimbursement, jadi tidak
+          perlu diketik ulang dan tidak perlu ditampilkan penuh di sini. Tetap bisa diubah per
           pengajuan.
         </p>
       </section>
 
       <section>
-        <h2 className={sectionLabel}>Telegram</h2>
+        <h2 className={sectionLabel}>Integrasi &amp; Notifikasi</h2>
         <div className={cardCls}>
           <Row
-            icon={Send}
-            label="Telegram Chat ID"
+            icon={Bell}
+            label="Notifikasi Telegram"
             trailing={
-              <a
-                href="https://t.me/userinfobot?start=start"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded-full border border-brand px-4 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"
-              >
-                Open Telegram
-              </a>
+              !editing ? (
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${
+                    saved.chatId
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {saved.chatId ? "Terhubung" : "Belum terhubung"}
+                </span>
+              ) : null
             }
           >
-            <input
-              type="text"
-              inputMode="numeric"
-              value={chatId}
-              onChange={(e) => setChatId(e.target.value.replace(/\D/g, ""))}
-              className={valueCls}
-              placeholder="Contoh: 123456789"
-            />
+            {!editing && (
+              <p className={textCls}>
+                {saved.chatId ? `Chat ID ${maskChatId(saved.chatId)}` : "Belum diatur"}
+              </p>
+            )}
           </Row>
-          <div className="border-t border-slate-100 px-5 py-4 text-xs leading-relaxed text-slate-500">
-            <p>
-              Diisi supaya Anda dapat notifikasi Telegram saat pengajuan Cash
-              Advance disetujui atau ditolak. Caranya:
-            </p>
-            <ol className="mt-2 space-y-1">
-              <li>
-                1. Chat bot{" "}
-                <span className="font-medium">@Userinfobot</span> di Telegram
-                untuk tahu Chat ID Anda (angka).
-              </li>
-              <li>
-                2. Cari bot notifikasi perusahaan
-                {botUsername && (
-                  <>
-                    {" "}
-                    (
-                    <a
-                      href={`https://t.me/${botUsername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-brand underline"
-                    >
-                      @{botUsername}
-                    </a>
-                    )
-                  </>
-                )}{" "}
-                dan tekan <span className="font-medium">/start</span> (wajib,
-                kalau tidak notifikasi tidak akan terkirim).
-              </li>
-              <li>3. Masukkan Chat ID dari langkah 1 di sini.</li>
-            </ol>
-          </div>
+
+          {editing && (
+            <>
+              <Row
+                icon={Send}
+                label="Telegram Chat ID"
+                trailing={
+                  <a
+                    href="https://t.me/userinfobot?start=start"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded-full border border-brand px-4 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"
+                  >
+                    Open Telegram
+                  </a>
+                }
+              >
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={draft.chatId}
+                  onChange={(e) => set("chatId")(e.target.value.replace(/[^\d-]/g, ""))}
+                  className={valueCls}
+                  placeholder="Contoh: 123456789"
+                />
+                {fieldError("chatId")}
+              </Row>
+              <div className="border-t border-slate-100 px-5 py-4 text-xs leading-relaxed text-slate-500">
+                <p>
+                  Diisi supaya Anda dapat notifikasi Telegram saat pengajuan Cash Advance disetujui
+                  atau ditolak. Caranya:
+                </p>
+                <ol className="mt-2 space-y-1">
+                  <li>
+                    1. Chat bot <span className="font-medium">@Userinfobot</span> di Telegram untuk
+                    tahu Chat ID Anda (angka).
+                  </li>
+                  <li>
+                    2. Cari bot notifikasi perusahaan
+                    {botUsername && (
+                      <>
+                        {" "}
+                        (
+                        <a
+                          href={`https://t.me/${botUsername}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-brand underline"
+                        >
+                          @{botUsername}
+                        </a>
+                        )
+                      </>
+                    )}{" "}
+                    dan tekan <span className="font-medium">/start</span> (wajib, kalau tidak
+                    notifikasi tidak akan terkirim).
+                  </li>
+                  <li>3. Masukkan Chat ID dari langkah 1 di sini.</li>
+                </ol>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
-      <div className="lg:flex lg:justify-end">
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-xl bg-brand py-3 font-medium text-white transition-colors hover:bg-brand-dark disabled:opacity-60 lg:w-auto lg:px-8 lg:py-2.5"
+      {editing && (
+        <div className="flex flex-col gap-2 lg:flex-row lg:justify-end">
+          <button type="button" onClick={cancelEdit} className={`${ghostBtn} py-3 lg:py-2.5`}>
+            Batal
+          </button>
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-brand py-3 font-medium text-white transition-colors hover:bg-brand-dark lg:w-auto lg:px-8 lg:py-2.5"
+          >
+            Simpan
+          </button>
+        </div>
+      )}
+
+      {confirming && (
+        <Dialog
+          title="Simpan perubahan profil?"
+          actions={
+            <>
+              <button type="button" onClick={() => setConfirming(false)} disabled={saving} className={ghostBtn}>
+                Periksa lagi
+              </button>
+              <button type="button" onClick={confirmSave} disabled={saving} className={primaryBtn}>
+                {saving ? "Menyimpan..." : "Ya, simpan"}
+              </button>
+            </>
+          }
         >
-          {saving ? "Menyimpan..." : "Simpan"}
-        </button>
-      </div>
+          <p>Data rekening dan Telegram baru akan dipakai untuk pengajuan dan notifikasi berikutnya.</p>
+          <ul className="mt-3 space-y-1 text-xs text-slate-500">
+            <li>
+              Rekening: {draft.bankName.trim() || "-"}{" "}
+              {maskAccountNumber(newAccountNumber || saved.accountNumber)}
+            </li>
+            <li>Atas nama: {draft.accountHolder.trim() || "-"}</li>
+            <li>Telegram: {draft.chatId ? maskChatId(draft.chatId) : "tidak diatur"}</li>
+          </ul>
+        </Dialog>
+      )}
+
+      {authOpen && (
+        <Dialog
+          title="Lihat nomor rekening lengkap"
+          actions={
+            <>
+              <button type="button" onClick={() => setAuthOpen(false)} disabled={authBusy} className={ghostBtn}>
+                Batal
+              </button>
+              <button type="button" onClick={submitReauth} disabled={authBusy} className={primaryBtn}>
+                {authBusy ? "Memeriksa..." : "Tampilkan"}
+              </button>
+            </>
+          }
+        >
+          {canReauthWithPassword ? (
+            <>
+              <p>Masukkan password untuk melanjutkan. Nomor akan disembunyikan lagi otomatis dalam {REVEAL_SECONDS} detik.</p>
+              <input
+                type="password"
+                autoFocus
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitReauth(e)}
+                className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                placeholder="Password"
+              />
+              {authError && <p className="mt-1 text-xs text-rose-600">{authError}</p>}
+            </>
+          ) : (
+            <p>
+              Pastikan tidak ada orang lain yang melihat layar Anda. Nomor akan disembunyikan lagi
+              otomatis dalam {REVEAL_SECONDS} detik.
+            </p>
+          )}
+        </Dialog>
+      )}
     </form>
   );
 }

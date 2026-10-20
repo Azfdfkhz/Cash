@@ -3,6 +3,7 @@
 import { Camera, LogOut } from "lucide-react";
 import { useLogout } from "@/components/useLogout";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import { maskEmail } from "@/lib/utils";
 
 // Kartu ringkasan profil — hanya tampil di desktop (≥lg), sesuai desain Figma.
 export default function ProfileSummaryCard({ fullName, email, role }) {
@@ -20,7 +21,7 @@ export default function ProfileSummaryCard({ fullName, email, role }) {
         </span>
       </div>
       <p className="mt-5 text-lg font-bold text-slate-900">{fullName}</p>
-      <p className="mt-1 break-all text-xs text-slate-500">{email}</p>
+      <p className="mt-1 break-all text-xs text-slate-500">{maskEmail(email)}</p>
       <span className="mt-3 inline-block rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600">
         {role === "operational" ? "Operasional" : "Requester"}
       </span>
