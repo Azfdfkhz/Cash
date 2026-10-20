@@ -8,9 +8,9 @@ import { useHasDraft } from "@/lib/useHasDraft";
 
 // Navigasi bawah mobile (disembunyikan ≥lg, diganti Sidebar).
 // Item aktif: garis gelap 3px di tepi atas + ikon/label gelap.
-export default function BottomNav({ role, pendingCount = 0, userId }) {
+export default function BottomNav({ role, pendingCounts, userId }) {
   const pathname = usePathname();
-  const approvalCount = useApprovalBadge(pendingCount, userId, role === "operational");
+  const approvalCount = useApprovalBadge(pendingCounts, userId, role === "operational").total;
   const hasDraft = useHasDraft().any;
   const items = navFor(role);
 

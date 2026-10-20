@@ -1,5 +1,5 @@
 import { getUserProfile } from "@/lib/supabase/server";
-import { getApprovalBadgeCount } from "@/lib/stats";
+import { EMPTY_APPROVAL_COUNTS, getApprovalBadgeCount } from "@/lib/stats";
 import ConditionalBottomNav from "@/components/ConditionalBottomNav";
 
 // Dipisah & dibungkus <Suspense> sendiri (lihat layout.js). getUserProfile()
@@ -7,14 +7,14 @@ import ConditionalBottomNav from "@/components/ConditionalBottomNav";
 // menambah query dibanding SidebarData / halaman Beranda.
 export default async function BottomNavData() {
   const { profile } = await getUserProfile();
-  const pendingCount =
+  const pendingCounts =
     profile?.role === "operational"
       ? await getApprovalBadgeCount(profile.id)
-      : 0;
+      : EMPTY_APPROVAL_COUNTS;
   return (
     <ConditionalBottomNav
       role={profile?.role}
-      pendingCount={pendingCount}
+      pendingCounts={pendingCounts}
       userId={profile?.id}
     />
   );

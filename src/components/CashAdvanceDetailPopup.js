@@ -75,6 +75,7 @@ export default function CashAdvanceDetailPopup({
   standalone = false,
   inline = false,
   headerActions = null,
+  proofFile = null,
 }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -108,7 +109,7 @@ export default function CashAdvanceDetailPopup({
       rel("cash_advance_returns", "*", "created_at", false),
       rel("cash_advance_reimbursements", "*", "created_at", false),
       rel("rab_items", "*", "position", true),
-      rel("cash_advance_events", "*, profiles:actor_id(full_name)", "created_at", true),
+      rel("cash_advance_events", "*, profiles:actor_id(full_name)", "created_at", false),
     ]).then(([full, bal, receipts, returns, reimb, rab, events]) => {
       if (cancelled) return;
       setError(receipts.error || rab.error ? "Sebagian data gagal dimuat." : "");
@@ -428,6 +429,7 @@ export default function CashAdvanceDetailPopup({
                         note={c.disbursement_note}
                         canDisburse={isOperational && !isOwner && c.status === "approved"}
                         kind={c.kind}
+                        externalFile={proofFile}
                       />
                     </section>
                   )}

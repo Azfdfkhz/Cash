@@ -6,7 +6,8 @@ export function getReportFilters(searchParams) {
   const rawDate = String(searchParams?.tanggal ?? "");
   const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : "";
   const jenis = searchParams?.jenis;
-  const kind = jenis === "cash_advance" || jenis === "reimbursement" ? jenis : "";
+  // Tab Cash Advance | Reimbursement; kosong = Cash Advance.
+  const kind = jenis === "reimbursement" ? "reimbursement" : "cash_advance";
   return { q, date, kind };
 }
 

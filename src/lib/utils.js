@@ -39,6 +39,24 @@ export function formatDateShort(value) {
   }).format(new Date(value));
 }
 
+// "20/10/2026" -- hari/bulan/tahun (urutan Indonesia), tidak bergantung pada
+// bahasa browser. Untuk tampilan tanggal yang ringkas di laporan.
+export function formatDateNumeric(value) {
+  if (!value) return "-";
+  const raw = String(value);
+  // Tanggal murni "2026-10-20" jangan lewat Date supaya tidak bergeser zona waktu.
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  const parts = new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: TZ,
+  }).formatToParts(new Date(value));
+  const get = (t) => parts.find((x) => x.type === t)?.value ?? "";
+  return `${get("day")}/${get("month")}/${get("year")}`;
+}
+
 // "10 Okt, 09:12"
 export function formatDateTimeShort(value) {
   if (!value) return "-";
@@ -137,7 +155,7 @@ export function shortName(name = "") {
 }
 
 export const STATUS_LABEL = {
-  pending: "Menunggu",
+  pending: "Belum Disetujui",
   approved: "Disetujui",
   rejected: "Ditolak",
   closed: "Selesai",

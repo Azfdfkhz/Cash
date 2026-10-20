@@ -276,7 +276,7 @@ export default function OperationalDashboard({
         </div>
 
         <div className="mt-8 grid grid-cols-4 gap-5">
-          <StatCard dark dot label="Menunggu" value={stats.pendingCount} caption="Butuh verifikasi dokumen" />
+          <StatCard dark dot label="Belum Disetujui" value={stats.pendingCount} caption="Butuh verifikasi dokumen" />
           <StatCard
             label="Saldo berjalan"
             value={formatCompactIdr(stats.totalOutstanding).replace("Rp ", "")}

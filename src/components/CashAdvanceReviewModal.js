@@ -22,6 +22,7 @@ import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import ReturnPopup from "@/components/ReturnPopup";
 import DisbursementSection from "@/components/DisbursementSection";
+import { toJpegFile } from "@/lib/imageConvert";
 import {
   formatCurrency,
   formatDateTimeFull,
@@ -87,6 +88,9 @@ function CashAdvanceReviewModalContent({
   const [returnOpen, setReturnOpen] = useState(false);
   const [askContinueAfterDetail, setAskContinueAfterDetail] = useState(false);
   const overlayRef = useRef(null);
+  // Bukti transfer yang dipilih langsung setelah menekan "Cairkan Sekarang".
+  const proofInputRef = useRef(null);
+  const [proofFile, setProofFile] = useState(null);
 
   const isOwner = ca.requester_id === currentUserId;
   const isPending = ca.status === "pending";
@@ -203,7 +207,7 @@ function CashAdvanceReviewModalContent({
               {isPending ? (
                 <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-[10px] font-semibold text-[#b45309]">
                   <span className="h-1 w-1 rounded-full bg-[#f59e0b]" />
-                  Menunggu Verifikasi
+                  Belum Disetujui
                 </span>
               ) : (
                 <StatusBadge status={ca.status} className="!px-2 !py-px !text-[10px] whitespace-nowrap" />
@@ -379,6 +383,7 @@ function CashAdvanceReviewModalContent({
               canDisburse
               kind={ca.kind}
               onDone={() => onDisbursed?.(ca.id)}
+              externalFile={proofFile}
             />
           )}
 
@@ -578,6 +583,19 @@ function CashAdvanceReviewModalContent({
           }}
         />
       )}
+      <input
+        ref={proofInputRef}
+        type="file"
+        accept="image/*,.heic,.heif,application/pdf"
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={async (e) => {
+          const raw = e.target.files?.[0];
+          e.target.value = "";
+          if (raw) setProofFile(await toJpegFile(raw));
+        }}
+      />
       {result && (
         <DecisionDialog
           result={result}
@@ -586,7 +604,10 @@ function CashAdvanceReviewModalContent({
           nextPendingCount={nextPendingCount}
           onLater={afterDisburseChoice}
           onDisburseNow={() => {
-            // Formulir pencairan sudah ada di panel ini; cukup tutup dialog.
+            // Formulir pencairan sudah ada di panel ini: tutup dialog dan
+            // langsung buka pemilih file bukti transfer (harus dipanggil
+            // langsung dari klik user agar tidak diblokir browser).
+            proofInputRef.current?.click();
             setResult(null);
           }}
           onStay={() => setResult(null)}

@@ -65,11 +65,15 @@ export default function DisbursementSection({
   kind,
   // Dipanggil setelah pencairan tersimpan (sebelum data di-refresh).
   onDone,
+  // Bukti transfer yang sudah dipilih dari luar (mis. langsung setelah menekan
+  // "Cairkan Sekarang"), jadi operasional tidak perlu memilih file lagi.
+  externalFile = null,
 }) {
   const isReimbursement = kind === "reimbursement";
   const router = useRouter();
   const fileInputRef = useRef(null);
-  const [file, setFile] = useState(null);
+  const [pickedFile, setFile] = useState(null);
+  const file = pickedFile ?? externalFile ?? null;
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

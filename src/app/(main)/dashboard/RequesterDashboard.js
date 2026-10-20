@@ -94,7 +94,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           </p>
           <div className="flex gap-2 border-t border-slate-100 pt-4">
             <Metric value={stats.activeCount} label="CA aktif" />
-            <Metric value={stats.pendingCount} label="Menunggu" />
+            <Metric value={stats.pendingCount} label="Belum disetujui" />
             <Metric value={formatCompactIdr(stats.totalReturned)} label="Dikembalikan" />
           </div>
         </section>
@@ -186,7 +186,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
         <div className="mt-7 grid grid-cols-4 gap-4 xl:gap-5">
           <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
           <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
-          <StatCard label="Menunggu" value={stats.pendingCount} caption="Menunggu persetujuan" icon={Info} />
+          <StatCard label="Belum Disetujui" value={stats.pendingCount} caption="Menunggu keputusan Operasional" icon={Info} />
           <StatCard label="Dikembalikan" value={formatCompactIdr(stats.totalReturned)} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
         </div>
 

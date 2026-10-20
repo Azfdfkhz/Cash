@@ -170,12 +170,12 @@ function LoginForm() {
             <input type="checkbox" className="auth-checkbox" />
             Ingat saya
           </label>
-          <button
-            type="button"
+          <Link
+            href="/forgot-password"
             className="text-sm font-medium text-brand hover:underline"
           >
             Lupa kata sandi?
-          </button>
+          </Link>
         </div>
 
         <PrimaryButton type="submit" disabled={loading} desktop="login">

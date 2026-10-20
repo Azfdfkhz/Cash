@@ -10,9 +10,10 @@ import {
   Eye,
   ExternalLink,
   FileText,
+  Search,
   X,
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDateNumeric } from "@/lib/utils";
 import { PendingNavProvider, usePendingNav } from "@/components/PendingNav";
 import { ReceiptListSkeleton } from "@/components/skeletons/ListSkeletons";
 
@@ -29,7 +30,6 @@ function driveIds(url) {
 }
 
 const KIND_OPTIONS = [
-  ["", "Semua"],
   ["cash_advance", "Cash Advance"],
   ["reimbursement", "Reimbursement"],
 ];
@@ -97,40 +97,78 @@ function ReportsTableInner({
   return (
     <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <div className="space-y-3">
-        <div className="flex gap-2">
-          <label className="relative shrink-0">
-            <Calendar
-              size={15}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-            />
+        <div className="relative">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari requester, vendor, keperluan, kategori..."
+            aria-label="Cari laporan"
+            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Hapus pencarian"
+              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Tanggal ditampilkan hari/bulan/tahun (bukan "mm/dd/yyyy" bawaan browser).
+            Input date asli tetap dipakai sebagai pemilih, ditaruh transparan di atas. */}
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <div
+              className={`flex items-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-sm ${
+                filters.date ? "border-brand text-slate-900" : "border-slate-300 text-slate-500"
+              }`}
+            >
+              <Calendar size={15} className="shrink-0 text-slate-500" />
+              <span className="font-num truncate">
+                {filters.date ? formatDateNumeric(filters.date) : "Semua tanggal kwitansi"}
+              </span>
+            </div>
             <input
               type="date"
               value={filters.date}
               onChange={(e) => go({ date: e.target.value })}
+              onClick={(e) => e.currentTarget.showPicker?.()}
               aria-label="Filter tanggal kwitansi"
-              className="w-[9.5rem] rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+              lang="id-ID"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
-          </label>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari requester, vendor, keperluan, jenis..."
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-          />
+          </div>
+          {filters.date && (
+            <button
+              type="button"
+              onClick={() => go({ date: "" })}
+              className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              Hapus tanggal
+            </button>
+          )}
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Filter jenis pengajuan">
+        <div className="flex border-b border-slate-200" role="tablist" aria-label="Jenis pengajuan">
           {KIND_OPTIONS.map(([value, label]) => (
             <button
-              key={label}
+              key={value}
               type="button"
               role="tab"
               aria-selected={filters.kind === value}
               onClick={() => value !== filters.kind && go({ kind: value })}
-              className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              className={`-mb-px flex flex-1 items-center justify-center border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
                 filters.kind === value
-                  ? "border-brand bg-brand text-white"
-                  : "border-slate-300 bg-white text-slate-600 hover:border-brand hover:text-brand"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
               {label}
@@ -138,9 +176,9 @@ function ReportsTableInner({
           ))}
         </div>
         <div className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-opacity ${pending ? "opacity-50" : ""}`}>
-          <span className="text-sm text-slate-500">{total} kwitansi</span>
+          <span className="font-num text-sm text-slate-500">{total} kwitansi</span>
           <div className="flex items-center gap-3">
-            <span className="text-base font-bold text-slate-900">
+            <span className="font-num text-base font-bold text-slate-900">
               {formatCurrency(totalAmount)}
             </span>
             <a
@@ -174,8 +212,8 @@ function ReportsTableInner({
                     : "border-slate-200 lg:hover:border-slate-300"
                 }`}
               >
-                <p className="text-xs text-slate-500">
-                  {r.receiptDate ? formatDate(r.receiptDate) : "-"}
+                <p className="font-num text-xs text-slate-500">
+                  {r.receiptDate ? formatDateNumeric(r.receiptDate) : "-"}
                 </p>
                 <div className="mt-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -193,7 +231,7 @@ function ReportsTableInner({
                       </p>
                     </div>
                   </div>
-                  <p className="shrink-0 text-sm font-bold text-slate-900">
+                  <p className="font-num shrink-0 text-sm font-bold text-slate-900">
                     {formatCurrency(r.amount)}
                   </p>
                 </div>
@@ -244,7 +282,7 @@ function ReportsTableInner({
                     Pratinjau kwitansi
                   </p>
                   <p className="truncate text-sm font-bold text-slate-900">
-                    {selected.vendor || "Kwitansi"} · {formatCurrency(selected.amount)}
+                    {selected.vendor || "Kwitansi"} · <span className="font-num">{formatCurrency(selected.amount)}</span>
                   </p>
                 </div>
                 <button
@@ -262,7 +300,7 @@ function ReportsTableInner({
                   <FileText size={14} className="shrink-0" />
                   <span className="truncate">
                     {selected.vendor || "kwitansi"}
-                    {selected.receiptDate ? ` · ${formatDate(selected.receiptDate)}` : ""}
+                    {selected.receiptDate ? ` · ${formatDateNumeric(selected.receiptDate)}` : ""}
                   </span>
                 </span>
                 <span className="shrink-0 text-slate-400">Tersimpan di Google Drive</span>

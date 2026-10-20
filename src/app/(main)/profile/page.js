@@ -60,7 +60,9 @@ export default async function ProfilePage() {
             initialBankAccountNumber={profile.bank_account_number}
             initialBankAccountHolder={profile.bank_account_holder}
             botUsername={botUsername}
-            canReauthWithPassword={Boolean(user?.app_metadata?.providers?.includes("email"))}
+            canReauthWithPassword={Boolean(
+              user?.app_metadata?.providers?.includes("email") || user?.user_metadata?.has_password === true
+            )}
           />
 
           <section>

@@ -1,10 +1,19 @@
-import { Poppins } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+// Font khusus angka (nominal, tanggal, jumlah) di laporan: angka Inter lebar
+// seragam (tabular) dan tegas, lebih rapi untuk kolom nominal daripada Poppins.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -40,7 +49,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="id"
-      className={`${poppins.variable} h-full antialiased`}
+      className={`${poppins.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}

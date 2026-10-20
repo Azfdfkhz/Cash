@@ -36,7 +36,7 @@ export default function SubmitSuccessModal({ open, rows = [], onDone }) {
           <div className="flex items-center justify-between gap-2 border-b border-dashed border-slate-300 pb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Pengajuan</span>
             <span className="rounded-full border border-emerald-200 bg-[#e8f8ee] px-3 py-1 text-xs font-bold text-[#047857]">
-              Menunggu Verifikasi
+              Belum Disetujui
             </span>
           </div>
           <dl className="mt-3 space-y-3 text-sm">

@@ -35,9 +35,12 @@ export async function fetchAll(buildQuery, cap = MAX_FETCH_ROWS) {
   return all;
 }
 
-// Filter jenis pengajuan dari `?jenis=` (cash_advance | reimbursement).
-// Nilai lain / kosong = semua jenis.
+// Jenis pengajuan yang dibuka pertama kali pada tab "Cash Advance | Reimbursement".
+export const DEFAULT_KIND = "cash_advance";
+
+// Tab jenis pengajuan dari `?jenis=` (cash_advance | reimbursement).
+// Kosong / nilai lain = tab pertama (Cash Advance).
 export function getKindFilter(searchParams) {
   const v = searchParams?.jenis;
-  return v === "cash_advance" || v === "reimbursement" ? v : null;
+  return v === "cash_advance" || v === "reimbursement" ? v : DEFAULT_KIND;
 }

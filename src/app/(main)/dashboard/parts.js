@@ -42,7 +42,7 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
   );
 }
 
-// Toggle "Semua | Menunggu (n)" berbasis query ?filter=
+// Toggle "Semua | Belum Disetujui (n)" berbasis query ?filter=
 export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
   const jenis = kind ? `jenis=${kind}` : "";
   const base =
@@ -65,7 +65,7 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
         href={`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`}
         className={tab(filter === "pending")}
       >
-        Menunggu ({pendingCount})
+        Belum Disetujui ({pendingCount})
       </PendingLink>
     </div>
   );

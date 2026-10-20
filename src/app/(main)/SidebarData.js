@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/supabase/server";
-import { getApprovalBadgeCount } from "@/lib/stats";
+import { EMPTY_APPROVAL_COUNTS, getApprovalBadgeCount } from "@/lib/stats";
 import Sidebar from "@/components/Sidebar";
 
 // Dipisah dari layout & dibungkus <Suspense> (lihat layout.js) supaya fetch
@@ -10,14 +10,14 @@ export default async function SidebarData() {
   const { user, profile } = await getUserProfile();
   if (!user) redirect("/login");
   const isOperational = profile?.role === "operational";
-  const pendingCount = isOperational
+  const pendingCounts = isOperational
     ? await getApprovalBadgeCount(profile.id)
-    : 0;
+    : EMPTY_APPROVAL_COUNTS;
   return (
     <Sidebar
       role={profile?.role}
       fullName={profile?.full_name ?? user.email}
-      pendingCount={pendingCount}
+      pendingCounts={pendingCounts}
       userId={profile?.id}
     />
   );

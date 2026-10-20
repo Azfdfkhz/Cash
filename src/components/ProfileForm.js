@@ -76,6 +76,9 @@ export default function ProfileForm({
   botUsername,
   canReauthWithPassword = true,
 }) {
+  // Akun email punya password sejak awal; akun Google bisa membuatnya sendiri
+  // (dikonfirmasi lewat kode yang dikirim ke email) untuk membuka nomor rekening.
+  const [hasPassword, setHasPassword] = useState(canReauthWithPassword);
   const router = useRouter();
 
   // Nilai tersimpan (dipakai tampilan baca). Draft hanya ada saat mode edit.
@@ -102,6 +105,12 @@ export default function ProfileForm({
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
+  const [authInfo, setAuthInfo] = useState("");
+  // Alur buat password (akun Google): "ask" -> "code" (kode email + password baru)
+  const [setupStep, setSetupStep] = useState("ask");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const hideTimer = useRef(null);
 
   useEffect(() => () => clearTimeout(hideTimer.current), []);
@@ -121,13 +130,18 @@ export default function ProfileForm({
     if (!saved.accountNumber) return;
     setPassword("");
     setAuthError("");
+    setAuthInfo("");
+    setSetupStep("ask");
+    setCode("");
+    setNewPassword("");
+    setConfirmPassword("");
     setAuthOpen(true);
   }
 
   async function submitReauth(e) {
     e?.preventDefault();
     setAuthError("");
-    if (canReauthWithPassword) {
+    if (hasPassword) {
       if (!password) {
         setAuthError("Masukkan password Anda.");
         return;
@@ -142,6 +156,76 @@ export default function ProfileForm({
       }
     }
     setPassword("");
+    setAuthOpen(false);
+    showAccount();
+  }
+
+  // Lupa password: kirim tautan reset ke email akun. Setelah mengatur password
+  // baru, user kembali ke Profil dan bisa membuka nomor rekening.
+  async function sendResetLink() {
+    setAuthError("");
+    setAuthInfo("");
+    setAuthBusy(true);
+    const supabase = createClient();
+    const next = encodeURIComponent("/reset-password?next=/profile");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=${next}`,
+    });
+    setAuthBusy(false);
+    if (error) {
+      setAuthError("Gagal mengirim tautan reset. Coba lagi sebentar lagi.");
+      return;
+    }
+    setAuthInfo(`Tautan reset password dikirim ke ${maskEmail(email)}. Buka email itu untuk membuat password baru.`);
+  }
+
+  // Akun Google: minta kode konfirmasi ke email sebelum membuat password.
+  async function sendSetupCode() {
+    setAuthError("");
+    setAuthInfo("");
+    setAuthBusy(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.reauthenticate();
+    setAuthBusy(false);
+    if (error) {
+      setAuthError("Gagal mengirim kode ke email. Coba lagi sebentar lagi.");
+      return;
+    }
+    setAuthInfo(`Kode konfirmasi dikirim ke ${maskEmail(email)}.`);
+    setSetupStep("code");
+  }
+
+  async function submitSetup(e) {
+    e?.preventDefault();
+    setAuthError("");
+    if (!code.trim()) {
+      setAuthError("Masukkan kode dari email.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setAuthError("Password minimal 8 karakter.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setAuthError("Konfirmasi password tidak sama.");
+      return;
+    }
+    setAuthBusy(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+      nonce: code.trim(),
+      data: { has_password: true },
+    });
+    setAuthBusy(false);
+    if (error) {
+      setAuthError("Kode salah atau sudah kedaluwarsa. Kirim ulang kode lalu coba lagi.");
+      return;
+    }
+    setHasPassword(true);
+    setCode("");
+    setNewPassword("");
+    setConfirmPassword("");
     setAuthOpen(false);
     showAccount();
   }
@@ -483,19 +567,29 @@ export default function ProfileForm({
 
       {authOpen && (
         <Dialog
-          title="Lihat nomor rekening lengkap"
+          title={hasPassword || setupStep === "ask" ? "Lihat nomor rekening lengkap" : "Buat password konfirmasi"}
           actions={
             <>
               <button type="button" onClick={() => setAuthOpen(false)} disabled={authBusy} className={ghostBtn}>
                 Batal
               </button>
-              <button type="button" onClick={submitReauth} disabled={authBusy} className={primaryBtn}>
-                {authBusy ? "Memeriksa..." : "Tampilkan"}
-              </button>
+              {hasPassword ? (
+                <button type="button" onClick={submitReauth} disabled={authBusy} className={primaryBtn}>
+                  {authBusy ? "Memeriksa..." : "Tampilkan"}
+                </button>
+              ) : setupStep === "ask" ? (
+                <button type="button" onClick={sendSetupCode} disabled={authBusy} className={primaryBtn}>
+                  {authBusy ? "Mengirim..." : "Kirim kode ke email"}
+                </button>
+              ) : (
+                <button type="button" onClick={submitSetup} disabled={authBusy} className={primaryBtn}>
+                  {authBusy ? "Menyimpan..." : "Simpan & tampilkan"}
+                </button>
+              )}
             </>
           }
         >
-          {canReauthWithPassword ? (
+          {hasPassword ? (
             <>
               <p>Masukkan password untuk melanjutkan. Nomor akan disembunyikan lagi otomatis dalam {REVEAL_SECONDS} detik.</p>
               <input
@@ -509,12 +603,67 @@ export default function ProfileForm({
                 placeholder="Password"
               />
               {authError && <p className="mt-1 text-xs text-rose-600">{authError}</p>}
+              {authInfo && <p className="mt-2 text-xs text-emerald-700">{authInfo}</p>}
+              <button
+                type="button"
+                onClick={sendResetLink}
+                disabled={authBusy}
+                className="mt-2 text-xs font-semibold text-brand hover:underline disabled:opacity-60"
+              >
+                Lupa password? Kirim tautan reset ke email
+              </button>
+            </>
+          ) : setupStep === "ask" ? (
+            <>
+              <p>
+                Akun Anda masuk lewat Google, jadi belum punya password. Untuk melihat nomor
+                rekening lengkap, buat password konfirmasi dulu. Kami kirim kode ke{" "}
+                <span className="font-semibold">{maskEmail(email)}</span> untuk memastikan ini Anda.
+              </p>
+              {authError && <p className="mt-2 text-xs text-rose-600">{authError}</p>}
             </>
           ) : (
-            <p>
-              Pastikan tidak ada orang lain yang melihat layar Anda. Nomor akan disembunyikan lagi
-              otomatis dalam {REVEAL_SECONDS} detik.
-            </p>
+            <>
+              {authInfo && <p className="text-xs text-emerald-700">{authInfo}</p>}
+              <input
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\s/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && submitSetup(e)}
+                className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                placeholder="Kode dari email"
+              />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitSetup(e)}
+                className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                placeholder="Password baru (min. 8 karakter)"
+              />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitSetup(e)}
+                className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                placeholder="Ulangi password baru"
+              />
+              {authError && <p className="mt-1 text-xs text-rose-600">{authError}</p>}
+              <button
+                type="button"
+                onClick={sendSetupCode}
+                disabled={authBusy}
+                className="mt-2 text-xs font-semibold text-brand hover:underline disabled:opacity-60"
+              >
+                Kirim ulang kode
+              </button>
+            </>
           )}
         </Dialog>
       )}

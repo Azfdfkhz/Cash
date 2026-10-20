@@ -4,23 +4,23 @@ import { createContext, useContext, useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import CashAdvanceCardSkeleton from "@/components/skeletons/CashAdvanceCardSkeleton";
 import { PendingNavContext } from "@/components/PendingNav";
+import { DEFAULT_KIND } from "@/lib/pagination";
 
 const OPTIONS = [
-  { value: null, label: "Semua" },
   { value: "cash_advance", label: "Cash Advance" },
   { value: "reimbursement", label: "Reimbursement" },
 ];
 
-const FilterContext = createContext({ kind: null, pending: false, select: () => {} });
+const FilterContext = createContext({ kind: DEFAULT_KIND, pending: false, select: () => {} });
 
-// Filter jenis pengajuan berbasis URL (?jenis=). Saat diklik, pilihan langsung
-// berpindah (optimistic) dan daftar di dalam <KindFilterContent> langsung
-// menampilkan skeleton -- tidak menunggu data server dulu baru berpindah.
-// Ganti filter = kembali ke halaman 1.
+// Tab jenis pengajuan (Cash Advance | Reimbursement) berbasis URL (?jenis=).
+// Saat diklik, tab langsung berpindah (optimistic) dan daftar di dalam
+// <KindFilterContent> langsung menampilkan skeleton -- tidak menunggu data
+// server dulu baru berpindah. Ganti tab = kembali ke halaman 1.
 export function KindFilterProvider({ basePath, active, children }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [kind, setOptimisticKind] = useOptimistic(active ?? null);
+  const [kind, setOptimisticKind] = useOptimistic(active ?? DEFAULT_KIND);
 
   // Tab / paginasi / filter lain di halaman yang sama ikut memakai transition
   // ini lewat <PendingLink>, jadi skeleton tampil untuk SEMUA perpindahan.
@@ -37,7 +37,9 @@ export function KindFilterProvider({ basePath, active, children }) {
       setOptimisticKind(value);
       const [path, existing = ""] = basePath.split("?");
       const q = new URLSearchParams(existing);
-      if (value) q.set("jenis", value);
+      q.set("jenis", value);
+      q.delete("page");
+      q.delete("pencairan");
       const qs = q.toString();
       router.push(qs ? `${path}?${qs}` : path, { scroll: false });
     });
@@ -52,29 +54,45 @@ export function KindFilterProvider({ basePath, active, children }) {
   );
 }
 
-export default function KindFilter({ counts = null }) {
+export default function KindFilter({ counts = null, dots = null, className = "" }) {
   const { kind, select } = useContext(FilterContext);
   return (
-    <div className="flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Filter jenis pengajuan">
+    <div
+      className={`flex border-b border-slate-200 ${className}`}
+      role="tablist"
+      aria-label="Jenis pengajuan"
+    >
       {OPTIONS.map((opt) => {
         const selected = kind === opt.value;
-        const n = counts ? counts[opt.value ?? "all"] : undefined;
+        const n = counts ? counts[opt.value] : undefined;
         return (
           <button
-            key={opt.label}
+            key={opt.value}
             type="button"
             role="tab"
             aria-selected={selected}
             onClick={() => select(opt.value)}
-            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            className={`-mb-px flex flex-1 items-center justify-center gap-2 border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
               selected
-                ? "border-brand bg-brand text-white"
-                : "border-slate-300 bg-white text-slate-600 hover:border-brand hover:text-brand"
+                ? "border-brand text-brand"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
             {opt.label}
+            {dots?.[opt.value] && (
+              <span
+                className="h-2 w-2 rounded-full bg-orange-500"
+                aria-label="Ada pengajuan yang perlu tindakan"
+              />
+            )}
             {n !== undefined && (
-              <span className={`ml-1.5 ${selected ? "text-white/80" : "text-slate-400"}`}>{n}</span>
+              <span
+                className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${
+                  selected ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {n}
+              </span>
             )}
           </button>
         );

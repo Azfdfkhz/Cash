@@ -20,21 +20,29 @@ export const getDashboardStats = cache(async function getDashboardStats() {
 // (menunggu persetujuan + disetujui tapi belum dicairkan), tidak termasuk
 // pengajuan milik sendiri. Dipakai untuk titik oranye di menu Persetujuan --
 // harus sama dengan isi daftar di halaman itu.
+export const EMPTY_APPROVAL_COUNTS = { total: 0, cash_advance: 0, reimbursement: 0 };
+
+// Hasil: { total, cash_advance, reimbursement } -- per jenis dipakai untuk titik
+// notifikasi di sub-menu Persetujuan (Cash Advance / Reimbursement).
 export const getApprovalBadgeCount = cache(async function getApprovalBadgeCount(userId) {
-  if (!userId) return 0;
+  if (!userId) return EMPTY_APPROVAL_COUNTS;
   const supabase = await createClient();
-  const [pending, toDisburse] = await Promise.all([
-    supabase
+  const count = (kind, toDisburse) => {
+    let q = supabase
       .from("cash_advances")
       .select("id", { count: "exact", head: true })
-      .eq("status", "pending")
-      .neq("requester_id", userId),
-    supabase
-      .from("cash_advances")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "approved")
-      .is("disbursed_at", null)
-      .neq("requester_id", userId),
+      .eq("kind", kind)
+      .neq("requester_id", userId);
+    q = toDisburse ? q.eq("status", "approved").is("disbursed_at", null) : q.eq("status", "pending");
+    return q;
+  };
+  const [caP, caD, reP, reD] = await Promise.all([
+    count("cash_advance", false),
+    count("cash_advance", true),
+    count("reimbursement", false),
+    count("reimbursement", true),
   ]);
-  return (pending.count ?? 0) + (toDisburse.count ?? 0);
+  const cash_advance = (caP.count ?? 0) + (caD.count ?? 0);
+  const reimbursement = (reP.count ?? 0) + (reD.count ?? 0);
+  return { total: cash_advance + reimbursement, cash_advance, reimbursement };
 });

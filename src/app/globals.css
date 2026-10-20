@@ -59,6 +59,7 @@
 
   /* Fonts */
   --font-sans: var(--font-poppins);
+  --font-num: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -189,4 +190,12 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-in-right, .animate-sheet-up, .animate-fade-in { animation: none; }
+}
+
+/* Angka profesional: lebar seragam & angka sejajar (untuk nominal/tanggal di laporan). */
+.font-num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.01em;
 }

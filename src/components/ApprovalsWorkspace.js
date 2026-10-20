@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PendingLink, usePendingNav } from "@/components/PendingNav";
 import { DetailPanelSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,8 @@ import NextAction from "@/components/NextAction";
 import ApprovalActions from "@/components/ApprovalActions";
 import CashAdvanceReviewModal, { DecisionDialog } from "@/components/CashAdvanceReviewModal";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
+import { useApprovalBadge } from "@/components/useApprovalBadge";
+import { toJpegFile } from "@/lib/imageConvert";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import {
   formatCompactIdr,
@@ -19,21 +21,19 @@ import {
 
 // Label dibuat pendek supaya tidak terpotong di kolom daftar (22rem); nama
 // lengkap ada di title/aria-label. Persetujuan dan pencairan adalah dua tahap
-// operasional yang berbeda, jadi diberi nomor tahap + penjelasan singkat.
+// operasional yang berbeda, jadi diberi penjelasan singkat (tanpa nomor tahap).
 const TABS = [
   {
     id: "persetujuan",
-    step: 1,
     label: "Persetujuan",
     full: "Menunggu Persetujuan",
-    hint: "Tahap 1 · Tinjau pengajuan, lalu setujui atau tolak.",
+    hint: "Tinjau pengajuan, lalu setujui atau tolak.",
   },
   {
     id: "pencairan",
-    step: 2,
     label: "Pencairan",
     full: "Menunggu Pencairan",
-    hint: "Tahap 2 · Transfer dana ke rekening requester, lalu unggah bukti transfer.",
+    hint: "Transfer dana ke rekening requester, lalu unggah bukti transfer.",
   },
 ];
 
@@ -67,6 +67,7 @@ function ApprovalsWorkspaceInner({
   currentUserId,
 }) {
   const router = useRouter();
+  const badge = useApprovalBadge(null, currentUserId, true);
   const { pending: navPending } = usePendingNav();
   const isDisburseTab = tab === "pencairan";
   const count = counts[tab] ?? 0;
@@ -86,6 +87,12 @@ function ApprovalsWorkspaceInner({
   // Pop up lanjutan setelah menyetujui/menolak lewat panel desktop:
   // { ca, step: "disburse" | "continue" } -- sama dengan yang ada di pop up tinjau.
   const [decision, setDecision] = useState(null);
+  // Bukti transfer yang dipilih langsung setelah menekan "Cairkan Sekarang".
+  // Input file-nya selalu terpasang di sini (bukan di pop up yang segera
+  // tertutup) supaya pemilih file tetap bisa mengirim hasilnya.
+  const proofInputRef = useRef(null);
+  const proofForRef = useRef(null);
+  const [proof, setProof] = useState(null); // { caId, file }
 
   function tabHref(id) {
     const q = new URLSearchParams();
@@ -222,14 +229,6 @@ function ApprovalsWorkspaceInner({
                     : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
-                <span
-                  aria-hidden="true"
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                    active ? "bg-brand text-white" : "bg-slate-200 text-slate-600"
-                  }`}
-                >
-                  {t.step}
-                </span>
                 <span className="truncate">{t.label}</span>
                 <span
                   className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
@@ -249,11 +248,15 @@ function ApprovalsWorkspaceInner({
 
         <p className="text-xs text-slate-500">{TABS.find((t) => t.id === tab)?.hint}</p>
 
-        <div>
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Jenis pengajuan
-          </p>
-          <KindFilter counts={kindCounts} />
+        {/* Desktop: Cash Advance / Reimbursement ada di sub-menu Persetujuan (sidebar). */}
+        <div className="lg:hidden">
+          <KindFilter
+            counts={kindCounts}
+            dots={{
+              cash_advance: badge.cash_advance > 0,
+              reimbursement: badge.reimbursement > 0,
+            }}
+          />
         </div>
 
         <KindFilterContent skeletons={4}>
@@ -337,6 +340,7 @@ function ApprovalsWorkspaceInner({
                 isOperational
                 inline
                 initialFocus={isDisburseTab ? "pencairan" : null}
+                proofFile={proof && proof.caId === selected.id ? proof.file : null}
                 headerActions={
                   <div className="flex shrink-0 items-center gap-2">
                     <button
@@ -401,6 +405,22 @@ function ApprovalsWorkspaceInner({
         onDisbursed={handleDisbursed}
       />
 
+      <input
+        ref={proofInputRef}
+        type="file"
+        accept="image/*,.heic,.heif,application/pdf"
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={async (e) => {
+          const raw = e.target.files?.[0];
+          e.target.value = "";
+          if (raw && proofForRef.current) {
+            setProof({ caId: proofForRef.current, file: await toJpegFile(raw) });
+          }
+        }}
+      />
+
       {decision?.step && (
         <DecisionDialog
           standalone
@@ -416,6 +436,9 @@ function ApprovalsWorkspaceInner({
           // Pindah ke tab Menunggu Pencairan dengan pengajuan ini terpilih --
           // formulir pencairan ada di panel, bukan pop up.
           onDisburseNow={() => {
+            // Harus dipanggil langsung dari klik user, kalau tidak diblokir browser.
+            proofForRef.current = decision.ca.id;
+            proofInputRef.current?.click();
             const q = new URLSearchParams({ tab: "pencairan", ca: decision.ca.id });
             if (kind) q.set("jenis", kind);
             setDecision(null);

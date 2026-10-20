@@ -13,6 +13,8 @@ let lastAt = 0;
 let lastCount = null;
 let lastUserId = null;
 
+const EMPTY = { total: 0, cash_advance: 0, reimbursement: 0 };
+
 async function fetchCount(userId) {
   if (inflight) return inflight;
   if (lastUserId === userId && lastCount !== null && Date.now() - lastAt < 4000) {
@@ -21,21 +23,26 @@ async function fetchCount(userId) {
   const supabase = createClient();
   inflight = (async () => {
     try {
-      const [pending, toDisburse] = await Promise.all([
-        supabase
+      const count = (kind, toDisburse) => {
+        let q = supabase
           .from("cash_advances")
           .select("id", { count: "exact", head: true })
-          .eq("status", "pending")
-          .neq("requester_id", userId),
-        supabase
-          .from("cash_advances")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "approved")
-          .is("disbursed_at", null)
-          .neq("requester_id", userId),
+          .eq("kind", kind)
+          .neq("requester_id", userId);
+        return toDisburse
+          ? q.eq("status", "approved").is("disbursed_at", null)
+          : q.eq("status", "pending");
+      };
+      const [caP, caD, reP, reD] = await Promise.all([
+        count("cash_advance", false),
+        count("cash_advance", true),
+        count("reimbursement", false),
+        count("reimbursement", true),
       ]);
-      if (pending.error || toDisburse.error) return null;
-      lastCount = (pending.count ?? 0) + (toDisburse.count ?? 0);
+      if (caP.error || caD.error || reP.error || reD.error) return null;
+      const cash_advance = (caP.count ?? 0) + (caD.count ?? 0);
+      const reimbursement = (reP.count ?? 0) + (reD.count ?? 0);
+      lastCount = { total: cash_advance + reimbursement, cash_advance, reimbursement };
       lastAt = Date.now();
       lastUserId = userId;
       return lastCount;
@@ -48,20 +55,23 @@ async function fetchCount(userId) {
   return inflight;
 }
 
-export function useApprovalBadge(initialCount, userId, enabled) {
+// Mengembalikan { total, cash_advance, reimbursement }.
+export function useApprovalBadge(initial, userId, enabled) {
+  const initialCount = initial ?? EMPTY;
+  const initialKey = `${initialCount.cash_advance}-${initialCount.reimbursement}`;
   const pathname = usePathname();
   // Hasil muat ulang dari klien; dibuang begitu server mengirim angka baru
   // (mis. setelah router.refresh()), karena angka server pasti yang terbaru.
   const [fetched, setFetched] = useState(null);
-  const [seenInitial, setSeenInitial] = useState(initialCount);
-  if (seenInitial !== initialCount) {
-    setSeenInitial(initialCount);
+  const [seenInitial, setSeenInitial] = useState(initialKey);
+  if (seenInitial !== initialKey) {
+    setSeenInitial(initialKey);
     setFetched(null);
   }
 
   useEffect(() => {
     lastAt = 0;
-  }, [initialCount]);
+  }, [initialKey]);
 
   useEffect(() => {
     if (!enabled || !userId) return undefined;
