@@ -41,15 +41,16 @@ export default function DraftPrompt({ draft, kindLabel, onContinue, onDiscard })
           ) : null}
           {draft._savedAt ? `, tersimpan ${ago(draft._savedAt)}` : ""}.
           {draft._reason === "error" ? " Pengiriman sebelumnya gagal." : ""} Pilih
-          &quot;Tidak&quot; untuk memulai dari awal; draft lama akan dihapus.
+          &quot;Lanjutkan Draft&quot; untuk melanjutkan isian tersimpan. Pilih &quot;Buat
+          Baru&quot; untuk mulai dari awal — draft lama akan dihapus permanen.
         </p>
         <div className="mt-4 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onDiscard}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100"
           >
-            Tidak
+            Buat Baru
           </button>
           <button
             type="button"
@@ -57,7 +58,7 @@ export default function DraftPrompt({ draft, kindLabel, onContinue, onDiscard })
             autoFocus
             className="rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800"
           >
-            Lanjutkan
+            Lanjutkan Draft
           </button>
         </div>
       </div>

@@ -22,6 +22,23 @@ export default function ValidationSummary({
   notice,
 }) {
   const ready = checks.every((c) => c.ok) && agreed;
+  const missingCount = checks.filter((c) => !c.ok).length;
+
+  // Label tombol yang jujur: user tahu persis kenapa tombol belum bisa diklik.
+  let submitContent;
+  if (loading) {
+    submitContent = submitLabel;
+  } else if (missingCount > 0) {
+    submitContent = `Lengkapi ${missingCount} isian lagi`;
+  } else if (!agreed) {
+    submitContent = "Centang pernyataan SPJ";
+  } else {
+    submitContent = (
+      <>
+        Kirim Pengajuan <ArrowRight size={16} strokeWidth={2.25} />
+      </>
+    );
+  }
 
   const actions = (
     <>
@@ -35,14 +52,12 @@ export default function ValidationSummary({
       <button
         type="submit"
         form={formId}
-        disabled={loading}
-        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#0f172a] px-5 text-sm font-semibold text-white shadow-[0_6px_16px_-6px_rgba(15,23,42,0.5)] transition-colors hover:bg-slate-800 disabled:opacity-60"
+        disabled={loading || !ready}
+        aria-disabled={!ready}
+        title={!ready ? "Lengkapkan semua isian dan centang pernyataan SPJ" : undefined}
+        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#0f172a] px-5 text-sm font-semibold text-white shadow-[0_6px_16px_-6px_rgba(15,23,42,0.5)] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? submitLabel : (
-          <>
-            Kirim Pengajuan <ArrowRight size={16} strokeWidth={2.25} />
-          </>
-        )}
+        {submitContent}
       </button>
     </>
   );
@@ -110,6 +125,11 @@ export default function ValidationSummary({
         </label>
 
         <div className="mt-5 hidden gap-3 lg:flex">{actions}</div>
+        {!ready && !loading && (
+          <p className="mt-3 text-xs text-slate-400">
+            Tombol kirim aktif setelah semua centang di atas hijau dan pernyataan SPJ dicentang.
+          </p>
+        )}
         {notice && <p className="mt-3 text-xs text-slate-500">{notice}</p>}
       </section>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { notifyOps } from "@/lib/receiptScan";
 import RabEditor, { newRabItem, toRabRows } from "@/components/RabEditor";
@@ -384,8 +384,30 @@ export default function NewCashAdvancePage() {
           </Field>
         </div>
 
+        {fundingSource && (
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            {fundingSource === "program" &&
+              "Dana dari campaign yang sudah terdaftar di sistem. Anda wajib mencantumkan ID campaign di bawah ini."}
+            {fundingSource === "program_lainnya" &&
+              "Kegiatan program di luar campaign terdaftar — tidak perlu ID campaign."}
+            {fundingSource === "marketing_operasional" &&
+              "Dana rutin non-program untuk kebutuhan pemasaran atau operasional harian."}
+          </p>
+        )}
+
         {fundingSource === "program" && (
-          <Field label="ID campaign / dana program" required htmlFor="program-ref">
+          <Field
+            label="ID campaign / dana program"
+            required
+            htmlFor="program-ref"
+            helper={
+              <p className="mt-2 text-xs text-slate-500">
+                ID campaign tertera di halaman detail campaign (contoh:{" "}
+                <span className="font-mono">CMP-2026-014</span>). Tidak tahu ID-nya? Tuliskan saja
+                nama dananya, mis. &quot;Dana Beasiswa Semester Ganjil&quot;.
+              </p>
+            }
+          >
             <input
               id="program-ref"
               type="text"
@@ -405,6 +427,14 @@ export default function NewCashAdvancePage() {
             </h2>
             <span className="text-xs text-slate-500">Nominal pengajuan mengikuti total RAB</span>
           </div>
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-3 text-xs leading-relaxed text-sky-800">
+            <Info size={16} className="mt-0.5 shrink-0" />
+            <p>
+              <strong>Tidak ada kolom nominal terpisah.</strong> Nominal pengajuan dihitung otomatis
+              dari total RAB di bawah — satu baris per jenis pengeluaran, lalu sistem
+              menjumlahkannya untuk Anda ({formatCurrency(total)}).
+            </p>
+          </div>
           <RabEditor
             items={rabItems}
             onItemsChange={setRabItems}
@@ -420,8 +450,15 @@ export default function NewCashAdvancePage() {
             required
             htmlFor="fund-date"
             helper={
-              fundUsageDate && (
-                <p className="mt-2 text-xs text-slate-400">{formatWeekdayDate(fundUsageDate)}</p>
+              fundUsageDate ? (
+                <p className="mt-2 text-xs text-slate-400">
+                  {formatWeekdayDate(fundUsageDate)} — paling cepat hari ini, supaya tim punya
+                  waktu memproses pencairan.
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-slate-400">
+                  Tanggal dana minimal harus dipakai — bukan tanggal pengajuan ini.
+                </p>
               )
             }
           >
@@ -429,6 +466,7 @@ export default function NewCashAdvancePage() {
               id="fund-date"
               type="date"
               required
+              min={new Date().toISOString().slice(0, 10)}
               value={fundUsageDate}
               onChange={(e) => setFundUsageDate(e.target.value)}
               className={inputCls}

@@ -134,7 +134,7 @@ export function shortName(name = "") {
 }
 
 export const STATUS_LABEL = {
-  pending: "Menunggu",
+  pending: "Menunggu Persetujuan",
   approved: "Disetujui",
   rejected: "Ditolak",
   closed: "Selesai",

@@ -124,6 +124,11 @@ export default function RabEditor({
         )}
       </div>
 
+      <p className="text-xs text-slate-500">
+        Total per baris = Jumlah × Frekuensi × Harga satuan. Contoh: 2 box × 3 kali × Rp 25.000 ={" "}
+        Rp 150.000.
+      </p>
+
       {items.map((item, index) => (
         <div
           key={item._key}
@@ -142,7 +147,11 @@ export default function RabEditor({
             />
             <button
               type="button"
-              onClick={() => onItemsChange(items.filter((it) => it._key !== item._key))}
+              onClick={() =>
+                items.length > 1
+                  ? onItemsChange(items.filter((it) => it._key !== item._key))
+                  : onItemsChange([newRabItem()]) // kosongkan isi, jangan hapus baris terakhir
+              }
               className="shrink-0 p-2 text-slate-400 hover:text-rose-600"
               aria-label={`Hapus baris ${index + 1}`}
             >
@@ -156,6 +165,7 @@ export default function RabEditor({
                 type="number"
                 min="0"
                 step="any"
+                placeholder="2"
                 value={item.quantity}
                 onChange={(e) => updateItem(item._key, { quantity: e.target.value })}
                 className={`${inputClass} mt-1 text-center`}
@@ -177,6 +187,7 @@ export default function RabEditor({
                 type="number"
                 min="0"
                 step="any"
+                placeholder="3"
                 value={item.frequency}
                 onChange={(e) => updateItem(item._key, { frequency: e.target.value })}
                 className={`${inputClass} mt-1 text-center`}
