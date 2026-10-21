@@ -199,8 +199,8 @@ export default function ProfileForm({
   async function submitSetup(e) {
     e?.preventDefault();
     setAuthError("");
-    if (!code.trim()) {
-      setAuthError("Masukkan kode dari email.");
+    if (!/^\d{6,10}$/.test(code.trim())) {
+      setAuthError("Kode dari email berupa 6 angka. Periksa kembali kode Anda.");
       return;
     }
     if (newPassword.length < 8) {

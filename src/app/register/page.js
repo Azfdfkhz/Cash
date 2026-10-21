@@ -82,7 +82,7 @@ export default function RegisterPage() {
           <SideHeadline>
             Buat akun
             <br />
-            CashAdvance.
+            Cash Advance.
           </SideHeadline>
           <p className="mt-6 text-lg text-slate-300">
             Daftar dengan email perusahaan Anda.
@@ -95,7 +95,7 @@ export default function RegisterPage() {
         <>
           Buat akun
           <br />
-          CashAdvance
+          Cash Advance
         </>
       }
       subtitle="Daftar dengan email perusahaan Anda."

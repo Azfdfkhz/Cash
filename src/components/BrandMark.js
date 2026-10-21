@@ -3,7 +3,8 @@ import Image from "next/image";
 // Logo kotak gelap (mark Sharing Happiness) + nama aplikasi.
 // Dipakai di sidebar desktop & top bar mobile (Beranda, Profil, dst.).
 // Ukuran mengikuti Figma: desktop 34px / radius 10, mobile 40px / radius 12.
-export default function BrandMark({ size = "md" }) {
+// `label`: teks nama aplikasi (sidebar desktop memakai singkatan "CA & RE").
+export default function BrandMark({ size = "md", label = "Cash Advance" }) {
   const lg = size === "lg";
   return (
     <div className="flex items-center gap-3">
@@ -26,7 +27,7 @@ export default function BrandMark({ size = "md" }) {
           lg ? "text-xl" : "text-xl"
         }`}
       >
-        CashAdvance
+        {label}
       </span>
     </div>
   );

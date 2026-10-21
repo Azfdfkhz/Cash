@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Info } from "lucide-react";
 import BankInput from "@/components/BankInput";
 import { Field, inputCls, maskedAccount } from "@/components/request/fields";
+import { maskAccountNumber } from "@/lib/utils";
 
 // Rekening tujuan transfer. Kalau rekening dari profil sudah lengkap, tampil
 // ringkas (BCA ••• 8821, a.n. ...) dan bisa diubah lewat "Ubah". Begitu
@@ -20,6 +21,11 @@ export default function BankAccountField({
 }) {
   const [editing, setEditing] = useState(false);
   const [touched, setTouched] = useState(false);
+  // Nomor rekening dari profil tidak pernah ditampilkan utuh di sini: selama
+  // pengguna belum mengetik nomor baru, kolom dikosongkan dan nomor lama hanya
+  // tampil tersamar di placeholder (nilainya tetap dipakai saat mengirim).
+  const [typedNumber, setTypedNumber] = useState(false);
+  const keepExisting = !typedNumber && Boolean(accountNumber);
   const complete = Boolean(bankName && accountNumber && accountHolder.trim());
   const showFields = editing || touched || !complete;
 
@@ -72,15 +78,21 @@ export default function BankAccountField({
       <Field label="Nomor rekening" required>
         <input
           type="text"
-          required
+          required={!keepExisting}
           inputMode="numeric"
-          value={accountNumber}
+          autoComplete="off"
+          value={keepExisting ? "" : accountNumber}
           onChange={(e) => {
             setTouched(true);
+            setTypedNumber(true);
             onAccountNumber(e.target.value.replace(/\D/g, ""));
           }}
           className={inputCls}
-          placeholder="Nomor rekening penerima"
+          placeholder={
+            keepExisting
+              ? `${maskAccountNumber(accountNumber)} (ketik untuk mengganti)`
+              : "Nomor rekening penerima"
+          }
         />
       </Field>
       <Field

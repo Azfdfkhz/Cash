@@ -116,7 +116,7 @@ export function parseRabCsv(text) {
   const rows = parseCsv(text);
   const headerIndex = rows.findIndex((r) => r.some((c) => norm(c) === "uraian"));
   if (headerIndex === -1) {
-    throw new Error('Kolom "Uraian" tidak ditemukan di spreadsheet.');
+    throw new Error("Isi RAB tidak terbaca. Gunakan template RAB dan jangan ubah nama kolom.");
   }
 
   const header = rows[headerIndex].map(norm);
@@ -167,7 +167,7 @@ export function parseRabCsv(text) {
   }
 
   if (!items.length) {
-    throw new Error("Tidak ada baris RAB yang terbaca dari spreadsheet.");
+    throw new Error("Tidak ada baris RAB yang terbaca. Isi minimal satu baris Uraian.");
   }
   return { title, items };
 }

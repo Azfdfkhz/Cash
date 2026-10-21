@@ -63,12 +63,12 @@ export default function RabEditor({
   async function handleImport() {
     setImportError("");
     if (!sourceUrl?.trim()) {
-      setImportError("Masukkan link Google Spreadsheet RAB.");
+      setImportError("Masukkan link RAB.");
       return;
     }
     if (
       items.some((it) => it.description) &&
-      !window.confirm("Ganti semua baris RAB dengan isi spreadsheet?")
+      !window.confirm("Ganti semua baris RAB dengan isi link ini?")
     ) {
       return;
     }
@@ -84,7 +84,7 @@ export default function RabEditor({
       onItemsChange(data.items.map((it) => newRabItem(it)));
       onImported?.(data);
     } catch (err) {
-      setImportError(err.message || "Gagal import spreadsheet.");
+      setImportError(err.message || "Gagal mengimpor RAB. Periksa link Anda.");
     } finally {
       setImporting(false);
     }

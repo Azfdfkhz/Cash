@@ -46,14 +46,14 @@ export async function POST(request) {
   }
 
   if (!(await checkRateLimit(supabase, "rab_import", { max: 20, windowSeconds: 600 }))) {
-    return tooManyRequests("Terlalu sering mengimpor spreadsheet. Coba lagi beberapa menit lagi.", 120);
+    return tooManyRequests("Terlalu sering mengimpor RAB. Coba lagi beberapa menit lagi.", 120);
   }
 
   const { url } = await request.json().catch(() => ({}));
   const sheet = parseSheetUrl(url);
   if (!sheet) {
     return NextResponse.json(
-      { error: "Link Google Spreadsheet tidak valid." },
+      { error: "Link tidak valid. Periksa kembali link RAB Anda." },
       { status: 400 }
     );
   }
@@ -63,14 +63,14 @@ export async function POST(request) {
     csv = await fetchPublicCsv(sheet);
     if (csv == null) csv = await fetchViaServiceAccount(sheet);
   } catch (err) {
-    console.error("RAB spreadsheet fetch failed", err);
+    console.error("RAB import fetch failed", err);
   }
 
   if (csv == null) {
-    const sa = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    // Jangan menyebut email service account / cara kerja impor ke pengguna.
     return NextResponse.json(
       {
-        error: `Spreadsheet tidak bisa dibuka. Ubah akses jadi "Siapa saja yang memiliki link", atau share ke ${sa || "service account aplikasi"}.`,
+        error: 'Link tidak bisa dibuka. Pastikan akses link diatur ke "Siapa saja yang memiliki link".',
       },
       { status: 400 }
     );

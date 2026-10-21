@@ -29,7 +29,7 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-slate-200 bg-white">
       <div className="border-b border-slate-100 px-6 pb-5 pt-7">
-        <BrandMark size="sm" />
+        <BrandMark size="sm" label="CA & RE" />
       </div>
 
       <nav className="flex-1 px-3 py-5">
