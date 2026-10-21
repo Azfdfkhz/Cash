@@ -40,7 +40,7 @@ const STATUS_TILE = {
 
 function KindTag({ kind }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
       {KIND_LABEL[kind] ?? "Cash Advance"}
     </p>
   );
@@ -50,7 +50,7 @@ function Metric({ value, label, tour }) {
   return (
     <div data-tour={tour} className="min-w-0 flex-1">
       <p className="break-words text-lg font-bold leading-tight text-slate-900">{value}</p>
-      <p className="text-xs font-medium text-slate-400">{label}</p>
+      <p className="text-xs font-medium text-slate-500">{label}</p>
     </div>
   );
 }
@@ -156,7 +156,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       <p className="line-clamp-2 text-sm font-bold leading-snug text-slate-900">
                         {ca.purpose}
                       </p>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-slate-500">
                         {formatDateShort(ca.created_at)}
                       </p>
                     </div>

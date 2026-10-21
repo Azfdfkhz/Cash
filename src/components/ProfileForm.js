@@ -28,7 +28,7 @@ function Row({ icon: Icon, label, children, trailing }) {
         <Icon size={20} strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
-        <span className="block text-xs text-slate-400">{label}</span>
+        <span className="block text-xs text-slate-500">{label}</span>
         {children}
       </div>
       {trailing}

@@ -46,7 +46,7 @@ export default function ResubmitPanel({ cashAdvanceId, kind }) {
         </p>
       </div>
       {error && (
-        <div className="text-sm text-rose-700 bg-white border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-700 bg-white border border-rose-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}

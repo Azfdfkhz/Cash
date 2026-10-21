@@ -12,97 +12,115 @@ export function normalizeHelpRole(role) {
   return role === "operational" ? "operational" : "requester";
 }
 
-// Ringkasan alur per peran (dipakai di Pusat Bantuan dan onboarding).
+// Ringkasan alur per peran (dipakai di Pusat Bantuan).
+// Standar keterbacaan v1.2.0: setiap kalimat penjelasan maksimal 80 karakter
+// (dijaga oleh tests/help.test.mjs). Penjelasan panjang dipecah jadi poin.
+export const HELP_MAX_CHARS = 80;
+
 export const ROLE_FLOW = {
   requester: [
     {
       title: "Ajukan dana",
-      body: "Pilih Ajukan, lalu pilih Cash Advance (dana di muka) atau Reimbursement (penggantian uang yang sudah Anda keluarkan). Isi data, lampirkan rincian, lalu kirim.",
+      body: "Pilih Ajukan, lalu Cash Advance atau Reimbursement. Isi data dan kirim.",
     },
     {
       title: "Tunggu persetujuan",
-      body: "Tim Operasional meninjau pengajuan Anda. Selama ditinjau, pengajuan tidak bisa diubah. Bila ditolak, baca catatannya, perbaiki, lalu ajukan ulang.",
+      body: "Tim Operasional meninjau. Jika ditolak, baca catatan lalu ajukan ulang.",
     },
     {
       title: "Terima dana",
-      body: "Setelah disetujui, Tim Operasional mentransfer dana ke rekening Anda dan mengunggah bukti transfer. Anda akan menerima notifikasi bila Telegram sudah diisi di Profil.",
+      body: "Dana ditransfer ke rekening Anda, lengkap dengan bukti transfer.",
     },
     {
       title: "Unggah bukti & kembalikan sisa",
-      body: "Untuk Cash Advance, unggah kwitansi setiap pengeluaran dan kembalikan sisa dana bila ada. Pengajuan selesai setelah semuanya dikonfirmasi.",
+      body: "Unggah kwitansi tiap pengeluaran dan kembalikan sisa dana bila ada.",
     },
   ],
   operational: [
     {
       title: "Tinjau pengajuan",
-      body: "Buka Persetujuan, periksa nominal, rincian, dan dokumen. Setujui, atau tolak dengan catatan yang jelas (catatan wajib saat menolak).",
+      body: "Periksa nominal dan dokumen. Penolakan wajib disertai catatan.",
     },
     {
       title: "Cairkan dana",
-      body: "Untuk pengajuan yang disetujui, transfer ke rekening requester lalu unggah bukti transfer. Anda tidak dapat mencairkan pengajuan milik sendiri.",
+      body: "Transfer ke rekening requester, lalu unggah bukti transfer.",
     },
     {
       title: "Pantau bukti & SPJ",
-      body: "Pantau kwitansi yang masuk dan sisa saldo tiap Cash Advance. Cek pengajuan yang menunggu pelaporan.",
+      body: "Pantau kwitansi yang masuk dan sisa saldo tiap Cash Advance.",
     },
     {
       title: "Konfirmasi & tutup",
-      body: "Konfirmasi pengembalian sisa saldo setelah dana masuk, catat penggantian bila pengeluaran melebihi dana, lalu unduh laporan penutupan.",
+      body: "Konfirmasi pengembalian, catat penggantian, lalu unduh laporan.",
     },
   ],
 };
 
-// Topik panduan. `common` berlaku untuk semua peran; `requester` / `operational`
-// berisi langkah khusus peran tersebut.
+// Topik panduan. `common` = satu kalimat inti untuk semua peran, `details` =
+// poin tambahan untuk semua peran, `requester` / `operational` = langkah
+// khusus peran tersebut. Semua teks maksimal 80 karakter.
 export const HELP_TOPICS = [
   {
     id: "alur-cash-advance",
     title: "Alur Cash Advance",
     summary: "Dana diberikan di muka, dipertanggungjawabkan sesudahnya.",
-    common:
-      "Cash Advance (CA) adalah dana kegiatan yang diberikan lebih dulu, lalu dipertanggungjawabkan dengan kwitansi. Alurnya: pengajuan → persetujuan → pencairan → unggah kwitansi (SPJ) → pengembalian sisa saldo bila ada → selesai.",
+    common: "Cash Advance adalah dana kegiatan yang diberikan lebih dulu.",
+    details: [
+      "Alur: ajukan, disetujui, dicairkan, unggah kwitansi, selesai.",
+      "Sisa dana yang tidak terpakai dikembalikan sebelum pengajuan selesai.",
+    ],
     requester: [
       "Pilih Ajukan, lalu pilih Cash Advance.",
-      "Isi keperluan, sumber dana, tanggal dana dibutuhkan, rekening tujuan, dan rincian anggaran (RAB). Nominal pengajuan mengikuti total RAB.",
-      "Centang pernyataan kebijakan SPJ, lalu kirim. Anda bisa menyimpan sebagai draft dan melanjutkannya nanti.",
-      "Pantau statusnya di Beranda. Kartu pengajuan menampilkan langkah berikutnya.",
+      "Isi keperluan, sumber dana, rekening tujuan, dan RAB.",
+      "Nominal pengajuan mengikuti total RAB.",
+      "Centang kebijakan SPJ, lalu kirim. Draft bisa dilanjutkan nanti.",
+      "Pantau status di Beranda. Kartu menunjukkan langkah berikutnya.",
     ],
     operational: [
-      "Pengajuan baru muncul di Persetujuan (tab Cash Advance).",
-      "Setelah disetujui dan dicairkan, pantau kwitansi dan sisa saldo sampai pengajuan selesai.",
+      "Pengajuan baru muncul di Persetujuan, tab Cash Advance.",
+      "Setelah dicairkan, pantau kwitansi dan sisa saldo sampai selesai.",
     ],
   },
   {
     id: "alur-reimbursement",
     title: "Alur Reimbursement",
     summary: "Uang dikeluarkan lebih dulu, lalu diganti.",
-    common:
-      "Reimbursement adalah penggantian uang yang sudah Anda bayarkan sendiri. Kwitansi dilampirkan saat mengajukan, sehingga setelah Tim Operasional mentransfer penggantiannya, pengajuan langsung selesai. Tidak ada pengembalian sisa saldo.",
+    common: "Reimbursement adalah penggantian uang yang Anda bayarkan sendiri.",
+    details: [
+      "Kwitansi dilampirkan saat mengajukan.",
+      "Setelah penggantian ditransfer, pengajuan langsung selesai.",
+      "Tidak ada pengembalian sisa saldo.",
+    ],
     requester: [
       "Pilih Ajukan, lalu pilih Reimbursement.",
-      "Tambahkan kwitansi beserta kategorinya. Total reimbursement dihitung dari kwitansi tersebut.",
-      "Centang pernyataan bahwa kwitansi asli dan sesuai, lalu kirim.",
-      "Setelah disetujui dan ditransfer, pengajuan berstatus Selesai.",
+      "Tambahkan kwitansi beserta kategorinya.",
+      "Total reimbursement dihitung dari kwitansi tersebut.",
+      "Centang pernyataan kwitansi asli dan sesuai, lalu kirim.",
+      "Setelah ditransfer, status pengajuan menjadi Selesai.",
     ],
     operational: [
-      "Periksa kecocokan kwitansi dengan nominal pengajuan sebelum menyetujui.",
-      "Setelah disetujui, transfer dan unggah bukti transfer. Pengajuan otomatis selesai.",
+      "Cocokkan kwitansi dengan nominal sebelum menyetujui.",
+      "Setelah disetujui, transfer dan unggah bukti transfer.",
+      "Pengajuan otomatis selesai setelah bukti transfer terunggah.",
     ],
   },
   {
     id: "persetujuan",
     title: "Persetujuan",
     summary: "Siapa yang memutuskan dan apa yang terjadi sesudahnya.",
-    common:
-      "Setiap pengajuan ditinjau oleh Tim Operasional. Status yang mungkin: Belum Disetujui, Disetujui, Ditolak, dan Selesai. Seseorang tidak dapat menyetujui pengajuannya sendiri.",
+    common: "Setiap pengajuan ditinjau oleh Tim Operasional.",
+    details: [
+      "Status: Belum Disetujui, Disetujui, Ditolak, atau Selesai.",
+      "Seseorang tidak dapat menyetujui pengajuannya sendiri.",
+    ],
     requester: [
-      "Selama berstatus Belum Disetujui, pengajuan terkunci dan tidak bisa diedit.",
+      "Pengajuan Belum Disetujui terkunci dan tidak bisa diedit.",
       "Jika Ditolak, buka pengajuan dan baca catatan penolakan.",
-      "Perbaiki RAB (Cash Advance) atau kwitansi (Reimbursement) sesuai catatan, lalu tekan Ajukan Ulang.",
+      "Perbaiki RAB atau kwitansi sesuai catatan, lalu Ajukan Ulang.",
     ],
     operational: [
-      "Buka pengajuan dari daftar Persetujuan, periksa isinya, lalu pilih Setujui atau Tolak.",
-      "Catatan wajib diisi saat menolak, supaya requester tahu apa yang perlu diperbaiki.",
+      "Buka pengajuan dari Persetujuan, periksa, lalu Setujui atau Tolak.",
+      "Catatan wajib diisi saat menolak.",
       "Anda tidak dapat menyetujui pengajuan milik sendiri.",
     ],
   },
@@ -110,86 +128,98 @@ export const HELP_TOPICS = [
     id: "pencairan",
     title: "Pencairan dana",
     summary: "Transfer dari Tim Operasional ke rekening requester.",
-    common:
-      "Pencairan adalah transfer dana ke rekening requester setelah pengajuan disetujui. Bukti transfer diunggah sebagai catatan.",
+    common: "Pencairan adalah transfer dana setelah pengajuan disetujui.",
+    details: ["Bukti transfer diunggah sebagai catatan."],
     requester: [
       "Pastikan rekening di pengajuan sudah benar sebelum mengirim.",
-      "Status berubah menjadi menunggu pencairan sampai Tim Operasional mentransfer.",
-      "Isi Telegram Chat ID di Profil bila ingin mendapat notifikasi saat dana cair.",
+      "Status menunggu pencairan sampai Tim Operasional mentransfer.",
+      "Isi Telegram Chat ID di Profil untuk notifikasi dana cair.",
     ],
     operational: [
-      "Buka pengajuan yang sudah disetujui, salin data rekening dengan tombol Salin, lalu transfer lewat bank.",
-      "Unggah bukti transfer. Pencairan hanya dapat dicatat sekali dan tidak untuk pengajuan milik sendiri.",
+      "Buka pengajuan disetujui, lalu salin rekening dengan tombol Salin.",
+      "Transfer lewat bank, lalu unggah bukti transfer.",
+      "Pencairan hanya dicatat sekali dan bukan untuk pengajuan sendiri.",
     ],
   },
   {
     id: "bukti-transaksi",
     title: "Unggah bukti transaksi",
     summary: "Kwitansi dan foto bukti pengeluaran.",
-    common:
-      "Bukti transaksi (kwitansi, nota, struk) membuktikan bahwa dana dipakai sesuai tujuan. Foto atau berkas disimpan di Google Drive organisasi dan ditautkan ke pengajuan.",
+    common: "Bukti transaksi membuktikan dana dipakai sesuai tujuan.",
+    details: [
+      "Contohnya kwitansi, nota, dan struk.",
+      "Berkas disimpan di Google Drive dan ditautkan ke pengajuan.",
+    ],
     requester: [
-      "Buka pengajuan Cash Advance yang sudah cair, lalu pilih untuk mencatat kwitansi.",
-      "Foto kwitansi dengan kamera atau pilih dari galeri. Aplikasi membantu membaca nominal, vendor, dan tanggal secara otomatis.",
-      "Periksa hasil bacaan otomatis. Perbaiki bila ada yang salah sebelum menyimpan.",
-      "Format yang diterima: JPG, PNG, WebP, HEIC, atau PDF. Ukuran berkas dibatasi 8 MB.",
+      "Buka Cash Advance yang sudah cair, lalu pilih Catat kwitansi.",
+      "Foto kwitansi atau pilih dari galeri.",
+      "Nominal, vendor, dan tanggal dibaca otomatis.",
+      "Periksa hasilnya dan perbaiki bila salah sebelum menyimpan.",
+      "Format: JPG, PNG, WebP, HEIC, atau PDF. Maksimal 8 MB.",
     ],
     operational: [
-      "Periksa kwitansi yang masuk di halaman detail pengajuan.",
-      "Bila ada pos anggaran yang belum ditandai, hubungi requester untuk melengkapinya.",
+      "Periksa kwitansi yang masuk di detail pengajuan.",
+      "Jika ada pos anggaran belum ditandai, minta requester melengkapi.",
     ],
   },
   {
     id: "spj",
     title: "SPJ (pertanggungjawaban)",
     summary: "Laporan penggunaan dana beserta buktinya.",
-    common:
-      "SPJ adalah laporan pertanggungjawaban penggunaan dana: kumpulan kwitansi yang dibandingkan dengan anggaran (RAB). Di aplikasi ini SPJ terbentuk dari kwitansi yang Anda unggah.",
+    common: "SPJ adalah laporan pertanggungjawaban penggunaan dana.",
+    details: [
+      "SPJ terbentuk dari kwitansi yang Anda unggah.",
+      "Kwitansi dibandingkan dengan anggaran (RAB).",
+    ],
     requester: [
-      "Pada formulir Cash Advance, Anda menyetujui kebijakan SPJ: kwitansi dan bukti pengeluaran diunggah maksimal 7 hari kalender setelah dana cair.",
-      "Tenggat tiap pengajuan juga tampil di detail pengajuan (Tenggat LPJ / SPJ).",
-      "Tandai tiap kwitansi pada pos RAB yang sesuai supaya perbandingan RAB dan realisasi akurat.",
+      "Unggah kwitansi maksimal 7 hari kalender setelah dana cair.",
+      "Tenggat tampil di detail pengajuan (Tenggat LPJ / SPJ).",
+      "Tandai tiap kwitansi pada pos RAB yang sesuai.",
     ],
     operational: [
       "Dashboard menampilkan jumlah pengajuan yang Perlu SPJ.",
-      "Gunakan perbandingan RAB dan realisasi di detail pengajuan untuk memeriksa pengeluaran.",
+      "Pakai perbandingan RAB dan realisasi untuk memeriksa pengeluaran.",
     ],
   },
   {
     id: "pengembalian",
     title: "Pengembalian sisa saldo",
     summary: "Dana yang tidak terpakai dikembalikan.",
-    common:
-      "Sisa saldo = dana yang diterima dikurangi total kwitansi. Bila masih ada sisa, dana itu dikembalikan ke rekening organisasi dan dikonfirmasi Tim Operasional. Pengajuan selesai setelah pengembalian yang dikonfirmasi menutup seluruh sisa.",
+    common: "Sisa saldo adalah dana diterima dikurangi total kwitansi.",
+    details: [
+      "Sisa dikembalikan ke rekening organisasi.",
+      "Pengajuan selesai setelah Tim Operasional mengonfirmasi.",
+    ],
     requester: [
-      "Buka pengajuan, lihat jumlah sisa saldo, dan transfer ke salah satu rekening organisasi yang tertera.",
-      "Catat pengembalian: isi nominal dan unggah bukti transfer (maks. 5 MB).",
-      "Status pengembalian Menunggu konfirmasi sampai Tim Operasional memverifikasi. Anda dapat membatalkannya selama belum dikonfirmasi.",
+      "Buka pengajuan, lihat sisa saldo, lalu transfer ke rekening tertera.",
+      "Catat pengembalian: isi nominal dan unggah bukti (maks. 5 MB).",
+      "Status Menunggu sampai diverifikasi. Bisa dibatalkan sebelum itu.",
     ],
     operational: [
-      "Periksa bukti transfer dan pastikan dana sudah masuk, lalu konfirmasi pengembalian.",
-      "Bila sisa saldo nol, pengajuan dapat ditutup langsung. Bila pengeluaran melebihi dana, catat penggantian kekurangan.",
-      "Setelah selesai, unduh laporan penutupan (PDF) atau simpan ke Drive.",
+      "Pastikan dana sudah masuk, lalu konfirmasi pengembalian.",
+      "Sisa saldo nol: pengajuan bisa ditutup langsung.",
+      "Pengeluaran melebihi dana: catat penggantian kekurangan.",
+      "Setelah selesai, unduh laporan penutupan atau simpan ke Drive.",
     ],
   },
 ];
 
-// Glosarium: bahasa sederhana.
+// Glosarium: bahasa sederhana, setiap penjelasan maksimal 80 karakter.
 export const GLOSSARY = [
-  { term: "Cash Advance (CA)", meaning: "Dana kegiatan yang diberikan di muka, lalu dipertanggungjawabkan dengan kwitansi." },
-  { term: "Reimbursement", meaning: "Penggantian uang yang sudah Anda bayarkan sendiri, berdasarkan kwitansi." },
-  { term: "RAB", meaning: "Rencana Anggaran Biaya: daftar rencana pengeluaran beserta nominalnya." },
-  { term: "Realisasi", meaning: "Pengeluaran yang benar-benar terjadi, dibuktikan dengan kwitansi." },
-  { term: "Kwitansi / bukti transaksi", meaning: "Nota, struk, atau tanda terima yang membuktikan sebuah pembayaran." },
-  { term: "SPJ / LPJ", meaning: "Surat/Laporan Pertanggungjawaban: laporan cara dana dipakai, lengkap dengan bukti." },
-  { term: "Pencairan", meaning: "Transfer dana ke rekening requester setelah pengajuan disetujui." },
-  { term: "Sisa saldo", meaning: "Dana diterima dikurangi total kwitansi. Bila positif, harus dikembalikan." },
-  { term: "Pengembalian", meaning: "Transfer sisa dana yang tidak terpakai ke rekening organisasi." },
-  { term: "Konfirmasi", meaning: "Pemeriksaan Tim Operasional bahwa transfer atau pengembalian benar-benar diterima." },
-  { term: "Bukti transfer", meaning: "Tangkapan layar atau struk dari bank yang menunjukkan transfer berhasil." },
-  { term: "Ajukan ulang", meaning: "Mengirim kembali pengajuan yang ditolak setelah diperbaiki sesuai catatan." },
-  { term: "Draft", meaning: "Pengajuan yang disimpan di perangkat Anda dan belum dikirim." },
-  { term: "Laporan penutupan", meaning: "Dokumen PDF ringkasan pengajuan yang sudah selesai." },
+  { term: "Cash Advance (CA)", meaning: "Dana kegiatan diberikan di muka, lalu dipertanggungjawabkan." },
+  { term: "Reimbursement", meaning: "Penggantian uang yang sudah Anda bayarkan sendiri." },
+  { term: "RAB", meaning: "Rencana Anggaran Biaya: daftar rencana pengeluaran dan nominalnya." },
+  { term: "Realisasi", meaning: "Pengeluaran yang benar-benar terjadi, dibuktikan kwitansi." },
+  { term: "Kwitansi / bukti transaksi", meaning: "Nota, struk, atau tanda terima yang membuktikan pembayaran." },
+  { term: "SPJ / LPJ", meaning: "Laporan pertanggungjawaban: cara dana dipakai, lengkap dengan bukti." },
+  { term: "Pencairan", meaning: "Transfer dana ke rekening requester setelah disetujui." },
+  { term: "Sisa saldo", meaning: "Dana diterima dikurangi total kwitansi. Jika positif, dikembalikan." },
+  { term: "Pengembalian", meaning: "Transfer sisa dana tak terpakai ke rekening organisasi." },
+  { term: "Konfirmasi", meaning: "Pemeriksaan Tim Operasional bahwa transfer benar-benar diterima." },
+  { term: "Bukti transfer", meaning: "Tangkapan layar atau struk bank yang menunjukkan transfer berhasil." },
+  { term: "Ajukan ulang", meaning: "Mengirim kembali pengajuan ditolak setelah diperbaiki." },
+  { term: "Draft", meaning: "Pengajuan tersimpan di perangkat Anda yang belum dikirim." },
+  { term: "Laporan penutupan", meaning: "PDF ringkasan pengajuan yang sudah selesai." },
   { term: "jt", meaning: "Singkatan juta. Rp 1,85 jt berarti sekitar Rp 1.850.000." },
   { term: "miliar", meaning: "Seribu juta. Rp 17 miliar berarti sekitar Rp 17.000.000.000." },
 ];

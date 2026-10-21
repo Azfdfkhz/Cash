@@ -11,6 +11,7 @@ import DisbursementSection from "@/components/DisbursementSection";
 import ReturnsSection from "@/components/ReturnsSection";
 import ReceiptCard from "@/components/ReceiptCard";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
+import ActionToast from "@/components/ActionToast";
 import { flattenReceiptLines } from "@/lib/rab";
 import {
   DetailTabSkeleton,
@@ -76,10 +77,14 @@ export default function CashAdvanceDetailPopup({
   inline = false,
   headerActions = null,
   proofFile = null,
+  // Bila diberikan, "Scan Kwitansi" diserahkan ke pemilik state modal (detail
+  // ditutup, kwitansi dibuka). Tanpa ini (panel inline), pop up dibuka di sini.
+  onOpenScan,
 }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [scanOpen, setScanOpen] = useState(false);
+  const [notice, setNotice] = useState(null);
   const [tab, setTab] = useState("ringkasan");
   const scrollRef = useRef(null);
   const disburseRef = useRef(null);
@@ -312,10 +317,10 @@ export default function CashAdvanceDetailPopup({
                     </p>
                   </div>
                   {!isReimbursement && (
-                    <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 ring-1 ring-slate-200">
+                    <div className="flex items-center gap-2 border-l border-slate-300 pl-3">
                       <Calendar size={14} className="text-brand" />
                       <div>
-                        <p className="text-[10px] font-medium text-slate-500">Tenggat LPJ / SPJ</p>
+                        <p className="text-[11px] font-medium text-slate-500">Tenggat LPJ / SPJ</p>
                         <p className="text-xs font-bold text-slate-900">{formatLpjDeadline(c)}</p>
                       </div>
                     </div>
@@ -487,7 +492,7 @@ export default function CashAdvanceDetailPopup({
               {receipts.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
                   <p className="text-[13px] font-medium text-slate-600">Belum ada kwitansi</p>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     Kwitansi dan bukti transfer yang dicatat akan muncul di sini.
                   </p>
                 </div>
@@ -551,7 +556,7 @@ export default function CashAdvanceDetailPopup({
             {canScan && (
               <button
                 type="button"
-                onClick={() => setScanOpen(true)}
+                onClick={() => (onOpenScan ? onOpenScan() : setScanOpen(true))}
                 className="inline-flex items-center gap-2 rounded-full bg-[#0f172a] px-5 py-2 text-xs font-bold text-white hover:bg-slate-800"
               >
                 <Camera size={14} />
@@ -562,7 +567,17 @@ export default function CashAdvanceDetailPopup({
         )}
       </div>
     </div>
-    {scanOpen && <ScanReceiptPopup ca={c} onClose={() => setScanOpen(false)} />}
+    {scanOpen && (
+      <ScanReceiptPopup
+        ca={c}
+        onClose={() => setScanOpen(false)}
+        onSaved={() => {
+          setScanOpen(false);
+          setNotice({ type: "success", text: "Kwitansi berhasil disimpan." });
+        }}
+      />
+    )}
+    <ActionToast notice={notice} onDismiss={() => setNotice(null)} />
     </>
   );
 }

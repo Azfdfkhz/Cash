@@ -53,8 +53,8 @@ function Steps({ items }) {
             {i + 1}
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900">{s.title}</p>
-            <p className="mt-0.5 text-sm leading-relaxed text-slate-600">{s.body}</p>
+            <p className="text-base font-semibold text-slate-900">{s.title}</p>
+            <p className="mt-0.5 text-base leading-relaxed text-slate-700">{s.body}</p>
           </div>
         </li>
       ))}
@@ -64,6 +64,7 @@ function Steps({ items }) {
 
 function Topic({ topic, role, open, onToggle }) {
   const items = topic[role] ?? [];
+  const roleLabel = HELP_ROLES.find((r) => r.id === role)?.label ?? "";
   const panelId = `topic-${topic.id}`;
   return (
     <div id={topic.id} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white">
@@ -76,25 +77,37 @@ function Topic({ topic, role, open, onToggle }) {
           className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
         >
           <span className="min-w-0">
-            <span className="block text-sm font-bold text-slate-900">{topic.title}</span>
-            <span className="mt-0.5 block text-xs text-slate-500">{topic.summary}</span>
+            <span className="block text-base font-bold text-slate-900">{topic.title}</span>
+            <span className="mt-0.5 block text-sm text-slate-600">{topic.summary}</span>
           </span>
           <ChevronDown
             size={18}
-            className={`shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
             aria-hidden="true"
           />
         </button>
       </h3>
       {open && (
         <div id={panelId} className="space-y-3 border-t border-slate-100 px-5 pb-5 pt-4">
-          <p className="text-sm leading-relaxed text-slate-700">{topic.common}</p>
-          {items.length > 0 && (
-            <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-600 marker:text-slate-400">
-              {items.map((t) => (
+          <p className="text-base font-semibold leading-relaxed text-slate-900">{topic.common}</p>
+          {topic.details?.length > 0 && (
+            <ul className="list-disc space-y-1.5 pl-5 text-base leading-relaxed text-slate-700 marker:text-slate-500">
+              {topic.details.map((t) => (
                 <li key={t}>{t}</li>
               ))}
             </ul>
+          )}
+          {items.length > 0 && (
+            <>
+              <h4 className="pt-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Langkah untuk {roleLabel}
+              </h4>
+              <ol className="list-decimal space-y-1.5 pl-5 text-base leading-relaxed text-slate-700 marker:text-slate-500">
+                {items.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ol>
+            </>
           )}
         </div>
       )}
@@ -119,10 +132,7 @@ export default function HelpCenter({ defaultRole = "requester", canReplayTour = 
     <div className="space-y-6">
       <header className="space-y-3">
         <h1 className="text-2xl font-bold text-slate-900">Pusat bantuan</h1>
-        <p className="text-sm text-slate-600">
-          Panduan alur Cash Advance, reimbursement, persetujuan, pencairan, bukti transaksi, SPJ,
-          dan pengembalian sisa saldo.
-        </p>
+        <p className="text-sm text-slate-700">Panduan alur dana, bukti, dan pengembalian sisa saldo.</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <RoleTabs role={role} onChange={setRole} />
           {canReplayTour && (
@@ -172,32 +182,32 @@ export default function HelpCenter({ defaultRole = "requester", canReplayTour = 
             <Search
               size={15}
               aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
             />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari istilah"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none"
             />
           </label>
         </div>
         {glossary.length === 0 ? (
-          <p className="text-sm text-slate-500">Istilah tidak ditemukan.</p>
+          <p className="text-sm text-slate-600">Istilah tidak ditemukan.</p>
         ) : (
           <dl className="divide-y divide-slate-100">
             {glossary.map((g) => (
               <div key={g.term} className="py-3 sm:grid sm:grid-cols-[14rem_1fr] sm:gap-4">
-                <dt className="text-sm font-semibold text-slate-900">{g.term}</dt>
-                <dd className="mt-0.5 text-sm leading-relaxed text-slate-600 sm:mt-0">{g.meaning}</dd>
+                <dt className="text-base font-semibold text-slate-900">{g.term}</dt>
+                <dd className="mt-0.5 text-base leading-relaxed text-slate-700 sm:mt-0">{g.meaning}</dd>
               </div>
             ))}
           </dl>
         )}
       </section>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         Masih bingung? Hubungi Tim Operasional di organisasi Anda.{" "}
         {!canReplayTour && (
           <Link href="/login" className="font-semibold text-brand hover:underline">

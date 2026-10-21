@@ -108,7 +108,7 @@ function ReportsTableInner({
         <div className="relative">
           <Search
             size={16}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
           />
           <input
             type="search"
@@ -123,7 +123,7 @@ function ReportsTableInner({
               type="button"
               onClick={() => setQuery("")}
               aria-label="Hapus pencarian"
-              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-600"
             >
               <X size={14} />
             </button>
@@ -205,7 +205,7 @@ function ReportsTableInner({
         ) : (
         <div className="space-y-3">
           {rows.length === 0 && (
-            <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
+            <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
               Tidak ada data.
             </p>
           )}
@@ -234,7 +234,7 @@ function ReportsTableInner({
                         {r.vendor || "-"}
                       </p>
                       <p className="truncate text-xs text-slate-500">{r.purpose}</p>
-                      <p className="truncate text-[11px] text-slate-400">
+                      <p className="truncate text-[11px] text-slate-500">
                         {r.kind}
                         {r.category ? ` · ${r.category}` : ""}
                       </p>
@@ -287,7 +287,7 @@ function ReportsTableInner({
             <>
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     Pratinjau kwitansi
                   </p>
                   <p className="truncate text-sm font-bold text-slate-900">
@@ -312,7 +312,7 @@ function ReportsTableInner({
                     {selected.receiptDate ? ` · ${formatDateNumeric(selected.receiptDate)}` : ""}
                   </span>
                 </span>
-                <span className="shrink-0 text-slate-400">Tersimpan di Google Drive</span>
+                <span className="shrink-0 text-slate-500">Tersimpan di Google Drive</span>
               </div>
 
               <div className="bg-slate-50 px-5 pb-5">

@@ -546,7 +546,7 @@ export default function NewReimbursementPage() {
                   <button
                     type="button"
                     onClick={() => removeDraft(d.key)}
-                    className="shrink-0 p-1.5 text-slate-400 hover:text-rose-600"
+                    className="shrink-0 p-1.5 text-slate-500 hover:text-rose-600"
                     aria-label={`Hapus kwitansi ${i + 1}`}
                   >
                     <Trash2 size={17} />

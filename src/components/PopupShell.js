@@ -15,6 +15,7 @@ export default function PopupShell({
   badge,
   subtitle,
   headerRight,
+  footer,
   onClose,
   children,
   maxWidth = "max-w-4xl",
@@ -47,7 +48,7 @@ export default function PopupShell({
           <div className="min-w-0">
             {badge && <div className="flex flex-wrap items-center gap-1.5">{badge}</div>}
             <h3 className="mt-2 break-words text-lg font-bold text-slate-900">{title}</h3>
-            {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+            {subtitle && <p className="mt-0.5 text-xs text-slate-600">{subtitle}</p>}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {headerRight}
@@ -63,6 +64,7 @@ export default function PopupShell({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        {footer && <div className="border-t border-slate-100 px-6 py-3">{footer}</div>}
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ function MenuRow({ href, icon: Icon, title, subtitle, tour }) {
         </span>
         <span className="block text-sm text-slate-500">{subtitle}</span>
       </span>
-      <ChevronRight size={18} className="shrink-0 text-slate-400" />
+      <ChevronRight size={18} className="shrink-0 text-slate-500" />
     </Link>
   );
 }

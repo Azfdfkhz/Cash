@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 
 // Gaya isian untuk form pengajuan (sesuai Figma: radius besar, border tipis).
 export const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
 
 export function Field({ label, required = false, hint, htmlFor, helper, children }) {
   return (
@@ -12,7 +12,7 @@ export function Field({ label, required = false, hint, htmlFor, helper, children
           {label}
           {required && <span className="ml-0.5 text-rose-500">*</span>}
         </label>
-        {hint && <span className="text-xs text-slate-400">{hint}</span>}
+        {hint && <span className="text-xs text-slate-500">{hint}</span>}
       </div>
       {children}
       {helper}

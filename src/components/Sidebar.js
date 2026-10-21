@@ -50,7 +50,7 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
                   <Icon size={20} strokeWidth={1.75} className="shrink-0" />
                   <span>{label}</span>
                   {draft && hasDraft && (
-                    <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                    <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
                       Draft
                     </span>
                   )}

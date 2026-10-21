@@ -429,7 +429,7 @@ export default function NewCashAdvancePage() {
             htmlFor="fund-date"
             helper={
               fundUsageDate && (
-                <p className="mt-2 text-xs text-slate-400">{formatWeekdayDate(fundUsageDate)}</p>
+                <p className="mt-2 text-xs text-slate-500">{formatWeekdayDate(fundUsageDate)}</p>
               )
             }
           >

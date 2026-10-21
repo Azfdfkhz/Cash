@@ -22,6 +22,9 @@ import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import ReturnPopup from "@/components/ReturnPopup";
 import DisbursementSection from "@/components/DisbursementSection";
+import ActionToast from "@/components/ActionToast";
+import { useModalState } from "@/lib/useModalState";
+import { MODAL } from "@/lib/modalState";
 import { toJpegFile } from "@/lib/imageConvert";
 import {
   formatCurrency,
@@ -35,22 +38,18 @@ import {
 } from "@/lib/utils";
 
 export default function CashAdvanceReviewModal(props) {
-  const { isOpen, onClose, ca } = props;
+  const { isOpen, ca } = props;
 
-  // Lock scroll & handle Escape key
+  // Kunci scroll halaman di belakang. Tombol Escape ditangani di dalam
+  // CashAdvanceReviewModalContent karena harus tahu modal mana yang sedang aktif.
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen || !ca) return null;
 
@@ -76,18 +75,20 @@ function CashAdvanceReviewModalContent({
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // Setelah setuju/tolak: modal TIDAK pindah sendiri. Pop up hasil muncul dulu;
-  // pindah ke pengajuan lain hanya jika user memilih "Lanjut".
-  // step: "disburse" (tanya cairkan sekarang/nanti) -> "continue" (tanya lanjut).
-  const [result, setResult] = useState(null);
+  // SATU modal aktif pada satu waktu (lihat lib/modalState.js): detail, catat
+  // kwitansi, kembalikan sisa, dan konfirmasi keputusan. Membuka salah satunya
+  // otomatis menggantikan yang lain, jadi tidak perlu menutup modal lain di
+  // setiap tombol.
+  //
+  // Setelah setuju/tolak: panel tidak pindah sendiri. Modal "decision" muncul
+  // dulu; pindah ke pengajuan lain hanya jika user memilih "Lanjut".
+  // decision.step: "disburse" (tanya cairkan sekarang/nanti) -> "continue" (tanya lanjut).
+  const modals = useModalState(startWithDetail ? { name: MODAL.DETAIL, focus: null } : null);
   const [decidedHere, setDecidedHere] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(startWithDetail);
-  const [detailFocus, setDetailFocus] = useState(null);
-  // Pop up terpisah dari "Lihat Detail": catat kwitansi & kembalikan sisa saldo.
-  const [scanOpen, setScanOpen] = useState(false);
-  const [returnOpen, setReturnOpen] = useState(false);
-  const [askContinueAfterDetail, setAskContinueAfterDetail] = useState(false);
+  // Hasil aksi (berhasil/gagal) yang tampil setelah sebuah modal tertutup.
+  const [notice, setNotice] = useState(null);
   const overlayRef = useRef(null);
+  const dismissNotice = () => setNotice(null);
   // Bukti transfer yang dipilih langsung setelah menekan "Cairkan Sekarang".
   const proofInputRef = useRef(null);
   const [proofFile, setProofFile] = useState(null);
@@ -109,6 +110,8 @@ function CashAdvanceReviewModalContent({
   const disburseInline = canReview && awaitingTransfer && !isOwner;
   // Requester sudah mencatat pengembalian sisa saldo, belum dikonfirmasi operasional.
   const pendingReturn = ca.status === "approved" && hasPendingReturn(ca);
+  // Requester boleh mengembalikan sisa saldo dari pop up Catat kwitansi.
+  const canReturnRemainder = isOwner && ca.status === "approved" && !isReimbursement;
   const holderName = ca.bank_account_holder || ca.profiles?.bank_account_holder || ca.profiles?.full_name || "-";
 
   const categoryLabel =
@@ -147,6 +150,7 @@ function CashAdvanceReviewModalContent({
 
     if (updateError) {
       setError("Gagal memperbarui status pengajuan.");
+      setNotice({ type: "error", text: "Gagal memperbarui status pengajuan. Coba lagi." });
       decideBusyRef.current = false;
       return;
     }
@@ -159,12 +163,16 @@ function CashAdvanceReviewModalContent({
     if (onDecisionComplete) {
       onDecisionComplete(ca.id, status, note.trim() || null);
       setDecidedHere(true);
-      setResult({
-        status,
-        step: status === "approved" ? "disburse" : "continue",
-      });
-      // Tidak ada pengajuan lain & ditolak -> cukup tampilkan hasil di modal.
-      if (status === "rejected" && nextPendingCount === 0) setResult(null);
+      // Disetujui -> modal konfirmasi terbuka otomatis (cairkan sekarang/nanti).
+      // Ditolak & masih ada antrean -> tanya lanjut. Ditolak & antrean kosong ->
+      // cukup toast hasil; banner di panel sudah menunjukkan statusnya.
+      if (status === "approved") {
+        modals.open(MODAL.DECISION, { status, step: "disburse" });
+      } else if (nextPendingCount > 0) {
+        modals.open(MODAL.DECISION, { status, step: "continue" });
+      } else {
+        setNotice({ type: "success", text: "Pengajuan ditolak." });
+      }
     } else {
       router.refresh();
       onClose();
@@ -180,11 +188,40 @@ function CashAdvanceReviewModalContent({
   }
 
   function afterDisburseChoice() {
-    setResult(nextPendingCount > 0 ? { status: "approved", step: "continue" } : null);
+    if (nextPendingCount > 0) {
+      modals.open(MODAL.DECISION, { status: "approved", step: "continue" });
+    } else {
+      modals.close();
+    }
   }
 
+  function closeDetail() {
+    modals.close(MODAL.DETAIL);
+    stripCaParam();
+  }
+
+  // Modal aktif ditutup dulu; baru bila tidak ada modal, panel ini yang tertutup.
+  // Pop up berisi isian (PopupShell) menangani Escape-nya sendiri lebih dulu.
+  const activeName = modals.active?.name ?? null;
+  const decisionStep = modals.active?.step ?? null;
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (activeName === MODAL.DETAIL) closeDetail();
+      else if (activeName === MODAL.DECISION) {
+        if (decisionStep === "disburse") afterDisburseChoice();
+        else modals.close();
+      } else if (activeName) modals.close();
+      else if (!loading) onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // Handler dibuat ulang tiap render; dependensi cukup state yang menentukan cabang.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeName, decisionStep, loading, onClose, nextPendingCount]);
+
   function handleOverlayClick(e) {
-    if (e.target === overlayRef.current && !result && !detailOpen && !scanOpen && !returnOpen) {
+    if (e.target === overlayRef.current && !activeName) {
       onClose();
     }
   }
@@ -204,19 +241,19 @@ function CashAdvanceReviewModalContent({
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="min-w-0 flex-1">
             <div className="flex flex-nowrap items-center gap-1.5">
-              <span className="shrink-0 rounded bg-[#eff6ff] px-1.5 py-0.5 text-[10px] font-bold text-[#2563eb]">
+              <span className="shrink-0 rounded bg-[#eff6ff] px-1.5 py-0.5 text-[11px] font-bold text-[#2563eb]">
                 {formatCaCode(ca)}
               </span>
-              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold text-slate-600">
                 {KIND_LABEL[ca.kind] ?? "Cash Advance"}
               </span>
               {isPending ? (
-                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-[10px] font-semibold text-[#b45309]">
+                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-[11px] font-semibold text-[#b45309]">
                   <span className="h-1 w-1 rounded-full bg-[#f59e0b]" />
                   Belum Disetujui
                 </span>
               ) : (
-                <StatusBadge status={ca.status} className="!px-2 !py-px !text-[10px] whitespace-nowrap" />
+                <StatusBadge status={ca.status} className="!px-2 !py-px !text-[11px] whitespace-nowrap" />
               )}
             </div>
             <h2 className="mt-1.5 truncate text-sm font-bold tracking-tight text-slate-900">
@@ -283,23 +320,23 @@ function CashAdvanceReviewModalContent({
           {/* Plafon + tenggat (sebaris seperti desain) */}
           <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 {isReimbursement ? "NOMINAL DIAJUKAN" : "PLAFON DIAJUKAN"}
               </p>
               <p className="mt-0.5 text-lg font-extrabold leading-tight tracking-tight text-slate-900">
                 {formatCurrency(ca.amount_requested)}
               </p>
               {!isReimbursement && (
-                <p className="mt-0.5 truncate text-[10px] font-medium text-slate-500">
+                <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
                   Kategori: {categoryFull}
                 </p>
               )}
             </div>
             {!isReimbursement && (
-            <div className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
+            <div className="flex shrink-0 items-center gap-2 border-l border-slate-300 pl-3">
               <Calendar size={13} strokeWidth={2} className="text-[#2563eb]" />
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   TENGGAT LPJ / SPJ
                 </p>
                 <p className="text-xs font-bold text-slate-900">
@@ -322,7 +359,7 @@ function CashAdvanceReviewModalContent({
               <div className="flex items-start justify-between gap-1">
                 <p className="text-[11px] font-medium text-slate-500">{isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}</p>
                 {(ca.bank_name || ca.bank_account_number) && (
-                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-[10px] font-semibold text-[#1fa653]">
+                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-[11px] font-semibold text-[#1fa653]">
                     <Check size={9} strokeWidth={3} />
                     Terverifikasi
                   </span>
@@ -331,7 +368,7 @@ function CashAdvanceReviewModalContent({
               <p className="mt-0.5 break-words text-xs font-bold text-slate-900">
                 {[ca.bank_name, ca.bank_account_number].filter(Boolean).join(" ") || "-"}
               </p>
-              <p className="text-[10px] text-slate-500">a.n {holderName}</p>
+              <p className="text-[11px] text-slate-500">a.n {holderName}</p>
             </div>
           </div>
 
@@ -351,22 +388,22 @@ function CashAdvanceReviewModalContent({
                 className="group flex items-center justify-between rounded-xl border border-slate-200/90 bg-white p-2 hover:border-slate-300 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-100 bg-[#eafaf1] text-[#12a150]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eafaf1] text-[#12a150]">
                     <FileSpreadsheet size={16} strokeWidth={1.75} />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-900">Link Spreadsheet</p>
-                    <p className="text-[10px] text-slate-400">Spreadsheet Google Sheets</p>
+                    <p className="text-[11px] text-slate-500">Spreadsheet Google Sheets</p>
                   </div>
                 </div>
-                <ExternalLink size={14} strokeWidth={2} className="mr-1 text-slate-400 group-hover:text-slate-600" />
+                <ExternalLink size={14} strokeWidth={2} className="mr-1 text-slate-500 group-hover:text-slate-600" />
               </a>
             ) : (
-              <p className="text-xs text-slate-400">Tidak ada link spreadsheet.</p>
+              <p className="text-xs text-slate-500">Tidak ada link spreadsheet.</p>
             )}
-            <p className="mt-1.5 text-[11px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-500">
               Rincian pos RAB lengkap ada di{" "}
-              <button type="button" onClick={() => setDetailOpen(true)} className="font-semibold text-brand hover:underline">
+              <button type="button" onClick={() => modals.open(MODAL.DETAIL, { focus: null })} className="font-semibold text-brand hover:underline">
                 Lihat Detail
               </button>
               .
@@ -399,7 +436,7 @@ function CashAdvanceReviewModalContent({
                 <label htmlFor="review-note-input" className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   CATATAN <span className="font-semibold text-rose-500">(WAJIB DIISI JIKA MENOLAK)</span>
                 </label>
-                <span className="text-[10px] text-slate-400">Opsional untuk persetujuan</span>
+                <span className="text-[11px] text-slate-500">Opsional untuk persetujuan</span>
               </div>
               <textarea
                 id="review-note-input"
@@ -410,7 +447,7 @@ function CashAdvanceReviewModalContent({
                 }}
                 rows={2}
                 placeholder="Tulis catatan verifikasi atau alasan spesifik jika pengajuan ini ditolak..."
-                className="w-full rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-xs placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+                className="w-full rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-xs placeholder:text-slate-500 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
               {error && <p className="mt-1 text-[11px] font-semibold text-rose-600">{error}</p>}
             </div>
@@ -425,7 +462,7 @@ function CashAdvanceReviewModalContent({
             )
           )}
 
-          <div className="space-y-1 border-t border-slate-100 pt-3 text-[11px] text-slate-400">
+          <div className="space-y-1 border-t border-slate-100 pt-3 text-[11px] text-slate-500">
             <div className="flex items-center gap-1.5">
               <Clock size={12} strokeWidth={1.75} />
               <span>Diajukan pada {formatDateTimeFull(ca.created_at)}</span>
@@ -445,7 +482,7 @@ function CashAdvanceReviewModalContent({
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setDetailOpen(true)}
+                onClick={() => modals.open(MODAL.DETAIL, { focus: null })}
                 className="mr-auto flex items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
               >
                 <Eye size={14} strokeWidth={2.25} />
@@ -479,7 +516,7 @@ function CashAdvanceReviewModalContent({
               </div>
               <button
                 type="button"
-                onClick={() => setDetailOpen(true)}
+                onClick={() => modals.open(MODAL.DETAIL, { focus: null })}
                 className="flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
               >
                 <Eye size={14} strokeWidth={2.25} />
@@ -490,14 +527,14 @@ function CashAdvanceReviewModalContent({
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setReturnOpen(true)}
+                onClick={() => modals.open(MODAL.RETURN)}
                 className="flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Kembalikan sisa
               </button>
               <button
                 type="button"
-                onClick={() => setScanOpen(true)}
+                onClick={() => modals.open(MODAL.SCAN)}
                 className="flex items-center justify-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
               >
                 <Plus size={14} strokeWidth={2.5} />
@@ -515,7 +552,7 @@ function CashAdvanceReviewModalContent({
               </button>
               <button
                 type="button"
-                onClick={() => setDetailOpen(true)}
+                onClick={() => modals.open(MODAL.DETAIL, { focus: null })}
                 className="flex items-center justify-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
               >
                 <Eye size={14} strokeWidth={2.25} />
@@ -534,14 +571,14 @@ function CashAdvanceReviewModalContent({
               <button
                 type="button"
                 onClick={() => {
-                  setDetailFocus(
-                    canReview && awaitingTransfer
-                      ? "pencairan"
-                      : canReview && pendingReturn
-                        ? "pengembalian"
-                        : null
-                  );
-                  setDetailOpen(true);
+                  modals.open(MODAL.DETAIL, {
+                    focus:
+                      canReview && awaitingTransfer
+                        ? "pencairan"
+                        : canReview && pendingReturn
+                          ? "pengembalian"
+                          : null,
+                  });
                 }}
                 className="flex items-center justify-center rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
               >
@@ -559,34 +596,35 @@ function CashAdvanceReviewModalContent({
           )}
         </div>
       </div>
-      {detailOpen && (
+      {activeName === MODAL.DETAIL && (
         <CashAdvanceDetailPopup
           ca={ca}
-          onClose={() => {
-            setDetailOpen(false);
-            setDetailFocus(null);
-            stripCaParam();
-            // Datang dari "Cairkan Sekarang": setelah popup ditutup, tanyakan lanjut.
-            if (askContinueAfterDetail) {
-              setAskContinueAfterDetail(false);
-              if (nextPendingCount > 0) setResult({ status: "approved", step: "continue" });
-            }
-          }}
+          onClose={closeDetail}
           currentUserId={currentUserId}
           isOperational={canReview}
-          initialFocus={detailFocus}
+          initialFocus={modals.active.focus ?? null}
+          // Dari detail ke "Scan Kwitansi": detail ditutup, hanya kwitansi yang tampil.
+          onOpenScan={() => modals.open(MODAL.SCAN)}
         />
       )}
-      {scanOpen && <ScanReceiptPopup ca={ca} onClose={() => setScanOpen(false)} />}
-      {returnOpen && (
+      {activeName === MODAL.SCAN && (
+        <ScanReceiptPopup
+          ca={ca}
+          onClose={() => modals.close(MODAL.SCAN)}
+          onSaved={() => {
+            modals.close(MODAL.SCAN);
+            setNotice({ type: "success", text: "Kwitansi berhasil disimpan." });
+          }}
+          onOpenDetail={() => modals.open(MODAL.DETAIL, { focus: null })}
+          onOpenReturn={canReturnRemainder ? () => modals.open(MODAL.RETURN) : undefined}
+        />
+      )}
+      {activeName === MODAL.RETURN && (
         <ReturnPopup
           ca={ca}
           currentUserId={currentUserId}
-          onClose={() => setReturnOpen(false)}
-          onOpenDetail={() => {
-            setReturnOpen(false);
-            setDetailOpen(true);
-          }}
+          onClose={() => modals.close(MODAL.RETURN)}
+          onOpenDetail={() => modals.open(MODAL.DETAIL, { focus: null })}
         />
       )}
       <input
@@ -602,9 +640,9 @@ function CashAdvanceReviewModalContent({
           if (raw) setProofFile(await toJpegFile(raw));
         }}
       />
-      {result && (
+      {activeName === MODAL.DECISION && (
         <DecisionDialog
-          result={result}
+          result={modals.active}
           ca={ca}
           isReimbursement={isReimbursement}
           nextPendingCount={nextPendingCount}
@@ -614,15 +652,18 @@ function CashAdvanceReviewModalContent({
             // langsung buka pemilih file bukti transfer (harus dipanggil
             // langsung dari klik user agar tidak diblokir browser).
             proofInputRef.current?.click();
-            setResult(null);
+            modals.close(MODAL.DECISION);
           }}
-          onStay={() => setResult(null)}
+          onStay={() => modals.close(MODAL.DECISION)}
           onGoNext={() => {
-            setResult(null);
+            modals.close(MODAL.DECISION);
             onGoNext?.();
           }}
+          // Modal persetujuan ditutup, hanya modal Detail yang tampil.
+          onViewDetail={() => modals.open(MODAL.DETAIL, { focus: null })}
         />
       )}
+      <ActionToast notice={notice} onDismiss={dismissNotice} />
     </div>
   );
 }
@@ -639,6 +680,8 @@ export function DecisionDialog({
   onDisburseNow,
   onStay,
   onGoNext,
+  // Menutup dialog ini dan membuka modal Detail pengajuan (hanya satu yang tampil).
+  onViewDetail,
   standalone = false,
 }) {
   const account = formatBankAccount({
@@ -655,6 +698,7 @@ export function DecisionDialog({
       }`}
       role="alertdialog"
       aria-modal="true"
+      aria-label={result.step === "disburse" ? "Pengajuan disetujui" : "Lanjut ke pengajuan berikutnya"}
     >
       <div className="animate-scale-up w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
         {result.step === "disburse" ? (
@@ -672,7 +716,16 @@ export function DecisionDialog({
               </span>{" "}
               ke {account}. Mau dilakukan sekarang atau nanti?
             </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+              {onViewDetail && (
+                <button
+                  type="button"
+                  onClick={onViewDetail}
+                  className="mr-auto rounded-full px-3 py-2 text-xs font-bold text-brand hover:bg-primary-muted"
+                >
+                  Lihat Detail
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onLater}
@@ -699,7 +752,16 @@ export function DecisionDialog({
               <span className="font-semibold text-slate-900">{nextPendingCount}</span>{" "}
               pengajuan lain yang menunggu verifikasi. Pindah ke pengajuan berikutnya sekarang?
             </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+              {onViewDetail && (
+                <button
+                  type="button"
+                  onClick={onViewDetail}
+                  className="mr-auto rounded-full px-3 py-2 text-xs font-bold text-brand hover:bg-primary-muted"
+                >
+                  Lihat Detail
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onStay}

@@ -1,6 +1,31 @@
 # Changelog
 
-## Unreleased
+## 1.2.0
+### Tipografi & keterbacaan
+- Teks minimal 11 px di semua layar. Penyebab teks 10,5 px: `text-xs` berbasis rem sementara
+  root desktop 14 px; sekarang `--text-xs: max(0.75rem, 11px)` (globals.css). Semua `text-[10px]`,
+  `text-[9px]`, dan `text-[8.5px]` dinaikkan ke 11 px.
+- Kontras: `text-slate-400` (2,6:1) diganti `text-slate-500` (4,8:1) untuk teks dan placeholder
+  di latar terang (panel gelap halaman masuk tidak diubah). Pusat Bantuan memakai slate-600/700.
+- Pusat Bantuan & Glosarium: setiap paragraf/unit penjelasan maksimal 80 karakter (bukan ukuran
+  font). Isi dipecah jadi poin (`common`, `details`, langkah per peran) dan dijaga oleh
+  `tests/help.test.mjs`. Teks panduan per topik memakai `text-base`.
+- Hapus card di dalam card: kotak tenggat LPJ, baris file bukti pengembalian, kotak rekening
+  pencairan, ikon spreadsheet, dan form Catat Kwitansi di dalam pop up.
+- Identitas desain CashGue (warna, bentuk, hierarki) tidak diubah.
+
+### Modal & alur tindakan
+- State modal terpusat: `lib/modalState.js` + `lib/useModalState.js`. Hanya SATU modal aktif
+  (detail, catat kwitansi, kembalikan sisa, konfirmasi keputusan); membuka yang baru otomatis
+  menggantikan yang lama, menggantikan boolean `detailOpen/scanOpen/returnOpen/result` terpisah
+  di `CashAdvanceReviewModal`, `ApprovalsWorkspace`, dan `CashAdvanceDetailPopup`.
+- Catat kwitansi punya tombol Kembalikan Sisa dan Lihat Detail (konfirmasi bila ada isian
+  belum tersimpan). Dialog persetujuan punya tombol Lihat Detail. Menutup Detail kembali ke
+  halaman sebelumnya tanpa membuka modal lain.
+- Escape menutup modal teratas saja (sebelumnya menutup seluruh panel tinjau).
+- Hasil aksi tampil jelas: `ActionToast` (berhasil/gagal) dan pesan galat berperan `alert`.
+- Tes baru: `tests/modal.test.mjs`.
+
 ### Perbaikan
 - **DB (0033)**: Tim Operasional tidak bisa lagi mengonfirmasi pengembalian sisa saldo atas
   pengajuannya sendiri (policy `returns_confirm`), menyamakan aturan dengan

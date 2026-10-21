@@ -198,14 +198,14 @@ export default function CompleteProfilePage() {
                 onChange={(e) =>
                   setTelegramChatId(e.target.value.replace(/\D/g, ""))
                 }
-                className="w-full h-13 lg:h-[51px] rounded-full lg:rounded-2xl border border-slate-300 lg:border-[#d1d5db] bg-white pl-11.5 lg:pl-11 pr-3 text-base lg:text-sm text-slate-900 placeholder:text-slate-400 lg:shadow-xs focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+                className="w-full h-13 lg:h-[51px] rounded-full lg:rounded-2xl border border-slate-300 lg:border-[#d1d5db] bg-white pl-11.5 lg:pl-11 pr-3 text-base lg:text-sm text-slate-900 placeholder:text-slate-500 lg:shadow-xs focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
                 placeholder="Contoh: 123456789"
               />
             </div>
             <button
               type="button"
               onClick={openTelegram}
-              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[114px] lg:px-0 text-[13px] lg:text-[10px] font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
+              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[114px] lg:px-0 text-[13px] lg:text-[11px] font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
             >
               Open Telegram
             </button>

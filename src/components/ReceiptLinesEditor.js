@@ -141,7 +141,7 @@ export default function ReceiptLinesEditor({
                 <button
                   type="button"
                   onClick={() => removeLine(line.key)}
-                  className="p-1 text-slate-400 hover:text-rose-600"
+                  className="p-1 text-slate-500 hover:text-rose-600"
                   aria-label={`Hapus rincian ${i + 1}`}
                 >
                   <Trash2 size={14} />

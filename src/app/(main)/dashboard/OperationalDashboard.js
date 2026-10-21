@@ -44,7 +44,7 @@ const MOBILE_ACTION = {
 
 function KindTag({ kind }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
       {KIND_LABEL[kind] ?? "Cash Advance"}
     </p>
   );
@@ -70,7 +70,7 @@ function QuickTile({ href, icon: Icon, tone, title, caption }) {
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-bold leading-tight text-slate-900">{title}</span>
-        <span className="mt-0.5 block text-[10px] leading-tight text-slate-500">{caption}</span>
+        <span className="mt-0.5 block text-[11px] leading-tight text-slate-500">{caption}</span>
       </span>
     </Link>
   );
@@ -232,7 +232,7 @@ export default function OperationalDashboard({
                       <p className="truncate text-[15px] font-bold text-slate-900">
                         {ca.profiles?.full_name ?? "-"}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-400">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {formatDateTimeShort(ca.created_at)}
                       </p>
                     </div>
@@ -310,7 +310,7 @@ export default function OperationalDashboard({
           <div className="flex items-center justify-between px-5 py-5">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Pengajuan terbaru</h2>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500">
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
             </div>

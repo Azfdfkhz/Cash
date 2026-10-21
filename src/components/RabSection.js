@@ -104,7 +104,7 @@ export default function RabSection({
         >
           <ChevronDown
             size={18}
-            className={`mt-0.5 shrink-0 text-slate-400 transition-transform ${
+            className={`mt-0.5 shrink-0 text-slate-500 transition-transform ${
               expanded ? "rotate-180" : ""
             } ${bare ? "hidden" : ""}`}
           />

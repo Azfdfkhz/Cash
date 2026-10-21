@@ -22,7 +22,7 @@ function CopyRow({ label, value, copyValue, strong = false }) {
     }
   }
   return (
-    <div className="flex items-center gap-3 border-t border-slate-100 px-3 py-2.5 first:border-t-0">
+    <div className="flex items-center gap-3 border-t border-slate-100 px-1 py-2.5 first:border-t-0">
       <div className="min-w-0 flex-1">
         <p className="text-xs text-slate-500">{label}</p>
         <p
@@ -216,7 +216,7 @@ export default function DisbursementSection({
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
+      <div className="border-y border-slate-100">
         <CopyRow label="Jumlah transfer" value={formatCurrency(amount)} copyValue={Math.round(Number(amount))} strong />
         <CopyRow label="Bank" value={bankName} />
         <CopyRow label="No. rekening" value={bankAccountNumber} strong />
@@ -224,7 +224,7 @@ export default function DisbursementSection({
       </div>
 
       {error && (
-        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}

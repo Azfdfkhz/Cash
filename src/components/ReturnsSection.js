@@ -694,7 +694,7 @@ export default function ReturnsSection({
       )}
 
       {error && (
-        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -723,7 +723,7 @@ export default function ReturnsSection({
           <div className="space-y-2.5">
             <label className="block text-sm font-bold text-slate-900">Jumlah yang Dikembalikan</label>
             <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
-              <span className="font-semibold text-slate-400">Rp</span>
+              <span className="font-semibold text-slate-500">Rp</span>
               <CurrencyInput
                 required
                 value={amount}
@@ -844,7 +844,7 @@ export default function ReturnsSection({
           {/* Catatan */}
           <div className="space-y-2.5">
             <label htmlFor="return-note" className="block text-sm font-bold text-slate-900">
-              Catatan Tambahan <span className="font-normal text-slate-400">(Opsional)</span>
+              Catatan Tambahan <span className="font-normal text-slate-500">(Opsional)</span>
             </label>
             <textarea
               id="return-note"
@@ -852,7 +852,7 @@ export default function ReturnsSection({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Contoh: Sisa dana kegiatan telah ditransfer dari rekening orang"
-              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
           </div>
 
@@ -996,7 +996,7 @@ export default function ReturnsSection({
                 }}
                 disabled={archiving}
                 title="Buat ulang laporan di Drive dari data terbaru"
-                className="font-medium text-slate-400 hover:text-brand disabled:opacity-60"
+                className="font-medium text-slate-500 hover:text-brand disabled:opacity-60"
               >
                 {archiving ? "Membuat ulang laporan..." : "Perbarui laporan di Drive"}
               </button>

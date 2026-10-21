@@ -8,7 +8,7 @@ import { formatCurrency, LARGE_AMOUNT_WARNING, terbilangRupiah } from "@/lib/uti
 import { rabItemTotal, rabTotal } from "@/lib/rab";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
+  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
 
 let keySeq = 0;
 export function newRabItem(fields = {}) {
@@ -95,7 +95,7 @@ export default function RabEditor({
       <div>
         <div className="mb-2 flex items-baseline justify-between">
           <p className="text-sm font-semibold text-slate-900">Import dari Google Spreadsheet</p>
-          <span className="text-xs text-slate-400">Opsional</span>
+          <span className="text-xs text-slate-500">Opsional</span>
         </div>
         <div className="flex gap-2">
           <input
@@ -130,7 +130,7 @@ export default function RabEditor({
           className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3"
         >
           <div className="flex items-center gap-3">
-            <span className="w-4 shrink-0 text-sm font-medium text-slate-400">
+            <span className="w-4 shrink-0 text-sm font-medium text-slate-500">
               {index + 1}
             </span>
             <input
@@ -143,7 +143,7 @@ export default function RabEditor({
             <button
               type="button"
               onClick={() => onItemsChange(items.filter((it) => it._key !== item._key))}
-              className="shrink-0 p-2 text-slate-400 hover:text-rose-600"
+              className="shrink-0 p-2 text-slate-500 hover:text-rose-600"
               aria-label={`Hapus baris ${index + 1}`}
             >
               <Trash2 size={17} />

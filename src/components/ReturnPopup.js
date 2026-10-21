@@ -40,10 +40,10 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
         <div className="min-w-0 space-y-3">
           <div className="rounded-xl border border-slate-200 px-4 py-3">
             <div className="mb-1 flex items-center justify-between gap-2 border-b border-dashed border-slate-200 pb-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
                 Rincian Pengembalian
               </p>
-              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                 Menunggu Verifikasi
               </span>
             </div>
@@ -55,13 +55,13 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
               {sent.note && <Row label="Catatan">{sent.note}</Row>}
             </div>
             {sent.file && (
-              <div className="mt-2 flex items-center gap-2.5 rounded-xl border border-slate-200 p-2.5">
+              <div className="mt-2 flex items-center gap-2.5 border-t border-dashed border-slate-200 pt-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                   <FileText size={16} />
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold text-slate-900">{sent.file.name}</p>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     {sizeMb} MB · Tersimpan di Google Drive
                   </p>
                 </div>
@@ -162,7 +162,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
       label="Kembalikan sisa saldo"
       title={sent ? "Status Pengembalian" : "Kembalikan Sisa Saldo"}
       badge={
-        <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-[10px] font-bold text-[#2563eb]">
+        <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-[11px] font-bold text-[#2563eb]">
           {formatCaCode(c)}
         </span>
       }

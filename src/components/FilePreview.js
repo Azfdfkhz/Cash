@@ -258,11 +258,11 @@ export function DriveInlinePreview({ url, title, className = "", variant = "full
           ref={ref}
           type="button"
           onClick={() => setOpen(true)}
-          className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 ${className}`}
+          className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 ${className}`}
           aria-label={`Lihat ${title || "file"}`}
         >
           <FileText size={20} />
-          <span className="text-[10px] font-medium">Buka</span>
+          <span className="text-[11px] font-medium">Buka</span>
         </button>
         <FilePreviewModal open={open} onClose={() => setOpen(false)} title={title} url={url} />
       </>
@@ -289,7 +289,7 @@ export function DriveInlinePreview({ url, title, className = "", variant = "full
           />
         ) : (
           <div
-            className={`flex items-center justify-center gap-2 text-xs text-slate-400 ${
+            className={`flex items-center justify-center gap-2 text-xs text-slate-500 ${
               thumb ? "h-full w-full" : "h-40"
             }`}
           >
@@ -348,7 +348,7 @@ export function LocalFilePreview({ file, className = "" }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={pages[0]} alt={file.name} className="mx-auto max-h-80 w-full object-contain" />
         ) : (
-          <div className="flex h-32 items-center justify-center gap-2 text-xs text-slate-400">
+          <div className="flex h-32 items-center justify-center gap-2 text-xs text-slate-500">
             {pages ? (
               <>
                 <FileText size={16} /> Pratinjau tidak tersedia

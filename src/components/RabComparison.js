@@ -78,7 +78,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
                 <p className="text-sm font-medium text-slate-900 min-w-0">
                   {index + 1}. {item.description}
                 </p>
-                <span className="text-xs text-slate-400 shrink-0">
+                <span className="text-xs text-slate-500 shrink-0">
                   {receiptCount} bukti
                 </span>
               </div>
@@ -135,7 +135,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
             <p className="text-sm font-medium text-slate-900">
               Di luar RAB (tak terduga)
             </p>
-            <span className="text-xs text-slate-400 shrink-0">
+            <span className="text-xs text-slate-500 shrink-0">
               {result.outside.length} rincian
             </span>
           </div>

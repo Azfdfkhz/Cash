@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PendingLink, usePendingNav } from "@/components/PendingNav";
 import { DetailPanelSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,9 @@ import ApprovalActions from "@/components/ApprovalActions";
 import CashAdvanceReviewModal, { DecisionDialog } from "@/components/CashAdvanceReviewModal";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import { useApprovalBadge } from "@/components/useApprovalBadge";
+import ActionToast from "@/components/ActionToast";
+import { useModalState } from "@/lib/useModalState";
+import { MODAL } from "@/lib/modalState";
 import { toJpegFile } from "@/lib/imageConvert";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import {
@@ -91,9 +94,13 @@ function ApprovalsWorkspaceInner({
   // sudah di-refresh dan pengajuan itu hilang dari daftar.
   const [reviewId, setReviewId] = useState(null);
   const [held, setHeld] = useState(null);
-  // Pop up lanjutan setelah menyetujui/menolak lewat panel desktop:
-  // { ca, step: "disburse" | "continue" } -- sama dengan yang ada di pop up tinjau.
-  const [decision, setDecision] = useState(null);
+  // Pop up lanjutan setelah menyetujui/menolak lewat panel desktop. Satu modal
+  // aktif pada satu waktu: "decision" { ca, step: "disburse" | "continue" } atau
+  // "detail" { ca } -- membuka salah satunya menutup yang lain.
+  const modals = useModalState();
+  const decision = modals.isOpen(MODAL.DECISION) ? modals.active : null;
+  const detailModal = modals.isOpen(MODAL.DETAIL) ? modals.active : null;
+  const [notice, setNotice] = useState(null);
   // Bukti transfer yang dipilih langsung setelah menekan "Cairkan Sekarang".
   // Input file-nya selalu terpasang di sini (bukan di pop up yang segera
   // tertutup) supaya pemilih file tetap bisa mengirim hasilnya.
@@ -183,14 +190,36 @@ function ApprovalsWorkspaceInner({
     };
     const hasOthers = items.some((ca) => ca.id !== selected.id);
     if (status === "approved") {
-      setDecision({ ca: decidedCa, step: "disburse" });
+      modals.open(MODAL.DECISION, { ca: decidedCa, step: "disburse" });
     } else if (hasOthers) {
-      setDecision({ ca: decidedCa, step: "continue" });
+      modals.open(MODAL.DECISION, { ca: decidedCa, step: "continue" });
+    } else {
+      setNotice({ type: "success", text: "Pengajuan ditolak." });
     }
     // Setelah daftar di-refresh, panel pindah ke pengajuan di posisi yang sama.
     const next = items[index + 1] ?? items[index - 1];
     if (next) setSelectedId(next.id);
   }
+
+  // Escape menutup modal aktif (dialog keputusan = pilihan paling aman, bukan "cairkan").
+  const activeName = modals.active?.name ?? null;
+  const decisionStep = modals.active?.step ?? null;
+  useEffect(() => {
+    if (!activeName) return;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (activeName === MODAL.DECISION && decisionStep === "disburse") {
+        const hasOthersLeft = items.some((ca) => ca.id !== modals.active.ca.id);
+        if (hasOthersLeft) modals.open(MODAL.DECISION, { ca: modals.active.ca, step: "continue" });
+        else modals.close();
+      } else {
+        modals.close();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeName, decisionStep, items]);
 
   const index = Math.max(0, items.findIndex((i) => i.id === selectedId));
   const selected = items[index] ?? null;
@@ -311,7 +340,7 @@ function ApprovalsWorkspaceInner({
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
                   {KIND_LABEL[ca.kind] ?? "Cash Advance"}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-slate-500">{ca.purpose}</p>
@@ -436,9 +465,9 @@ function ApprovalsWorkspaceInner({
           isReimbursement={decision.ca.kind === "reimbursement"}
           nextPendingCount={othersPending.length}
           onLater={() =>
-            setDecision(
-              othersPending.length > 0 ? { ca: decision.ca, step: "continue" } : null
-            )
+            othersPending.length > 0
+              ? modals.open(MODAL.DECISION, { ca: decision.ca, step: "continue" })
+              : modals.close()
           }
           // Pindah ke tab Menunggu Pencairan dengan pengajuan ini terpilih --
           // formulir pencairan ada di panel, bukan pop up.
@@ -448,17 +477,31 @@ function ApprovalsWorkspaceInner({
             proofInputRef.current?.click();
             const q = new URLSearchParams({ tab: "pencairan", ca: decision.ca.id });
             if (kind) q.set("jenis", kind);
-            setDecision(null);
+            modals.close();
             router.push(`/approvals?${q}`, { scroll: false });
           }}
-          onStay={() => setDecision(null)}
+          onStay={() => modals.close()}
           onGoNext={() => {
             const next = othersPending[0];
             if (next) setSelectedId(next.id);
-            setDecision(null);
+            modals.close();
           }}
+          // Dialog persetujuan ditutup, hanya modal Detail yang tampil.
+          onViewDetail={() => modals.open(MODAL.DETAIL, { ca: decision.ca })}
         />
       )}
+
+      {detailModal && (
+        <CashAdvanceDetailPopup
+          standalone
+          ca={detailModal.ca}
+          onClose={() => modals.close(MODAL.DETAIL)}
+          currentUserId={currentUserId}
+          isOperational
+        />
+      )}
+
+      <ActionToast notice={notice} onDismiss={() => setNotice(null)} />
 
     </div>
   );

@@ -35,7 +35,7 @@ export default function KindSwitch({ active }) {
               <span className="flex items-center gap-1.5 text-sm font-bold text-slate-900 lg:text-base">
                 {label}
                 {drafts[kind] && (
-                  <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-bold text-amber-700">
+                  <span className="rounded-full bg-amber-100 px-1.5 py-px text-[11px] font-bold text-amber-700">
                     Draft
                   </span>
                 )}

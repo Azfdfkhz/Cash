@@ -14,7 +14,7 @@ export function RoleBadge({ children, dot = false, dark = false }) {
 }
 
 // Kartu ringkasan desktop. `dark` = kartu utama bernuansa navy.
-export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-3xl mt-5", tour }) {
+export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-500", valueClass = "text-3xl mt-5", tour }) {
   return (
     <div
       data-tour={tour}
@@ -74,4 +74,4 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
 
 // Sel tabel desktop: header & body
 export const TH =
-  "whitespace-nowrap px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.55px] text-slate-400";
+  "whitespace-nowrap px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.55px] text-slate-500";

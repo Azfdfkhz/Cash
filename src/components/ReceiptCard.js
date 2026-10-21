@@ -174,7 +174,7 @@ export default function ReceiptCard({
             <p className="mt-0.5 truncate text-xs text-slate-500">{savedLines[0].notes}</p>
           )}
           {receipt.notes && receipt.notes !== savedLines[0].notes && (
-            <p className="mt-0.5 truncate text-xs text-slate-400">{receipt.notes}</p>
+            <p className="mt-0.5 truncate text-xs text-slate-500">{receipt.notes}</p>
           )}
 
           {receipt.drive_view_url && (
@@ -190,7 +190,7 @@ export default function ReceiptCard({
       </div>
 
       {error && (
-        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -291,7 +291,7 @@ export default function ReceiptCard({
             />
           </label>
 
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-slate-500">
             Foto salah? Hapus kwitansi ini lalu scan ulang.
           </p>
           <div className="flex gap-2">

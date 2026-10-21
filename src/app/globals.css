@@ -57,6 +57,11 @@
   --color-foreground: var(--foreground);
   --color-dark-navy:  var(--dark-navy);
 
+  /* Ukuran teks minimum 11px. Ukuran Tailwind berbasis rem dan root dikecilkan
+     jadi 14px di desktop, sehingga text-xs (0.75rem) menjadi 10,5px. max()
+     menjaga 12px di mobile dan 11px di desktop. */
+  --text-xs: max(0.75rem, 11px);
+
   /* Fonts */
   --font-sans: var(--font-poppins);
   --font-num: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
@@ -109,7 +114,7 @@ input, select, textarea {
 }
 
 input::placeholder, textarea::placeholder {
-  color: #98a2b3;
+  color: #667085; /* kontras 4,8:1 di atas putih (sebelumnya #98a2b3 = 2,6:1) */
 }
 
 @media (prefers-reduced-motion: reduce) {

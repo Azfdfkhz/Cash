@@ -71,7 +71,7 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
               Catatan <span className="text-rose-500">(wajib diisi jika menolak)</span>
             </label>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-500">
               Opsional untuk persetujuan
             </span>
           </div>
@@ -82,7 +82,11 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
             placeholder="Tulis catatan verifikasi atau alasan jika pengajuan ini ditolak..."
             className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
           />
-          {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
+          {error && (
+            <p role="alert" className="mt-2 text-xs font-semibold text-rose-700">
+              {error}
+            </p>
+          )}
         </div>
         <div className="mt-5 flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
           <button
@@ -110,7 +114,7 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
         Tindakan Persetujuan
       </p>
       {error && (
-        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Eye, FileText, Loader2, ScanLine } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -26,12 +26,18 @@ export default function ScanForm({
   // `onDone` alih-alih router.back().
   embedded = false,
   onDone,
+  // Memberi tahu pop up pembungkus bahwa ada file/isian yang belum disimpan.
+  onDirtyChange,
 }) {
   const isReimbursement = kind === "reimbursement";
   const router = useRouter();
   const fileInputRef = useRef(null);
 
   const [file, setFile] = useState(null);
+  const hasFile = Boolean(file);
+  useEffect(() => {
+    onDirtyChange?.(hasFile);
+  }, [hasFile, onDirtyChange]);
   const [previewUrl, setPreviewUrl] = useState(null);
   // Pratinjau PDF: null = belum/bukan PDF, { pages, pageCount } = siap,
   // { failed: true } = gagal dirender (tetap bisa dibuka lewat "Buka PDF").
@@ -354,7 +360,7 @@ export default function ScanForm({
         {/* Form (kiri di desktop) */}
         <div className={`space-y-4 ${embedded ? "@2xl:col-start-1 @2xl:row-start-1" : "lg:col-start-1 lg:row-start-1"}`}>
           {error && (
-            <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+            <div role="alert" className="text-sm font-medium text-rose-800 bg-rose-50 border border-rose-300 rounded-lg px-3 py-2">
               {error}
             </div>
           )}
@@ -369,7 +375,11 @@ export default function ScanForm({
           {scanned && (
             <form
               onSubmit={handleSubmit}
-              className={`bg-white rounded-2xl border border-slate-200 p-5 space-y-4 ${embedded ? "@2xl:rounded-3xl @2xl:p-6" : "lg:rounded-3xl lg:p-6"}`}
+              className={
+                embedded
+                  ? "space-y-4" // di dalam pop up: tanpa kartu lagi (hindari card di dalam card)
+                  : "bg-white rounded-2xl border border-slate-200 p-5 space-y-4 lg:rounded-3xl lg:p-6"
+              }
             >
               {scanOk && (
                 <div className={`hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 ${embedded ? "@2xl:block" : "lg:block"}`}>
@@ -394,7 +404,7 @@ export default function ScanForm({
                   className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand ${embedded ? "@2xl:font-semibold" : "lg:font-semibold"}`}
                 />
                 {balance !== null && !isReimbursement && (
-                  <p className={`mt-1.5 hidden text-xs text-slate-400 ${embedded ? "@2xl:block" : "lg:block"}`}>
+                  <p className={`mt-1.5 hidden text-xs text-slate-500 ${embedded ? "@2xl:block" : "lg:block"}`}>
                     Sisa pagu saldo saat ini: {formatCurrency(balance)}
                   </p>
                 )}
