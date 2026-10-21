@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.3.0
+### Persetujuan
+- Pencarian (`?q=`, ditunda 400 ms, desktop & mobile): username / nama / email pemohon,
+  keperluan, nomor pengajuan (`#CA-2026-A1B2` atau potongannya), dan nominal. Dihitung di
+  database (`lib/approvalSearch.js`); jumlah di tab ikut hasil pencarian.
+- Kartu disederhanakan (`CashAdvanceCard compact`): label jenis, badge status, dan badge
+  pengembalian dihapus karena sudah diwakili tab. Nomor pengajuan tampil di baris tanggal.
+- Tombol **Lihat Detail** di setiap kartu (mobile membuka panel tinjau, desktop memilih
+  pengajuan di panel kanan).
+- Tab mobile: tinggi min. 44 px, label 14 px, `whitespace-nowrap` + `min-w-0`, badge angka
+  tidak menyusut.
+- Pemohon ditampilkan dengan **username** saja (fallback `full_name` untuk akun lama) lewat
+  `requesterName()`.
+
+### Laporan
+- Mobile: **Lihat Kwitansi** membuka modal pratinjau (PDF & gambar), bukan tab baru. Modal
+  punya tombol Unduh, Buka di Drive, dan Tutup; kondisi gagal muat menampilkan pesan + Unduh.
+- Unduh memakai `/api/files/<id>?download=1`: berkas ASLI dari Drive, dengan pemeriksaan akses
+  (RLS) yang sama seperti pratinjau, dan `Content-Disposition: attachment`. Tombol Unduh desktop
+  juga dialihkan ke rute ini (sebelumnya tautan Drive langsung).
+
+### Ajukan
+- Tombol **Template RAB Excel (.xlsx)** dan **Template RAB CSV (.csv)** di bagian RAB
+  (`public/templates/`). Kolom: No, Uraian, Jumlah, Satuan, Frekuensi, Harga Satuan, Total;
+  berisi 3 baris contoh + petunjuk. Sudah diuji lewat `parseRabCsv` (CSV langsung, dan xlsx
+  setelah diekspor ke CSV).
+
+### Pusat Bantuan
+- Isi dipilih di SERVER (`getHelpContent(role)`): requester dan halaman publik `/bantuan` tidak
+  menerima panduan Tim Operasional sama sekali; tab peran hanya muncul untuk
+  `role === 'operational'`.
+- Topik: Pengajuan, RAB, Kwitansi, Persetujuan, Pencairan, Laporan (khusus operasional),
+  Pengembalian Sisa. `tests/help.test.mjs` diperbarui (termasuk uji tidak ada kebocoran).
+
 ## 1.2.0
 ### Tipografi & keterbacaan
 - Teks minimal 11 px di semua layar. Penyebab teks 10,5 px: `text-xs` berbasis rem sementara

@@ -21,6 +21,12 @@ export function rabTotal(items) {
   return (items ?? []).reduce((sum, item) => sum + rabItemTotal(item), 0);
 }
 
+// Template RAB di Google Sheets. Akhiran "/copy" membuat Google langsung
+// menawarkan "Buat salinan" ke Drive pengguna sendiri, jadi template tidak
+// perlu disalin manual dan file asli tidak bisa diubah pengguna.
+export const RAB_TEMPLATE_ID = "1Ghe2dhcUy4JdQyt7DoItTmayfceasG5FJnx957zrFrc";
+export const RAB_TEMPLATE_URL = `https://docs.google.com/spreadsheets/d/${RAB_TEMPLATE_ID}/copy`;
+
 // Ambil spreadsheet id + gid dari link Google Sheets.
 export function parseSheetUrl(url) {
   const match = String(url || "").match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);

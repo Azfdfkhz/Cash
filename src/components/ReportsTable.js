@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { formatCurrency, formatDateNumeric } from "@/lib/utils";
+import { FilePreviewModal, fileDownloadHref } from "@/components/FilePreview";
 import { PendingNavProvider, usePendingNav } from "@/components/PendingNav";
 import { ReceiptListSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
@@ -68,6 +69,8 @@ function ReportsTableInner({
   useRealtimeRefresh(REALTIME_TABLES);
   const [query, setQuery] = useState(filters.q);
   const [selectedId, setSelectedId] = useState(null);
+  // Mobile: "Lihat Kwitansi" membuka pop up pratinjau (bukan pindah halaman).
+  const [modalId, setModalId] = useState(null);
   const lastPushedQuery = useRef(filters.q);
 
   function go(next) {
@@ -94,6 +97,11 @@ function ReportsTableInner({
 
   const selected = rows.find((r) => r.id === selectedId) ?? null;
   const ids = driveIds(selected?.driveUrl);
+  const modalRow = rows.find((r) => r.id === modalId) ?? null;
+  const receiptName = (r) =>
+    ["kwitansi", r?.vendor, r?.receiptDate].filter(Boolean).join(" ");
+  // Unduhan lewat server: berkas asli, dicek akses user (bukan tautan Drive).
+  const selectedDownload = selected ? fileDownloadHref(selected.driveUrl, receiptName(selected)) : null;
 
   const exportParams = new URLSearchParams();
   if (filters.q) exportParams.set("q", filters.q);
@@ -250,15 +258,16 @@ function ReportsTableInner({
                   </span>
                   {r.driveUrl && (
                     <>
-                      <a
-                        href={r.driveUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary-muted px-3 py-1.5 text-xs font-semibold text-brand lg:hidden"
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalId(r.id);
+                        }}
+                        className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary-muted px-3.5 text-xs font-semibold text-brand lg:hidden"
                       >
-                        <Eye size={13} /> Lihat Kwitansi
-                      </a>
+                        <Eye size={14} /> Lihat Kwitansi
+                      </button>
                       <span
                         className={`hidden shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold lg:inline-flex ${
                           active
@@ -342,9 +351,10 @@ function ReportsTableInner({
                   >
                     <ExternalLink size={14} /> Buka di Drive
                   </a>
-                  {ids.download && (
+                  {selectedDownload && (
                     <a
-                      href={ids.download}
+                      href={selectedDownload}
+                      download
                       className="inline-flex items-center gap-1.5 rounded-lg bg-dark-navy px-4 py-2 text-xs font-semibold text-white"
                     >
                       <Download size={14} /> Unduh
@@ -360,6 +370,14 @@ function ReportsTableInner({
           )}
         </div>
       </aside>
+
+      <FilePreviewModal
+        open={!!modalRow}
+        onClose={() => setModalId(null)}
+        title={modalRow ? `${modalRow.vendor || "Kwitansi"} · ${formatCurrency(modalRow.amount)}` : ""}
+        url={modalRow?.driveUrl}
+        downloadName={modalRow ? receiptName(modalRow) : undefined}
+      />
     </div>
   );
 }

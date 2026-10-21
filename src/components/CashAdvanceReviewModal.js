@@ -31,6 +31,7 @@ import {
   formatDateTimeFull,
   formatBankAccount,
   formatCaCode,
+  requesterName,
   formatLpjDeadline,
   FUNDING_SOURCE_LABEL,
   KIND_LABEL,
@@ -352,7 +353,7 @@ function CashAdvanceReviewModalContent({
             <div className="rounded-xl border border-slate-200/90 bg-white p-2.5">
               <p className="text-[11px] font-medium text-slate-500">Nama Pemohon</p>
               <p className="mt-0.5 break-words text-xs font-bold text-slate-900">
-                {ca.profiles?.full_name || "-"}
+                {requesterName(ca.profiles)}
               </p>
             </div>
             <div className="min-w-0 rounded-xl border border-slate-200/90 bg-white p-2.5">

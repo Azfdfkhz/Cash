@@ -19,6 +19,7 @@ import {
 } from "@/components/skeletons/ListSkeletons";
 import {
   formatCaCode,
+  requesterName,
   formatCurrency,
   formatDate,
   formatDateTimeShort,
@@ -101,7 +102,7 @@ export default function CashAdvanceDetailPopup({
       supabase
         .from("cash_advances")
         .select(
-          "*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder), disburser:disbursed_by(full_name)"
+          "*, profiles:requester_id(full_name, username, email, bank_name, bank_account_number, bank_account_holder), disburser:disbursed_by(full_name)"
         )
         .eq("id", ca.id)
         .maybeSingle(),
@@ -240,7 +241,7 @@ export default function CashAdvanceDetailPopup({
             </div>
             <h3 className="mt-2 break-words text-lg font-bold leading-snug text-slate-900">{c.purpose}</h3>
             <p className="mt-0.5 text-xs text-slate-500">
-              Diajukan oleh {c.profiles?.full_name ?? "-"} · {formatDate(c.created_at)}
+              Diajukan oleh {requesterName(c.profiles)} · {formatDate(c.created_at)}
             </p>
           </div>
           {inline ? (

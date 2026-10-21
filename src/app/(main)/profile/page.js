@@ -41,21 +41,20 @@ export default async function ProfilePage() {
       </h1>
 
       <ProfileMobileHeader
-        fullName={profile?.full_name}
+        fullName={profile?.username || profile?.full_name}
         email={profile?.email}
         role={profile?.role}
       />
 
       <div className="space-y-6 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
         <ProfileSummaryCard
-          fullName={profile?.full_name}
+          fullName={profile?.username || profile?.full_name}
           email={profile?.email}
           role={profile?.role}
         />
         <div className="space-y-6">
           <ProfileForm
             profileId={profile.id}
-            fullName={profile?.full_name}
             username={profile?.username}
             email={profile?.email}
             initialChatId={profile.telegram_chat_id}

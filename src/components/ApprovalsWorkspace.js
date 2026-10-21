@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { PendingLink, usePendingNav } from "@/components/PendingNav";
 import { DetailPanelSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, Search, X } from "lucide-react";
 import CashAdvanceCard from "@/components/CashAdvanceCard";
 import NextAction from "@/components/NextAction";
 import CompactIdr from "@/components/CompactIdr";
@@ -18,8 +18,9 @@ import { MODAL } from "@/lib/modalState";
 import { toJpegFile } from "@/lib/imageConvert";
 import KindFilter, { KindFilterContent, KindFilterProvider } from "@/components/KindFilter";
 import {
+  formatCaCode,
   formatDateTimeShort,
-  KIND_LABEL,
+  requesterName,
 } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
 
@@ -54,9 +55,13 @@ const TABS = [
 // Desktop (≥lg): daftar di kiri + panel detail & aksi di kanan.
 // Semua dibuka langsung di halaman ini -- tidak pindah ke Beranda.
 export default function ApprovalsWorkspace(props) {
+  const base = new URLSearchParams();
+  if (props.tab === "pencairan") base.set("tab", "pencairan");
+  if (props.query) base.set("q", props.query);
+  const baseQs = base.toString();
   return (
     <KindFilterProvider
-      basePath={props.tab === "pencairan" ? "/approvals?tab=pencairan" : "/approvals"}
+      basePath={baseQs ? `/approvals?${baseQs}` : "/approvals"}
       active={props.kind ?? null}
     >
       <ApprovalsWorkspaceInner {...props} />
@@ -70,6 +75,7 @@ function ApprovalsWorkspaceInner({
   counts = { persetujuan: 0, pencairan: 0 },
   kind = null,
   kindCounts = null,
+  query = "",
   focusId = null,
   pagination,
   currentUserId,
@@ -78,7 +84,9 @@ function ApprovalsWorkspaceInner({
   // Auto-refresh antrean persetujuan/pencairan tanpa reload manual.
   useRealtimeRefresh(REALTIME_TABLES);
   const badge = useApprovalBadge(null, currentUserId, true);
-  const { pending: navPending } = usePendingNav();
+  const { pending: navPending, navigate } = usePendingNav();
+  const [searchText, setSearchText] = useState(query);
+  const lastPushedQuery = useRef(query);
   const isDisburseTab = tab === "pencairan";
   const count = counts[tab] ?? 0;
   const [selectedId, setSelectedId] = useState(focusId ?? items[0]?.id ?? null);
@@ -112,6 +120,7 @@ function ApprovalsWorkspaceInner({
     const q = new URLSearchParams();
     if (id !== "persetujuan") q.set("tab", id);
     if (kind) q.set("jenis", kind);
+    if (query) q.set("q", query);
     const str = q.toString();
     return str ? `/approvals?${str}` : "/approvals";
   }
@@ -136,6 +145,28 @@ function ApprovalsWorkspaceInner({
       ? items[held.index]
       : items[reviewIndex + 1];
   const pendingOthers = items.filter((ca) => ca.id !== reviewId);
+
+  // Pencarian ditunda sebentar supaya tidak meminta ke database di tiap
+  // ketikan. Mengganti kata kunci kembali ke halaman 1.
+  function pushSearch(value) {
+    const q = new URLSearchParams();
+    if (isDisburseTab) q.set("tab", "pencairan");
+    if (kind) q.set("jenis", kind);
+    if (value) q.set("q", value);
+    const str = q.toString();
+    navigate?.(str ? `/approvals?${str}` : "/approvals", { replace: true, scroll: false });
+  }
+
+  useEffect(() => {
+    const trimmed = searchText.trim();
+    if (trimmed === lastPushedQuery.current) return undefined;
+    const t = setTimeout(() => {
+      lastPushedQuery.current = trimmed;
+      pushSearch(trimmed);
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchText]);
 
   function openReview(id) {
     setHeld(null);
@@ -246,6 +277,33 @@ function ApprovalsWorkspaceInner({
           </p>
         </div>
 
+        <div data-tour="approval-search" className="relative">
+          <Search
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+          />
+          <input
+            type="search"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Cari username, nomor pengajuan, keperluan..."
+            aria-label="Cari pengajuan"
+            enterKeyHint="search"
+            className="h-11 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-10 text-base text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 lg:h-10 lg:text-sm [&::-webkit-search-cancel-button]:hidden"
+          />
+          {searchText && (
+            <button
+              type="button"
+              onClick={() => setSearchText("")}
+              aria-label="Hapus pencarian"
+              className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+
         <div data-tour="approval-tabs" role="tablist" aria-label="Daftar pengajuan" className="flex border-b border-slate-200">
           {TABS.map((t) => {
             const active = t.id === tab;
@@ -259,7 +317,7 @@ function ApprovalsWorkspaceInner({
                 aria-selected={active}
                 title={t.full}
                 aria-label={`${t.full}, ${n} pengajuan`}
-                className={`-mb-px flex flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-2.5 text-[13px] font-semibold transition-colors ${
+                className={`-mb-px flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
                   active
                     ? "border-brand text-brand"
                     : "border-transparent text-slate-500 hover:text-slate-800"
@@ -267,7 +325,7 @@ function ApprovalsWorkspaceInner({
               >
                 <span className="truncate">{t.label}</span>
                 <span
-                  className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                  className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
                     active
                       ? "bg-brand/10 text-brand"
                       : n > 0
@@ -298,9 +356,11 @@ function ApprovalsWorkspaceInner({
         <KindFilterContent skeletons={4}>
         {items.length === 0 && (
           <p className="text-sm text-slate-500">
-            {isDisburseTab
-              ? "Tidak ada pengajuan yang menunggu pencairan."
-              : "Tidak ada pengajuan yang menunggu persetujuan."}
+            {query
+              ? `Tidak ada pengajuan yang cocok dengan "${query}".`
+              : isDisburseTab
+                ? "Tidak ada pengajuan yang menunggu pencairan."
+                : "Tidak ada pengajuan yang menunggu persetujuan."}
           </p>
         )}
 
@@ -310,6 +370,8 @@ function ApprovalsWorkspaceInner({
               key={ca.id}
               ca={ca}
               showRequester
+              compact
+              detailLabel="Lihat Detail"
               onClick={() => openReview(ca.id)}
             />
           ))}
@@ -319,29 +381,16 @@ function ApprovalsWorkspaceInner({
           {items.map((ca) => {
             const active = ca.id === selected?.id;
             return (
-              <button
+              <div
                 key={ca.id}
-                type="button"
-                onClick={() => setSelectedId(ca.id)}
-                aria-pressed={active}
                 className={`w-full rounded-2xl border bg-white p-4 text-left transition-colors ${
                   active
                     ? "border-brand ring-2 ring-primary-ring"
                     : "border-slate-200 hover:border-slate-300"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="truncate text-sm font-semibold text-slate-900">
-                    {ca.profiles?.full_name}
-                  </p>
-                  {active && (
-                    <span className="rounded-md bg-primary-muted px-2 py-0.5 text-[11px] font-semibold text-brand">
-                      Dipilih
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
-                  {KIND_LABEL[ca.kind] ?? "Cash Advance"}
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {requesterName(ca.profiles)}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-slate-500">{ca.purpose}</p>
                 <p className="mt-1.5 text-base font-bold text-slate-900">
@@ -350,10 +399,24 @@ function ApprovalsWorkspaceInner({
                 <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
                   <span className="text-xs text-slate-500">
                     {formatDateTimeShort(ca.created_at)}
+                    <span className="font-num"> · {formatCaCode(ca)}</span>
                   </span>
                   <NextAction ca={ca} operational className="text-right" />
                 </div>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(ca.id)}
+                  aria-pressed={active}
+                  className={`mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors ${
+                    active
+                      ? "border-brand bg-brand text-white"
+                      : "border-brand bg-primary-muted text-brand hover:bg-brand hover:text-white"
+                  }`}
+                >
+                  <Eye size={15} aria-hidden="true" />
+                  {active ? "Sedang Dilihat" : "Lihat Detail"}
+                </button>
+              </div>
             );
           })}
         </div>

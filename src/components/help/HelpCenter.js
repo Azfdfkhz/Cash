@@ -3,23 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, PlayCircle, Search } from "lucide-react";
-import {
-  GLOSSARY,
-  HELP_ROLES,
-  HELP_TOPICS,
-  ROLE_FLOW,
-  normalizeHelpRole,
-} from "@/lib/helpContent";
 import { START_TOUR_EVENT } from "@/lib/tour/tourConfig";
 
-function RoleTabs({ role, onChange }) {
+function RoleTabs({ roles, role, onChange }) {
   return (
     <div
       role="tablist"
       aria-label="Pilih panduan sesuai peran"
       className="inline-flex w-full rounded-xl border border-slate-200 bg-slate-100/80 p-1 sm:w-auto"
     >
-      {HELP_ROLES.map((r) => {
+      {roles.map((r) => {
         const active = r.id === role;
         return (
           <button
@@ -62,9 +55,8 @@ function Steps({ items }) {
   );
 }
 
-function Topic({ topic, role, open, onToggle }) {
-  const items = topic[role] ?? [];
-  const roleLabel = HELP_ROLES.find((r) => r.id === role)?.label ?? "";
+function Topic({ topic, role, roleLabel, open, onToggle }) {
+  const items = topic.steps?.[role] ?? [];
   const panelId = `topic-${topic.id}`;
   return (
     <div id={topic.id} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white">
@@ -118,15 +110,26 @@ function Topic({ topic, role, open, onToggle }) {
 // Pusat Bantuan: dipakai di dalam aplikasi (/help) dan halaman publik
 // (/bantuan). `canReplayTour` hanya benar di dalam aplikasi, karena
 // tur interaktif berada di layout aplikasi.
-export default function HelpCenter({ defaultRole = "requester", canReplayTour = false }) {
-  const [role, setRole] = useState(normalizeHelpRole(defaultRole));
-  const [openId, setOpenId] = useState(HELP_TOPICS[0].id);
+export default function HelpCenter({ content, canReplayTour = false }) {
+  // `content` dipilih di server menurut role (lihat getHelpContent): requester
+  // hanya menerima panduan requester, jadi tidak ada panduan Tim Operasional
+  // di browsernya. Tab peran hanya muncul bila ada lebih dari satu peran.
+  const { roles, flow, topics, glossary: allGlossary } = content;
+  const [role, setRole] = useState(content.defaultRole);
+  // undefined = belum disentuh (topik pertama terbuka), null = semua ditutup.
+  const [openId, setOpenId] = useState(undefined);
   const [query, setQuery] = useState("");
+
+  const activeRole = roles.some((r) => r.id === role) ? role : roles[0].id;
+  const roleLabel = roles.find((r) => r.id === activeRole)?.label ?? "";
+  // Topik tampil di tab peran yang punya langkah/panduannya.
+  const roleTopics = topics.filter((t) => t.steps?.[activeRole]?.length);
+  const currentOpen = openId === undefined ? roleTopics[0]?.id ?? null : openId;
 
   const q = query.trim().toLowerCase();
   const glossary = q
-    ? GLOSSARY.filter((g) => `${g.term} ${g.meaning}`.toLowerCase().includes(q))
-    : GLOSSARY;
+    ? allGlossary.filter((g) => `${g.term} ${g.meaning}`.toLowerCase().includes(q))
+    : allGlossary;
 
   return (
     <div className="space-y-6">
@@ -134,7 +137,16 @@ export default function HelpCenter({ defaultRole = "requester", canReplayTour = 
         <h1 className="text-2xl font-bold text-slate-900">Pusat bantuan</h1>
         <p className="text-sm text-slate-700">Panduan alur dana, bukti, dan pengembalian sisa saldo.</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <RoleTabs role={role} onChange={setRole} />
+          {roles.length > 1 && (
+            <RoleTabs
+              roles={roles}
+              role={activeRole}
+              onChange={(r) => {
+                setRole(r);
+                setOpenId(undefined);
+              }}
+            />
+          )}
           {canReplayTour && (
             <button
               type="button"
@@ -148,25 +160,26 @@ export default function HelpCenter({ defaultRole = "requester", canReplayTour = 
         </div>
       </header>
 
-      <div id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${role}`} className="space-y-6">
+      <div id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${activeRole}`} className="space-y-6">
         <section aria-labelledby="help-flow" className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 id="help-flow" className="mb-4 text-base font-bold text-slate-900">
-            Ringkasan alur untuk {HELP_ROLES.find((r) => r.id === role).label}
+            Ringkasan alur untuk {roleLabel}
           </h2>
-          <Steps items={ROLE_FLOW[role]} />
+          <Steps items={flow[activeRole]} />
         </section>
 
         <section aria-labelledby="help-topics" className="space-y-3">
           <h2 id="help-topics" className="text-base font-bold text-slate-900">
             Panduan per topik
           </h2>
-          {HELP_TOPICS.map((t) => (
+          {roleTopics.map((t) => (
             <Topic
               key={t.id}
               topic={t}
-              role={role}
-              open={openId === t.id}
-              onToggle={() => setOpenId(openId === t.id ? null : t.id)}
+              role={activeRole}
+              roleLabel={roleLabel}
+              open={currentOpen === t.id}
+              onToggle={() => setOpenId(currentOpen === t.id ? null : t.id)}
             />
           ))}
         </section>

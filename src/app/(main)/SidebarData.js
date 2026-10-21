@@ -16,7 +16,7 @@ export default async function SidebarData() {
   return (
     <Sidebar
       role={profile?.role}
-      fullName={profile?.full_name ?? user.email}
+      fullName={profile?.username || profile?.full_name || user.email}
       pendingCounts={pendingCounts}
       userId={profile?.id}
     />

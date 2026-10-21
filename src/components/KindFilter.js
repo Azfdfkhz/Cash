@@ -73,7 +73,7 @@ export default function KindFilter({ counts = null, dots = null, className = "" 
             role="tab"
             aria-selected={selected}
             onClick={() => select(opt.value)}
-            className={`-mb-px flex flex-1 items-center justify-center gap-2 border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
+            className={`-mb-px flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
               selected
                 ? "border-brand text-brand"
                 : "border-transparent text-slate-500 hover:text-slate-800"

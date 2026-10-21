@@ -111,6 +111,12 @@ export function formatCaCode(ca) {
   return `#CA-${year}-${seq}`;
 }
 
+// Nama pemohon untuk tampilan: username saja (sudah mencakup nama lengkap).
+// Akun lama yang belum punya username jatuh ke full_name.
+export function requesterName(profile) {
+  return profile?.username || profile?.full_name || "-";
+}
+
 // Tenggat LPJ: fund_usage_date or +14 days from created_at
 export function formatLpjDeadline(ca) {
   if (ca?.fund_usage_date) {

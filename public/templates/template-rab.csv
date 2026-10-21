@@ -1,0 +1,9 @@
+﻿RAB - isi nama kegiatan di sini
+"Petunjuk: hapus baris contoh, isi baris Anda sendiri. Jangan ubah nama kolom."
+"Total = Jumlah x Frekuensi x Harga Satuan. Isi Harga Satuan dengan angka saja, tanpa Rp."
+
+No,Uraian,Jumlah,Satuan,Frekuensi,Harga Satuan,Total
+1,Tiket kereta Jakarta-Bandung,2,orang,2,150000,600000
+2,Konsumsi peserta,20,porsi,1,35000,700000
+3,Sewa ruang rapat,1,hari,2,500000,1000000
+Total,,,,,,2300000

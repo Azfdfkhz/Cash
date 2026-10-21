@@ -12,6 +12,14 @@ export function normalizeHelpRole(role) {
   return role === "operational" ? "operational" : "requester";
 }
 
+// Peran yang boleh MELIHAT panduan: requester hanya panduan requester; hanya
+// role === "operational" yang juga mendapat panduan Tim Operasional.
+export function helpRolesFor(role) {
+  return normalizeHelpRole(role) === "operational"
+    ? ["requester", "operational"]
+    : ["requester"];
+}
+
 // Ringkasan alur per peran (dipakai di Pusat Bantuan).
 // Standar keterbacaan v1.2.0: setiap kalimat penjelasan maksimal 80 karakter
 // (dijaga oleh tests/help.test.mjs). Penjelasan panjang dipecah jadi poin.
@@ -59,55 +67,87 @@ export const ROLE_FLOW = {
 // Topik panduan. `common` = satu kalimat inti untuk semua peran, `details` =
 // poin tambahan untuk semua peran, `requester` / `operational` = langkah
 // khusus peran tersebut. Semua teks maksimal 80 karakter.
+// `audience` = peran yang boleh melihat topik. Topik khusus Tim Operasional
+// (mis. Laporan) tidak pernah dikirim ke requester: pemilihan dilakukan di
+// server lewat getHelpContent(), bukan disembunyikan di browser.
 export const HELP_TOPICS = [
   {
-    id: "alur-cash-advance",
-    title: "Alur Cash Advance",
-    summary: "Dana diberikan di muka, dipertanggungjawabkan sesudahnya.",
-    common: "Cash Advance adalah dana kegiatan yang diberikan lebih dulu.",
+    id: "pengajuan",
+    title: "Pengajuan",
+    summary: "Cash Advance atau Reimbursement lewat menu Ajukan.",
+    audience: ["requester", "operational"],
+    common: "Pengajuan dibuat lewat menu Ajukan.",
     details: [
-      "Alur: ajukan, disetujui, dicairkan, unggah kwitansi, selesai.",
-      "Sisa dana yang tidak terpakai dikembalikan sebelum pengajuan selesai.",
+      "Cash Advance: dana diberikan di muka, lalu dipertanggungjawabkan.",
+      "Reimbursement: uang dibayar sendiri lebih dulu, lalu diganti.",
+      "Draft tersimpan di perangkat dan bisa dilanjutkan nanti.",
     ],
     requester: [
-      "Pilih Ajukan, lalu pilih Cash Advance.",
-      "Isi keperluan, sumber dana, rekening tujuan, dan RAB.",
-      "Nominal pengajuan mengikuti total RAB.",
-      "Centang kebijakan SPJ, lalu kirim. Draft bisa dilanjutkan nanti.",
+      "Pilih Ajukan, lalu pilih Cash Advance atau Reimbursement.",
+      "Isi keperluan, sumber dana, dan rekening tujuan.",
+      "Cash Advance: lengkapi RAB. Nominal mengikuti total RAB.",
+      "Reimbursement: tambahkan kwitansi. Total dihitung dari kwitansi.",
+      "Centang pernyataan yang tampil, lalu kirim.",
       "Pantau status di Beranda. Kartu menunjukkan langkah berikutnya.",
     ],
     operational: [
-      "Pengajuan baru muncul di Persetujuan, tab Cash Advance.",
-      "Setelah dicairkan, pantau kwitansi dan sisa saldo sampai selesai.",
+      "Anda juga bisa mengajukan dana lewat menu Ajukan.",
+      "Pengajuan milik sendiri tidak bisa Anda setujui atau cairkan.",
     ],
   },
   {
-    id: "alur-reimbursement",
-    title: "Alur Reimbursement",
-    summary: "Uang dikeluarkan lebih dulu, lalu diganti.",
-    common: "Reimbursement adalah penggantian uang yang Anda bayarkan sendiri.",
+    id: "rab",
+    title: "RAB",
+    summary: "Rencana Anggaran Biaya untuk Cash Advance.",
+    audience: ["requester", "operational"],
+    common: "RAB berisi daftar rencana pengeluaran beserta nominalnya.",
     details: [
-      "Kwitansi dilampirkan saat mengajukan.",
-      "Setelah penggantian ditransfer, pengajuan langsung selesai.",
-      "Tidak ada pengembalian sisa saldo.",
+      "Kolom: No, Uraian, Jumlah, Satuan, Frekuensi, Harga Satuan, Total.",
+      "Total = Jumlah x Frekuensi x Harga Satuan.",
     ],
     requester: [
-      "Pilih Ajukan, lalu pilih Reimbursement.",
-      "Tambahkan kwitansi beserta kategorinya.",
-      "Total reimbursement dihitung dari kwitansi tersebut.",
-      "Centang pernyataan kwitansi asli dan sesuai, lalu kirim.",
-      "Setelah ditransfer, status pengajuan menjadi Selesai.",
+      "Isi RAB di halaman Ajukan atau impor dari Google Spreadsheet.",
+      "Tekan Gunakan Template RAB. Salinannya langsung ada di Drive Anda.",
+      "Hapus baris contoh, isi baris Anda, dan jangan ubah nama kolom.",
+      "Atur akses ke Siapa saja yang memiliki link, lalu salin linknya.",
+      "Tempel link di halaman Ajukan, lalu tekan Import.",
     ],
     operational: [
-      "Cocokkan kwitansi dengan nominal sebelum menyetujui.",
-      "Setelah disetujui, transfer dan unggah bukti transfer.",
-      "Pengajuan otomatis selesai setelah bukti transfer terunggah.",
+      "Cocokkan total RAB dengan nominal sebelum menyetujui.",
+      "Perbandingan RAB dan realisasi ada di detail pengajuan.",
+    ],
+  },
+  {
+    id: "kwitansi",
+    title: "Kwitansi",
+    summary: "Bukti pengeluaran dan cara mengunggahnya.",
+    audience: ["requester", "operational"],
+    common: "Kwitansi membuktikan dana dipakai sesuai tujuan.",
+    details: [
+      "Contohnya kwitansi, nota, dan struk.",
+      "Berkas disimpan di Google Drive dan ditautkan ke pengajuan.",
+      "Kwitansi dibandingkan dengan anggaran (RAB).",
+    ],
+    requester: [
+      "Buka Cash Advance yang sudah cair, lalu pilih Catat kwitansi.",
+      "Foto kwitansi atau pilih dari galeri.",
+      "Nominal, vendor, dan tanggal dibaca otomatis.",
+      "Periksa hasilnya dan perbaiki bila salah sebelum menyimpan.",
+      "Tandai tiap kwitansi pada pos RAB yang sesuai.",
+      "Tenggat unggah tampil di detail pengajuan (Tenggat LPJ / SPJ).",
+      "Format: JPG, PNG, WebP, HEIC, atau PDF. Maksimal 8 MB.",
+    ],
+    operational: [
+      "Periksa kwitansi yang masuk di detail pengajuan.",
+      "Jika ada pos RAB belum ditandai, minta requester melengkapi.",
+      "Semua kwitansi bisa dilihat dan diunduh di menu Laporan.",
     ],
   },
   {
     id: "persetujuan",
     title: "Persetujuan",
     summary: "Siapa yang memutuskan dan apa yang terjadi sesudahnya.",
+    audience: ["requester", "operational"],
     common: "Setiap pengajuan ditinjau oleh Tim Operasional.",
     details: [
       "Status: Belum Disetujui, Disetujui, Ditolak, atau Selesai.",
@@ -119,8 +159,9 @@ export const HELP_TOPICS = [
       "Perbaiki RAB atau kwitansi sesuai catatan, lalu Ajukan Ulang.",
     ],
     operational: [
-      "Buka pengajuan dari Persetujuan, periksa, lalu Setujui atau Tolak.",
-      "Catatan wajib diisi saat menolak.",
+      "Buka menu Persetujuan. Cari lewat username, nomor, atau keperluan.",
+      "Tekan Lihat Detail untuk memeriksa nominal, RAB, dan pemohon.",
+      "Setujui atau Tolak. Catatan wajib diisi saat menolak.",
       "Anda tidak dapat menyetujui pengajuan milik sendiri.",
     ],
   },
@@ -128,6 +169,7 @@ export const HELP_TOPICS = [
     id: "pencairan",
     title: "Pencairan dana",
     summary: "Transfer dari Tim Operasional ke rekening requester.",
+    audience: ["requester", "operational"],
     common: "Pencairan adalah transfer dana setelah pengajuan disetujui.",
     details: ["Bukti transfer diunggah sebagai catatan."],
     requester: [
@@ -136,59 +178,36 @@ export const HELP_TOPICS = [
       "Isi Telegram Chat ID di Profil untuk notifikasi dana cair.",
     ],
     operational: [
-      "Buka pengajuan disetujui, lalu salin rekening dengan tombol Salin.",
+      "Buka tab Pencairan, lalu salin rekening dengan tombol Salin.",
       "Transfer lewat bank, lalu unggah bukti transfer.",
       "Pencairan hanya dicatat sekali dan bukan untuk pengajuan sendiri.",
     ],
   },
   {
-    id: "bukti-transaksi",
-    title: "Unggah bukti transaksi",
-    summary: "Kwitansi dan foto bukti pengeluaran.",
-    common: "Bukti transaksi membuktikan dana dipakai sesuai tujuan.",
-    details: [
-      "Contohnya kwitansi, nota, dan struk.",
-      "Berkas disimpan di Google Drive dan ditautkan ke pengajuan.",
-    ],
-    requester: [
-      "Buka Cash Advance yang sudah cair, lalu pilih Catat kwitansi.",
-      "Foto kwitansi atau pilih dari galeri.",
-      "Nominal, vendor, dan tanggal dibaca otomatis.",
-      "Periksa hasilnya dan perbaiki bila salah sebelum menyimpan.",
-      "Format: JPG, PNG, WebP, HEIC, atau PDF. Maksimal 8 MB.",
-    ],
+    id: "laporan",
+    title: "Laporan",
+    summary: "Rekap kwitansi Cash Advance dan Reimbursement.",
+    audience: ["operational"],
+    common: "Laporan menampilkan seluruh kwitansi yang sudah masuk.",
+    details: ["Hanya Tim Operasional yang dapat membuka halaman Laporan."],
     operational: [
-      "Periksa kwitansi yang masuk di detail pengajuan.",
-      "Jika ada pos anggaran belum ditandai, minta requester melengkapi.",
-    ],
-  },
-  {
-    id: "spj",
-    title: "SPJ (pertanggungjawaban)",
-    summary: "Laporan penggunaan dana beserta buktinya.",
-    common: "SPJ adalah laporan pertanggungjawaban penggunaan dana.",
-    details: [
-      "SPJ terbentuk dari kwitansi yang Anda unggah.",
-      "Kwitansi dibandingkan dengan anggaran (RAB).",
-    ],
-    requester: [
-      "Unggah kwitansi maksimal 7 hari kalender setelah dana cair.",
-      "Tenggat tampil di detail pengajuan (Tenggat LPJ / SPJ).",
-      "Tandai tiap kwitansi pada pos RAB yang sesuai.",
-    ],
-    operational: [
-      "Dashboard menampilkan jumlah pengajuan yang Perlu SPJ.",
-      "Pakai perbandingan RAB dan realisasi untuk memeriksa pengeluaran.",
+      "Cari berdasarkan requester, vendor, keperluan, atau kategori.",
+      "Saring dengan tanggal kwitansi dan tab jenis pengajuan.",
+      "Ketuk Lihat Kwitansi untuk pratinjau, lalu Unduh bila perlu.",
+      "Tombol CSV mengekspor hasil yang sedang ditampilkan.",
+      "Laporan penutupan PDF diunduh dari detail pengajuan selesai.",
     ],
   },
   {
     id: "pengembalian",
-    title: "Pengembalian sisa saldo",
+    title: "Pengembalian Sisa",
     summary: "Dana yang tidak terpakai dikembalikan.",
+    audience: ["requester", "operational"],
     common: "Sisa saldo adalah dana diterima dikurangi total kwitansi.",
     details: [
       "Sisa dikembalikan ke rekening organisasi.",
       "Pengajuan selesai setelah Tim Operasional mengonfirmasi.",
+      "Reimbursement tidak punya pengembalian sisa saldo.",
     ],
     requester: [
       "Buka pengajuan, lihat sisa saldo, lalu transfer ke rekening tertera.",
@@ -219,7 +238,30 @@ export const GLOSSARY = [
   { term: "Bukti transfer", meaning: "Tangkapan layar atau struk bank yang menunjukkan transfer berhasil." },
   { term: "Ajukan ulang", meaning: "Mengirim kembali pengajuan ditolak setelah diperbaiki." },
   { term: "Draft", meaning: "Pengajuan tersimpan di perangkat Anda yang belum dikirim." },
-  { term: "Laporan penutupan", meaning: "PDF ringkasan pengajuan yang sudah selesai." },
+  { term: "Laporan penutupan", meaning: "PDF ringkasan pengajuan yang sudah selesai.", audience: ["operational"] },
   { term: "jt", meaning: "Singkatan juta. Rp 1,85 jt berarti sekitar Rp 1.850.000." },
   { term: "miliar", meaning: "Seribu juta. Rp 17 miliar berarti sekitar Rp 17.000.000.000." },
 ];
+
+// Isi Pusat Bantuan yang BOLEH dilihat satu peran. Dipanggil di SERVER
+// (page.js), lalu hasilnya dikirim ke komponen klien -- jadi panduan Tim
+// Operasional tidak ikut terkirim ke browser requester (bukan sekadar
+// disembunyikan di tampilan, dan tidak bisa dibuka lewat URL langsung).
+export function getHelpContent(role) {
+  const roles = helpRolesFor(role);
+  const allowed = (audience) => !audience || audience.some((a) => roles.includes(a));
+  return {
+    roles: HELP_ROLES.filter((r) => roles.includes(r.id)),
+    defaultRole: normalizeHelpRole(role),
+    flow: Object.fromEntries(roles.map((r) => [r, ROLE_FLOW[r]])),
+    topics: HELP_TOPICS.filter((t) => allowed(t.audience)).map((t) => ({
+      id: t.id,
+      title: t.title,
+      summary: t.summary,
+      common: t.common,
+      details: t.details ?? [],
+      steps: Object.fromEntries(roles.filter((r) => t[r]?.length).map((r) => [r, t[r]])),
+    })),
+    glossary: GLOSSARY.filter((g) => allowed(g.audience)).map(({ term, meaning }) => ({ term, meaning })),
+  };
+}

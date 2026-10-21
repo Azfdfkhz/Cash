@@ -28,7 +28,7 @@ export default async function DashboardPage({ searchParams }) {
   // ada di halaman daftar saat ini. RLS menentukan siapa yang boleh melihat.
   const focusId = typeof params?.ca === "string" ? params.ca : null;
   const focusSelect =
-    "*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder), cash_advance_returns(confirmed_at)";
+    "*, profiles:requester_id(full_name, username, email, bank_name, bank_account_number, bank_account_holder), cash_advance_returns(confirmed_at)";
   const focusCa = focusId
     ? (await supabase.from("cash_advances").select(focusSelect).eq("id", focusId).maybeSingle()).data
     : null;
@@ -39,7 +39,7 @@ export default async function DashboardPage({ searchParams }) {
     const filter = params?.filter === "pending" ? "pending" : "all";
     let query = supabase
       .from("cash_advances")
-      .select("*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder), cash_advance_returns(confirmed_at)", {
+      .select("*, profiles:requester_id(full_name, username, email, bank_name, bank_account_number, bank_account_holder), cash_advance_returns(confirmed_at)", {
         count: "exact",
       })
       .order("created_at", { ascending: false })
@@ -70,7 +70,7 @@ export default async function DashboardPage({ searchParams }) {
   let requesterQuery = supabase
     .from("cash_advances")
     .select(
-      "*, profiles:requester_id(full_name, email, bank_name, bank_account_number, bank_account_holder), cash_advance_returns(confirmed_at)",
+      "*, profiles:requester_id(full_name, username, email, bank_name, bank_account_number, bank_account_holder), cash_advance_returns(confirmed_at)",
       { count: "exact" }
     )
     .eq("requester_id", profile.id)

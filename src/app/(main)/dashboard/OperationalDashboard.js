@@ -20,6 +20,7 @@ import {
   formatNumber,
   KIND_LABEL,
   hasPendingReturn,
+  requesterName,
 } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
 import { RoleBadge, StatCard, FilterTabs, TH } from "./parts";
@@ -230,7 +231,7 @@ export default function OperationalDashboard({
                     <div className="min-w-0">
                       <KindTag kind={ca.kind} />
                       <p className="truncate text-[15px] font-bold text-slate-900">
-                        {ca.profiles?.full_name ?? "-"}
+                        {requesterName(ca.profiles)}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
                         {formatDateTimeShort(ca.created_at)}
@@ -357,7 +358,7 @@ export default function OperationalDashboard({
                         }}
                         className="hover:text-brand transition-colors text-left font-semibold"
                       >
-                        {ca.profiles?.full_name ?? "-"}
+                        {requesterName(ca.profiles)}
                       </button>
                     </td>
                     <td className="px-5 py-4 text-[13px] text-slate-600">

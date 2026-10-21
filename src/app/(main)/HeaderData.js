@@ -9,5 +9,5 @@ import Header from "@/components/Header";
 export default async function HeaderData() {
   const { user, profile } = await getUserProfile();
   if (!user) redirect("/login");
-  return <Header fullName={profile?.full_name ?? user.email} role={profile?.role} />;
+  return <Header fullName={profile?.username || profile?.full_name || user.email} role={profile?.role} />;
 }

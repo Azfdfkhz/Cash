@@ -67,7 +67,6 @@ const primaryBtn =
 
 export default function ProfileForm({
   profileId,
-  fullName,
   username: initialUsername,
   email,
   initialChatId,
@@ -368,9 +367,6 @@ export default function ProfileForm({
         </div>
 
         <div className={cardCls}>
-          <Row icon={UserRound} label="Nama Lengkap">
-            <p className={textCls}>{fullName || "-"}</p>
-          </Row>
           <Row icon={User} label="Username">
             {editing ? (
               <>

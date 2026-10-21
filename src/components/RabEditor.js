@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2, Plus, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
 import CurrencyInput from "@/components/CurrencyInput";
 import UnitSelect from "@/components/UnitSelect";
 import { formatCurrency, LARGE_AMOUNT_WARNING, terbilangRupiah } from "@/lib/utils";
-import { rabItemTotal, rabTotal } from "@/lib/rab";
+import { RAB_TEMPLATE_URL, rabItemTotal, rabTotal } from "@/lib/rab";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
@@ -122,6 +122,22 @@ export default function RabEditor({
         {importError && (
           <p className="text-xs text-rose-600 mt-1">{importError}</p>
         )}
+
+        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+          <p className="text-xs font-semibold text-slate-900">Template RAB</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+            Kolom: No, Uraian, Jumlah, Satuan, Frekuensi, Harga Satuan, Total. Template
+            langsung dibuat di Google Spreadsheet Anda. Isi, lalu tempel linknya di atas.
+          </p>
+          <a
+            href={RAB_TEMPLATE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-brand hover:text-brand sm:w-auto"
+          >
+            <FileSpreadsheet size={16} aria-hidden="true" /> Gunakan Template RAB
+          </a>
+        </div>
       </div>
 
       {items.map((item, index) => (

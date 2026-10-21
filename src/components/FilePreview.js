@@ -2,12 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, FileText, Loader2, X } from "lucide-react";
+import { Download, ExternalLink, FileText, Loader2, X } from "lucide-react";
 import { renderPdfPreview } from "@/lib/pdfPreview";
 
 // Ambil file id dari link Drive (".../file/d/<id>/view?...").
 export function driveFileId(url) {
   return String(url || "").match(/\/file\/d\/([a-zA-Z0-9_-]+)/)?.[1] ?? null;
+}
+
+// Tautan unduh berkas ASLI lewat server (dicek aksesnya, sama seperti pratinjau).
+export function fileDownloadHref(url, name) {
+  const id = driveFileId(url);
+  if (!id) return null;
+  const q = new URLSearchParams({ download: "1" });
+  if (name) q.set("name", name);
+  return `/api/files/${id}?${q}`;
 }
 
 // Muat file bukti Drive lewat /api/files (server, dicek aksesnya) dan siapkan
@@ -50,8 +59,9 @@ function useAppFile(url, { enabled = true, maxPages = 30, width = 1400 } = {}) {
   return result.key === key ? result : { status: "loading" };
 }
 
-function AppFileViewer({ url, title }) {
+function AppFileViewer({ url, title, downloadHref }) {
   const file = useAppFile(url, { maxPages: 30, width: 1400 });
+  const [broken, setBroken] = useState(0);
   if (file.status === "loading") {
     return (
       <div className="h-full flex items-center justify-center gap-2 text-sm text-white/80">
@@ -59,18 +69,33 @@ function AppFileViewer({ url, title }) {
       </div>
     );
   }
-  if (file.status === "error") {
+  if (file.status === "error" || (file.pages && broken >= file.pages.length)) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 text-center text-sm text-white/80">
-        <p>File tidak bisa ditampilkan di aplikasi.</p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-xs font-medium text-white hover:bg-white/25"
-        >
-          <ExternalLink size={14} /> Buka di Drive
-        </a>
+      <div
+        role="alert"
+        className="h-full flex flex-col items-center justify-center gap-3 px-4 text-center text-sm text-white/80"
+      >
+        <FileText size={28} aria-hidden="true" />
+        <p>File gagal dimuat. Coba lagi nanti, atau unduh / buka file aslinya.</p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {downloadHref && (
+            <a
+              href={downloadHref}
+              download
+              className="inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-white/90"
+            >
+              <Download size={14} /> Unduh
+            </a>
+          )}
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-xs font-medium text-white hover:bg-white/25"
+          >
+            <ExternalLink size={14} /> Buka di Drive
+          </a>
+        </div>
       </div>
     );
   }
@@ -82,7 +107,8 @@ function AppFileViewer({ url, title }) {
           key={i}
           src={src}
           alt={`${title || "File"}${file.pages.length > 1 ? ` halaman ${i + 1}` : ""}`}
-          className="mx-auto max-w-full bg-white"
+          onError={() => setBroken((n) => n + 1)}
+          className="mx-auto max-h-full max-w-full bg-white object-contain"
         />
       ))}
       {file.pageCount > file.pages.length && (
@@ -102,7 +128,17 @@ function AppFileViewer({ url, title }) {
 //              PDF yang sudah dirender) -> ditampilkan berurutan.
 // - `fallbackUrl`: kalau tidak ada yang bisa ditampilkan (mis. PDF gagal
 //              dirender), tawarkan buka file aslinya di tab baru.
-export function FilePreviewModal({ open, onClose, title, url, images, loading, fallbackUrl }) {
+export function FilePreviewModal({
+  open,
+  onClose,
+  title,
+  url,
+  images,
+  loading,
+  fallbackUrl,
+  downloadName,
+}) {
+  const downloadHref = fileDownloadHref(url, downloadName ?? title);
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -137,14 +173,25 @@ export function FilePreviewModal({ open, onClose, title, url, images, loading, f
         <p className="flex-1 min-w-0 truncate text-sm font-medium">
           {title || "Pratinjau"}
         </p>
+        {downloadHref && (
+          <a
+            href={downloadHref}
+            download
+            aria-label="Unduh file"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-xs font-semibold text-slate-900 hover:bg-white/90"
+          >
+            <Download size={15} /> Unduh
+          </a>
+        )}
         {url && (
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium hover:bg-white/25"
+            aria-label="Buka di Drive"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-medium hover:bg-white/25"
           >
-            <ExternalLink size={14} /> Buka di Drive
+            <ExternalLink size={14} /> <span className="hidden sm:inline">Buka di Drive</span>
           </a>
         )}
         <button
@@ -152,7 +199,7 @@ export function FilePreviewModal({ open, onClose, title, url, images, loading, f
           onClick={onClose}
           aria-label="Tutup"
           autoFocus
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-white/15"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"
         >
           <X size={20} />
         </button>
@@ -163,7 +210,7 @@ export function FilePreviewModal({ open, onClose, title, url, images, loading, f
         onClick={(e) => e.stopPropagation()}
       >
         {url ? (
-          <AppFileViewer url={url} title={title} />
+          <AppFileViewer url={url} title={title} downloadHref={downloadHref} />
         ) : images?.length ? (
           <div className="h-full overflow-y-auto space-y-3">
             {images.map((src, i) => (
