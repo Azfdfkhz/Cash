@@ -106,8 +106,7 @@ function LoginForm() {
         Masuk
       </h2>
       <p className="hidden lg:block text-sm leading-[22.75px] text-[#64748b] mb-5">
-        Gunakan akun yayasan Anda untuk mengelola pengajuan dan pelaporan kas
-        bon.
+        Gunakan akun yayasan Anda untuk mengelola pengajuan 
       </p>
 
       {error && (
