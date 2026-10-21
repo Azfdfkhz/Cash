@@ -389,6 +389,13 @@ export default function ReturnsSection({
 
   async function handleConfirm(returnId) {
     if (confirmBusyRef.current) return;
+    // Jaga-jaga di frontend selain tombol disembunyikan: Ops tidak boleh
+    // mengonfirmasi pengembalian atas pengajuannya sendiri. Dicegah juga di
+    // RLS (returns_confirm, migrasi 0033) agar tidak bisa dilewati lewat API langsung.
+    if (isOwner) {
+      setError("Anda tidak bisa mengonfirmasi pengembalian atas pengajuan Anda sendiri.");
+      return;
+    }
     confirmBusyRef.current = true;
     setError("");
     setConfirmingId(returnId);
@@ -577,7 +584,7 @@ export default function ReturnsSection({
                       <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
                         Terkonfirmasi
                       </span>
-                    ) : isOperational ? (
+                    ) : isOperational && !isOwner ? (
                       <button
                         onClick={() => handleConfirm(r.id)}
                         disabled={confirmingId === r.id}
@@ -587,7 +594,14 @@ export default function ReturnsSection({
                         {confirmingId === r.id ? "..." : "Konfirmasi"}
                       </button>
                     ) : (
-                      <span className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
+                      <span
+                        className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1"
+                        title={
+                          isOperational && isOwner
+                            ? "Tidak bisa mengonfirmasi pengembalian atas pengajuan Anda sendiri. Minta Tim Operasional lain."
+                            : undefined
+                        }
+                      >
                         Menunggu konfirmasi
                       </span>
                     )}

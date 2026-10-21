@@ -1,6 +1,15 @@
 # Changelog
 
 ## Unreleased
+### Perbaikan
+- **DB (0033)**: Tim Operasional tidak bisa lagi mengonfirmasi pengembalian sisa saldo atas
+  pengajuannya sendiri (policy `returns_confirm`), menyamakan aturan dengan
+  persetujuan/pencairan (`0003_no_self_approve.sql`). Tombol "Konfirmasi" di `ReturnsSection`
+  juga disembunyikan untuk pemilik pengajuan, dengan guard tambahan di `handleConfirm`.
+- Folder `supabase/migrations/` disamakan dengan `src/lib/supabase/migrations/` (sebelumnya
+  hilang `0030_security_hardening.sql` dan `0031_signup_domain_policy.sql`), supaya setup
+  mengikuti README/PRODUCTION_CHECKLIST benar-benar menjalankan semua hardening keamanan.
+
 ### Fitur
 - **Tur interaktif (Product Tour)**: menggantikan panduan modal lama. Tur menyorot elemen UI
   nyata (atribut `data-tour`), meredupkan sisa halaman, menampilkan tooltip dengan progres
