@@ -20,7 +20,16 @@ import {
   KIND_LABEL,
   hasPendingReturn,
 } from "@/lib/utils";
+import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
 import { RoleBadge, StatCard, TH } from "./parts";
+
+// Requester perlu lihat langsung saat Ops memutuskan/mencairkan pengajuannya,
+// atau saat pengembalian/penggantiannya dikonfirmasi -- tanpa reload manual.
+const REALTIME_TABLES = [
+  "cash_advances",
+  "cash_advance_returns",
+  "cash_advance_reimbursements",
+];
 
 const STATUS_TILE = {
   approved: { bg: "bg-[#e8f8ee]", icon: Check, color: "text-[#1fa653]" },
@@ -47,6 +56,10 @@ function Metric({ value, label, tour }) {
 }
 
 export default function RequesterDashboard({ name, stats, list, count, page, kind, currentUserId, focusCa = null }) {
+  // Auto-refresh: status berubah (disetujui/ditolak/dicairkan) atau
+  // pengembalian/penggantiannya dikonfirmasi -> tabel & badge status
+  // perbarui diri sendiri tanpa reload manual.
+  useRealtimeRefresh(REALTIME_TABLES);
   const [viewCaId, setViewCaId] = useState(focusCa?.id ?? null);
   // Dibuka dari tautan (?ca=): langsung tampilkan pop up detail.
   const [autoDetailId, setAutoDetailId] = useState(focusCa?.id ?? null);

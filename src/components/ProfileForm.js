@@ -68,6 +68,7 @@ const primaryBtn =
 export default function ProfileForm({
   profileId,
   fullName,
+  username: initialUsername,
   email,
   initialChatId,
   initialBankName,
@@ -83,6 +84,7 @@ export default function ProfileForm({
 
   // Nilai tersimpan (dipakai tampilan baca). Draft hanya ada saat mode edit.
   const [saved, setSaved] = useState({
+    username: initialUsername || "",
     chatId: initialChatId || "",
     bankName: initialBankName || "",
     accountNumber: initialBankAccountNumber || "",
@@ -248,10 +250,21 @@ export default function ProfileForm({
 
   function validate() {
     const next = {};
+    const username = draft.username.trim();
     const bank = draft.bankName.trim();
     const holder = draft.accountHolder.trim();
     const number = newAccountNumber || saved.accountNumber;
     const anyBank = bank || holder || number;
+
+    // Format & panjang username: huruf kecil, angka, titik, underscore,
+    // 3–30 karakter (sama dengan batas & pola yang dijaga di database).
+    if (username) {
+      if (username.length < 3 || username.length > 30) {
+        next.username = "Username 3–30 karakter.";
+      } else if (!/^[a-z0-9_.]+$/.test(username)) {
+        next.username = "Username hanya huruf kecil, angka, titik, dan underscore.";
+      }
+    }
 
     if (anyBank) {
       if (!bank) next.bankName = "Nama bank wajib diisi.";
@@ -277,10 +290,15 @@ export default function ProfileForm({
     setSaving(true);
     setServerError("");
     const accountNumber = newAccountNumber || saved.accountNumber;
+    // Username kosong -> tidak diubah (null hanya dikirim kalau memang
+    // sebelumnya belum diisi); dinormalisasi huruf kecil, sumber kebenaran
+    // tetap kolom `username` di tabel profiles (bukan full_name).
+    const username = draft.username.trim().toLowerCase();
     const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
       .update({
+        username: username || null,
         telegram_chat_id: draft.chatId || null,
         bank_name: draft.bankName.trim() || null,
         bank_account_number: accountNumber.trim() || null,
@@ -291,11 +309,20 @@ export default function ProfileForm({
     setConfirming(false);
 
     if (error) {
-      setServerError("Gagal menyimpan. Coba lagi.");
+      // 23505 = unique_violation (idx_profiles_username_lower) -> username
+      // sudah dipakai orang lain. Email, ID akun, dan relasi pengajuan
+      // (requester_id dst. memakai id, bukan username) tidak tersentuh sama
+      // sekali oleh update ini.
+      setServerError(
+        error.code === "23505"
+          ? "Username sudah dipakai. Coba username lain."
+          : "Gagal menyimpan. Coba lagi."
+      );
       return;
     }
 
     setSaved({
+      username,
       chatId: draft.chatId,
       bankName: draft.bankName.trim(),
       accountNumber: accountNumber.trim(),
@@ -341,8 +368,28 @@ export default function ProfileForm({
         </div>
 
         <div className={cardCls}>
-          <Row icon={User} label="Username">
+          <Row icon={UserRound} label="Nama Lengkap">
             <p className={textCls}>{fullName || "-"}</p>
+          </Row>
+          <Row icon={User} label="Username">
+            {editing ? (
+              <>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  value={draft.username}
+                  onChange={(e) =>
+                    set("username")(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""))
+                  }
+                  className={valueCls}
+                  placeholder="Contoh: rina.w"
+                  maxLength={30}
+                />
+                {fieldError("username")}
+              </>
+            ) : (
+              <p className={textCls}>{saved.username || "Belum diatur"}</p>
+            )}
           </Row>
           <Row icon={Mail} label="Email">
             <p className={textCls}>{maskEmail(email) || "-"}</p>
@@ -555,6 +602,7 @@ export default function ProfileForm({
         >
           <p>Data rekening dan Telegram baru akan dipakai untuk pengajuan dan notifikasi berikutnya.</p>
           <ul className="mt-3 space-y-1 text-xs text-slate-500">
+            <li>Username: {draft.username.trim() || "tidak diatur"}</li>
             <li>
               Rekening: {draft.bankName.trim() || "-"}{" "}
               {maskAccountNumber(newAccountNumber || saved.accountNumber)}

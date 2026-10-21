@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -11,8 +11,11 @@ export default function ResubmitPanel({ cashAdvanceId, kind }) {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const busyRef = useRef(false);
 
   async function handleResubmit() {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setError("");
     setLoading(true);
     const supabase = createClient();
@@ -24,6 +27,7 @@ export default function ResubmitPanel({ cashAdvanceId, kind }) {
 
     if (error) {
       setError(error.message || "Gagal mengajukan ulang.");
+      busyRef.current = false;
       return;
     }
     notifyOps(cashAdvanceId, { event: "resubmitted", note: note.trim() || null });

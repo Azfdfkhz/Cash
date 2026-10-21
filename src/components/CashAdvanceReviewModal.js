@@ -91,6 +91,9 @@ function CashAdvanceReviewModalContent({
   // Bukti transfer yang dipilih langsung setelah menekan "Cairkan Sekarang".
   const proofInputRef = useRef(null);
   const [proofFile, setProofFile] = useState(null);
+  // Ref sinkron: cegah klik ganda yang sangat cepat memicu dua keputusan
+  // sekaligus sebelum tombol ter-disable oleh state `loading`.
+  const decideBusyRef = useRef(false);
 
   const isOwner = ca.requester_id === currentUserId;
   const isPending = ca.status === "pending";
@@ -116,12 +119,14 @@ function CashAdvanceReviewModalContent({
     : categoryLabel;
 
   async function handleDecide(status) {
+    if (decideBusyRef.current) return;
     setError("");
     if (status === "rejected" && !note.trim()) {
       setError("Catatan wajib diisi jika menolak pengajuan.");
       return;
     }
 
+    decideBusyRef.current = true;
     setLoading(true);
     const supabase = createClient();
     const {
@@ -142,6 +147,7 @@ function CashAdvanceReviewModalContent({
 
     if (updateError) {
       setError("Gagal memperbarui status pengajuan.");
+      decideBusyRef.current = false;
       return;
     }
 

@@ -78,6 +78,9 @@ export default function DisbursementSection({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
+  // Ref sinkron: cegah klik ganda super cepat pada tombol konfirmasi
+  // mencairkan dana dua kali sebelum `saving` membuatnya disabled.
+  const busyRef = useRef(false);
 
   if (disbursedAt) {
     return (
@@ -146,6 +149,8 @@ export default function DisbursementSection({
   }
 
   async function doDisburse() {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setSaving(true);
     try {
       const formData = new FormData();
@@ -189,6 +194,7 @@ export default function DisbursementSection({
     } catch (err) {
       setError(err.message || "Gagal menyimpan pencairan. Coba lagi.");
       setConfirming(false);
+      busyRef.current = false; // izinkan coba lagi setelah gagal
     } finally {
       setSaving(false);
     }

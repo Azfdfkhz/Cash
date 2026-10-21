@@ -18,6 +18,11 @@ import {
   formatDateTimeShort,
   KIND_LABEL,
 } from "@/lib/utils";
+import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
+
+// Persetujuan & Pencairan: pengajuan baru masuk antrean, atau pengajuan lain
+// berubah status (mis. diputuskan operasional lain) harus langsung terlihat.
+const REALTIME_TABLES = ["cash_advances", "cash_advance_returns"];
 
 // Label dibuat pendek supaya tidak terpotong di kolom daftar (22rem); nama
 // lengkap ada di title/aria-label. Persetujuan dan pencairan adalah dua tahap
@@ -67,6 +72,8 @@ function ApprovalsWorkspaceInner({
   currentUserId,
 }) {
   const router = useRouter();
+  // Auto-refresh antrean persetujuan/pencairan tanpa reload manual.
+  useRealtimeRefresh(REALTIME_TABLES);
   const badge = useApprovalBadge(null, currentUserId, true);
   const { pending: navPending } = usePendingNav();
   const isDisburseTab = tab === "pencairan";

@@ -197,6 +197,13 @@ export default function ReturnsSection({
   );
   const [reimburseNote, setReimburseNote] = useState("");
   const [reimbursing, setReimbursing] = useState(false);
+  // Ref sinkron per aksi: cegah klik ganda super cepat (sebelum state
+  // `submitting`/`reimbursing`/dst. membuat tombol disabled) memicu
+  // pengiriman atau konfirmasi dua kali untuk aksi finansial yang sama.
+  const submitBusyRef = useRef(false);
+  const reimburseBusyRef = useRef(false);
+  const closeBusyRef = useRef(false);
+  const confirmBusyRef = useRef(false);
 
   const remaining = disbursed ? balance - totalReturned : 0;
   // Reimbursement tidak punya sisa/kekurangan: selesai lewat transfer
@@ -211,6 +218,7 @@ export default function ReturnsSection({
 
   async function handleSubmitReturn(e) {
     e.preventDefault();
+    if (submitBusyRef.current) return;
     setError("");
 
     const numericAmount = Number(amount);
@@ -227,6 +235,7 @@ export default function ReturnsSection({
       return;
     }
 
+    submitBusyRef.current = true;
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -272,6 +281,7 @@ export default function ReturnsSection({
       router.refresh();
     } catch (err) {
       setError(err.message || "Gagal menyimpan pengembalian. Coba lagi.");
+      submitBusyRef.current = false;
     } finally {
       setSubmitting(false);
     }
@@ -279,6 +289,7 @@ export default function ReturnsSection({
 
   async function handleSubmitReimbursement(e) {
     e.preventDefault();
+    if (reimburseBusyRef.current) return;
     setError("");
 
     const numericAmount = Number(reimburseAmount);
@@ -291,6 +302,7 @@ export default function ReturnsSection({
       return;
     }
 
+    reimburseBusyRef.current = true;
     setReimbursing(true);
     try {
       const formData = new FormData();
@@ -348,6 +360,7 @@ export default function ReturnsSection({
       router.refresh();
     } catch (err) {
       setError(err.message || "Gagal menyimpan penggantian. Coba lagi.");
+      reimburseBusyRef.current = false;
     } finally {
       setReimbursing(false);
     }
@@ -375,6 +388,8 @@ export default function ReturnsSection({
   }
 
   async function handleConfirm(returnId) {
+    if (confirmBusyRef.current) return;
+    confirmBusyRef.current = true;
     setError("");
     setConfirmingId(returnId);
 
@@ -391,6 +406,7 @@ export default function ReturnsSection({
     if (updateError) {
       setError("Gagal mengonfirmasi pengembalian.");
       setConfirmingId(null);
+      confirmBusyRef.current = false;
       return;
     }
 
@@ -409,6 +425,8 @@ export default function ReturnsSection({
   }
 
   async function handleCloseDirect() {
+    if (closeBusyRef.current) return;
+    closeBusyRef.current = true;
     setError("");
     setClosing(true);
 
@@ -421,6 +439,7 @@ export default function ReturnsSection({
     if (updateError) {
       setError("Gagal menutup pengajuan.");
       setClosing(false);
+      closeBusyRef.current = false;
       return;
     }
 

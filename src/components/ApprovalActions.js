@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -12,13 +12,19 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Ref (bukan state) karena harus efektif SEBELUM render berikutnya --
+  // mencegah klik ganda yang sangat cepat memicu dua keputusan sekaligus
+  // (state `loading` baru membuat tombol disabled setelah re-render).
+  const busyRef = useRef(false);
 
   async function decide(status) {
+    if (busyRef.current) return;
     setError("");
     if (variant === "panel" && status === "rejected" && !note.trim()) {
       setError("Catatan wajib diisi jika menolak pengajuan.");
       return;
     }
+    busyRef.current = true;
     setLoading(true);
 
     const supabase = createClient();
@@ -40,6 +46,7 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
 
     if (error) {
       setError("Gagal memperbarui status.");
+      busyRef.current = false;
       return;
     }
 
@@ -51,6 +58,9 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
 
     onDecided?.(status, note.trim() || null);
     router.refresh();
+    // busyRef sengaja TIDAK direset di sini: komponen ini biasanya di-unmount
+    // atau dirender ulang dengan props baru setelah router.refresh(), jadi
+    // tidak perlu dibuka lagi untuk keputusan yang sama.
   }
 
   if (variant === "panel") {

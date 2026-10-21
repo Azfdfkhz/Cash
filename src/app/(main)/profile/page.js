@@ -56,6 +56,7 @@ export default async function ProfilePage() {
           <ProfileForm
             profileId={profile.id}
             fullName={profile?.full_name}
+            username={profile?.username}
             email={profile?.email}
             initialChatId={profile.telegram_chat_id}
             initialBankName={profile.bank_name}

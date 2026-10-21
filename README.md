@@ -33,9 +33,12 @@ Supabase, siap deploy ke Vercel.
 
 1. Buat project baru di [supabase.com](https://supabase.com).
 2. Buka **SQL Editor**, jalankan SEMUA file di `supabase/migrations/` berurutan
-   (0001 … 0030). Lihat `PRODUCTION_CHECKLIST.md` sebelum go-live.
+   (0001 … 0032). Lihat `PRODUCTION_CHECKLIST.md` sebelum go-live.
    Ini akan membuat tabel `profiles`, `cash_advances`, `receipts`, view saldo,
-   dan seluruh RLS policy.
+   seluruh RLS policy, dan mengaktifkan Supabase Realtime untuk auto-refresh
+   (migrasi 0032) -- tanpa ini, Realtime tetap tidak aktif dan halaman jatuh
+   kembali ke mode tanpa auto-refresh (tetap bisa dipakai, hanya perlu reload
+   manual).
 3. Ambil **Project URL** dan **anon public key** dari
    *Project Settings → API*, isi ke `.env.local`.
 4. Setiap user yang mendaftar otomatis masuk sebagai role `requester`. Untuk

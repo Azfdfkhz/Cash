@@ -16,6 +16,11 @@ import {
 import { formatCurrency, formatDateNumeric } from "@/lib/utils";
 import { PendingNavProvider, usePendingNav } from "@/components/PendingNav";
 import { ReceiptListSkeleton } from "@/components/skeletons/ListSkeletons";
+import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
+
+// Laporan menampilkan rekap kwitansi -- kwitansi baru/diubah harus langsung
+// masuk tabel & total tanpa reload manual.
+const REALTIME_TABLES = ["receipts", "receipt_lines"];
 
 // Ambil ID file dari URL Google Drive → URL pratinjau & unduh.
 function driveIds(url) {
@@ -59,6 +64,8 @@ function ReportsTableInner({
 }) {
   const pathname = usePathname();
   const { pending, navigate } = usePendingNav();
+  // Kwitansi baru dari requester lain langsung muncul tanpa reload manual.
+  useRealtimeRefresh(REALTIME_TABLES);
   const [query, setQuery] = useState(filters.q);
   const [selectedId, setSelectedId] = useState(null);
   const lastPushedQuery = useRef(filters.q);

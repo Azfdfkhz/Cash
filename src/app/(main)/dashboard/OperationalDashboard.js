@@ -21,7 +21,18 @@ import {
   KIND_LABEL,
   hasPendingReturn,
 } from "@/lib/utils";
+import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
 import { RoleBadge, StatCard, FilterTabs, TH } from "./parts";
+
+// Tabel yang relevan untuk Beranda Tim Operasional: daftar pengajuan, status
+// pengembalian/penggantian (badge "Konfirmasi Pengembalian"), dan kwitansi
+// (memengaruhi status "Perlu SPJ"). Lihat lib/useRealtimeRefresh.js.
+const REALTIME_TABLES = [
+  "cash_advances",
+  "receipts",
+  "cash_advance_returns",
+  "cash_advance_reimbursements",
+];
 
 // Teks & gaya tombol aksi menurut status (dipakai kartu mobile)
 const MOBILE_ACTION = {
@@ -77,6 +88,10 @@ export default function OperationalDashboard({
   focusCa = null,
 }) {
   const router = useRouter();
+  // Auto-refresh: saat ada pengajuan baru, perubahan status, kwitansi, atau
+  // pengembalian/penggantian, daftar & kartu statistik di halaman ini
+  // memperbarui diri sendiri tanpa reload manual.
+  useRealtimeRefresh(REALTIME_TABLES);
   const basePath = filter === "pending" ? "/dashboard?filter=pending" : "/dashboard";
   const filterParams = { jenis: kind };
 

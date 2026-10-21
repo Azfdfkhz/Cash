@@ -178,6 +178,7 @@ export default function NewCashAdvancePage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (loading) return; // cegah klik ganda / submit ganda saat masih mengirim
     setError("");
 
     // RAB wajib; nominal diajukan = total RAB (dijaga juga oleh trigger
