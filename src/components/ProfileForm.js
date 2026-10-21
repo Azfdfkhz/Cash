@@ -323,7 +323,7 @@ export default function ProfileForm({
         </div>
       )}
 
-      <section>
+      <section data-tour="profile-account">
         <div className="mb-2 flex items-center justify-between px-1">
           <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             Informasi Akun
@@ -433,7 +433,7 @@ export default function ProfileForm({
         </p>
       </section>
 
-      <section>
+      <section data-tour="profile-telegram">
         <h2 className={sectionLabel}>Integrasi &amp; Notifikasi</h2>
         <div className={cardCls}>
           <Row

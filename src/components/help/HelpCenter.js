@@ -10,7 +10,7 @@ import {
   ROLE_FLOW,
   normalizeHelpRole,
 } from "@/lib/helpContent";
-import { OPEN_ONBOARDING_EVENT } from "@/components/help/OnboardingTour";
+import { START_TOUR_EVENT } from "@/lib/tour/tourConfig";
 
 function RoleTabs({ role, onChange }) {
   return (
@@ -104,7 +104,7 @@ function Topic({ topic, role, open, onToggle }) {
 
 // Pusat Bantuan: dipakai di dalam aplikasi (/help) dan halaman publik
 // (/bantuan). `canReplayTour` hanya benar di dalam aplikasi, karena
-// onboarding berada di layout aplikasi.
+// tur interaktif berada di layout aplikasi.
 export default function HelpCenter({ defaultRole = "requester", canReplayTour = false }) {
   const [role, setRole] = useState(normalizeHelpRole(defaultRole));
   const [openId, setOpenId] = useState(HELP_TOPICS[0].id);
@@ -128,11 +128,11 @@ export default function HelpCenter({ defaultRole = "requester", canReplayTour = 
           {canReplayTour && (
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new Event(OPEN_ONBOARDING_EVENT))}
+              onClick={() => window.dispatchEvent(new Event(START_TOUR_EVENT))}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
             >
               <PlayCircle size={16} aria-hidden="true" />
-              Buka ulang pengenalan
+              Panduan interaktif · Mulai tur ulang
             </button>
           )}
         </div>

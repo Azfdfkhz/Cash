@@ -5,14 +5,16 @@ import ProfileForm from "@/components/ProfileForm";
 import ProfileSummaryCard from "@/components/ProfileSummaryCard";
 import ProfileMobileHeader from "@/components/ProfileMobileHeader";
 import ProfileMobileLogout from "@/components/ProfileMobileLogout";
+import ProfileTourRow from "@/components/tour/ProfileTourRow";
 import { getBotUsername } from "@/lib/telegram/send";
 
 export const dynamic = "force-dynamic";
 
-function MenuRow({ href, icon: Icon, title, subtitle }) {
+function MenuRow({ href, icon: Icon, title, subtitle, tour }) {
   return (
     <Link
       href={href}
+      data-tour={tour}
       className="flex items-center gap-4 border-t border-slate-100 px-4 py-3.5 first:border-t-0 hover:bg-slate-50"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-600">
@@ -69,13 +71,14 @@ export default async function ProfilePage() {
             <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               Lainnya
             </h2>
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div data-tour="profile-help" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               {profile?.role === "operational" && (
                 <MenuRow
                   href="/users"
                   icon={UserCog}
                   title="Kelola Pengguna"
                   subtitle="Mengelola Role Pengguna"
+                  tour="profile-users"
                 />
               )}
               <MenuRow
@@ -84,6 +87,7 @@ export default async function ProfilePage() {
                 title="Pusat bantuan"
                 subtitle="Panduan, glosarium & pengenalan"
               />
+              <ProfileTourRow />
               <MenuRow
                 href="/terms"
                 icon={FileText}

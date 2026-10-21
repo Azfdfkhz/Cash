@@ -14,9 +14,10 @@ export function RoleBadge({ children, dot = false, dark = false }) {
 }
 
 // Kartu ringkasan desktop. `dark` = kartu utama bernuansa navy.
-export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-3xl mt-5" }) {
+export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-400", valueClass = "text-3xl mt-5", tour }) {
   return (
     <div
+      data-tour={tour}
       className={`rounded-2xl border p-5 xl:p-6 ${
         dark
           ? "border-slate-800 bg-slate-900 text-white"
@@ -56,7 +57,7 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
         : "text-slate-500 hover:text-slate-700"
     }`;
   return (
-    <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1">
+    <div data-tour="status-filter" className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1">
       <PendingLink scroll={false} href={jenis ? `/dashboard?${jenis}` : "/dashboard"} className={tab(filter !== "pending")}>
         Semua
       </PendingLink>

@@ -39,9 +39,9 @@ function KindTag({ kind }) {
   );
 }
 
-function Metric({ value, label, divider }) {
+function Metric({ value, label, divider, tour }) {
   return (
-    <div className={`flex-1 ${divider ? "border-l border-slate-100 pl-4" : ""}`}>
+    <div data-tour={tour} className={`flex-1 ${divider ? "border-l border-slate-100 pl-4" : ""}`}>
       <p className="text-xl font-bold text-slate-900">{value}</p>
       <p className="mt-0.5 text-xs font-medium leading-snug text-slate-500">{label}</p>
     </div>
@@ -160,15 +160,15 @@ export default function OperationalDashboard({
           </div>
         </div>
 
-        <section className="rounded-[28px] border border-slate-200/90 bg-white px-6 pb-6 pt-6 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)]">
+        <section data-tour="stat-balance" className="rounded-[28px] border border-slate-200/90 bg-white px-6 pb-6 pt-6 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)]">
           <p className="text-[13px] font-medium text-slate-500">Total Saldo Berjalan</p>
           <p className="pb-4 pt-1.5 text-[32px] font-extrabold leading-8 tracking-tight text-[#0d1b2a]">
             {formatCurrency(stats.totalOutstanding)}
           </p>
           <div className="flex gap-4 border-t border-slate-100 pt-4">
-            <Metric value={stats.pendingCount} label="Perlu Disetujui" />
-            <Metric value={stats.activeCount} label="CA Berjalan" divider />
-            <Metric value={stats.needsSpjCount} label="Perlu SPJ/Laporan" divider />
+            <Metric value={stats.pendingCount} label="Perlu Disetujui" tour="stat-pending" />
+            <Metric value={stats.activeCount} label="CA Berjalan" divider tour="stat-active" />
+            <Metric value={stats.needsSpjCount} label="Perlu SPJ/Laporan" divider tour="stat-spj" />
           </div>
         </section>
 
@@ -200,8 +200,8 @@ export default function OperationalDashboard({
           {list.length === 0 && (
             <p className="text-sm text-slate-500">Belum ada pengajuan.</p>
           )}
-          <div className="space-y-4">
-            {list.map((ca) => {
+          <div data-tour="request-list" className="space-y-4">
+            {list.map((ca, i) => {
               const action =
                 ca.status === "approved" && hasPendingReturn(ca)
                   ? { label: "Konfirmasi Pengembalian", primary: true }
@@ -243,6 +243,7 @@ export default function OperationalDashboard({
                   <button
                     type="button"
                     onClick={() => openReview(ca.id)}
+                    data-tour={i === 0 ? "row-action" : undefined}
                     className={
                       action.primary
                         ? "mt-3 ml-auto flex w-fit items-center rounded-full bg-[#0f172a] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
@@ -276,8 +277,9 @@ export default function OperationalDashboard({
         </div>
 
         <div className="mt-8 grid grid-cols-4 gap-5">
-          <StatCard dark dot label="Belum Disetujui" value={stats.pendingCount} caption="Butuh verifikasi dokumen" />
+          <StatCard tour="stat-pending" dark dot label="Belum Disetujui" value={stats.pendingCount} caption="Butuh verifikasi dokumen" />
           <StatCard
+            tour="stat-balance"
             label="Saldo berjalan"
             value={<CompactIdr value={stats.totalOutstanding} prefix={false} />}
             caption="Total sisa saldo CA berjalan"
@@ -285,8 +287,8 @@ export default function OperationalDashboard({
             icon={TrendingUp}
             iconClass="text-emerald-500"
           />
-          <StatCard label="CA berjalan" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} iconClass="text-brand" />
-          <StatCard label="Perlu SPJ" value={stats.needsSpjCount} caption="Menunggu pelaporan kuitansi" icon={TriangleAlert} iconClass="text-amber-500" />
+          <StatCard tour="stat-active" label="CA berjalan" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} iconClass="text-brand" />
+          <StatCard tour="stat-spj" label="Perlu SPJ" value={stats.needsSpjCount} caption="Menunggu pelaporan kuitansi" icon={TriangleAlert} iconClass="text-amber-500" />
         </div>
 
         <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
@@ -303,7 +305,7 @@ export default function OperationalDashboard({
             <KindFilter />
           </div>
 
-          <table className="w-full border-t border-slate-200 text-left">
+          <table data-tour="request-list" className="w-full border-t border-slate-200 text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 <th className={TH}>Pemohon</th>
@@ -323,7 +325,7 @@ export default function OperationalDashboard({
                   </td>
                 </tr>
               )}
-              {list.map((ca) => {
+              {list.map((ca, i) => {
                 const isPending = ca.status === "pending";
                 return (
                   <tr
@@ -365,6 +367,7 @@ export default function OperationalDashboard({
                     <td className="px-5 py-4 text-center">
                       <button
                         type="button"
+                        data-tour={i === 0 ? "row-action" : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           openReview(ca.id);

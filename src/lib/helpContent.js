@@ -193,20 +193,3 @@ export const GLOSSARY = [
   { term: "jt", meaning: "Singkatan juta. Rp 1,85 jt berarti sekitar Rp 1.850.000." },
   { term: "miliar", meaning: "Seribu juta. Rp 17 miliar berarti sekitar Rp 17.000.000.000." },
 ];
-
-// Langkah onboarding singkat. Memakai ringkasan alur di atas.
-export const ONBOARDING_VERSION = "v1";
-export function onboardingSteps(role) {
-  const flow = ROLE_FLOW[normalizeHelpRole(role)];
-  const intro =
-    normalizeHelpRole(role) === "operational"
-      ? {
-          title: "Selamat datang, Tim Operasional",
-          body: "Berikut gambaran singkat tugas Anda di aplikasi ini. Anda bisa membuka panduan lengkapnya kapan saja di Pusat Bantuan.",
-        }
-      : {
-          title: "Selamat datang di Cash Advance",
-          body: "Berikut gambaran singkat cara mengajukan dan melaporkan dana. Anda bisa membuka panduan lengkapnya kapan saja di Pusat Bantuan.",
-        };
-  return [intro, ...flow];
-}

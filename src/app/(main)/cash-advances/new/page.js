@@ -63,9 +63,14 @@ export default function NewCashAdvancePage() {
   // Autosave menunggu pilihan user (`restored`), supaya draft lama tidak tertimpa.
   const [pendingDraft, setPendingDraft] = useState(null);
   useEffect(() => {
-    const d = loadDraft(DRAFT_KIND);
-    if (d) setPendingDraft(d);
-    else setRestored(true);
+    // Dibaca dari localStorage setelah mount (bukan saat render, agar hidrasi cocok);
+    // setState ditunda ke callback supaya tidak dipanggil sinkron di badan efek.
+    const t = setTimeout(() => {
+      const d = loadDraft(DRAFT_KIND);
+      if (d) setPendingDraft(d);
+      else setRestored(true);
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   function continueDraft() {
@@ -340,6 +345,7 @@ export default function NewCashAdvancePage() {
           </div>
         )}
 
+        <div data-tour="req-basic" className="space-y-6">
         <Field label="Keperluan / judul kegiatan" required hint={`${purpose.length}/80`} htmlFor="purpose">
           <input
             id="purpose"
@@ -397,8 +403,9 @@ export default function NewCashAdvancePage() {
             />
           </Field>
         )}
+        </div>
 
-        <div>
+        <div data-tour="req-rab">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3">
             <h2 className="text-base font-bold text-slate-900">
               Rencana Anggaran Biaya (RAB) <span className="text-rose-500">*</span>
@@ -414,7 +421,7 @@ export default function NewCashAdvancePage() {
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
+        <div data-tour="req-date" className="grid gap-6 lg:grid-cols-2 lg:gap-4">
           <Field
             label="Tanggal kebutuhan dana"
             required
@@ -436,6 +443,7 @@ export default function NewCashAdvancePage() {
           </Field>
         </div>
 
+        <div data-tour="req-bank">
         <BankAccountField
           bankName={bankName}
           onBankName={setBankName}
@@ -445,6 +453,7 @@ export default function NewCashAdvancePage() {
           onAccountHolder={setBankAccountHolder}
           profileBankMissing={profileBankMissing}
         />
+        </div>
       </form>
 
       <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />

@@ -37,9 +37,9 @@ function KindTag({ kind }) {
   );
 }
 
-function Metric({ value, label }) {
+function Metric({ value, label, tour }) {
   return (
-    <div className="min-w-0 flex-1">
+    <div data-tour={tour} className="min-w-0 flex-1">
       <p className="break-words text-lg font-bold leading-tight text-slate-900">{value}</p>
       <p className="text-xs font-medium text-slate-400">{label}</p>
     </div>
@@ -87,15 +87,15 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           </div>
         </div>
 
-        <section className="rounded-[28px] border border-slate-200/90 bg-white px-6 pb-6 pt-7 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)]">
+        <section data-tour="stat-balance" className="rounded-[28px] border border-slate-200/90 bg-white px-6 pb-6 pt-7 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)]">
           <p className="text-[13px] font-medium text-slate-500">Sisa saldo aktif</p>
           <p className="pb-4 pt-1.5 text-[32px] font-extrabold leading-8 tracking-tight text-[#0d1b2a]">
             {formatCurrency(stats.totalOutstanding)}
           </p>
           <div className="flex gap-2 border-t border-slate-100 pt-4">
-            <Metric value={stats.activeCount} label="CA aktif" />
-            <Metric value={stats.pendingCount} label="Belum disetujui" />
-            <Metric value={<CompactIdr value={stats.totalReturned} />} label="Dikembalikan" />
+            <Metric value={stats.activeCount} label="CA aktif" tour="stat-active" />
+            <Metric value={stats.pendingCount} label="Belum disetujui" tour="stat-pending" />
+            <Metric value={<CompactIdr value={stats.totalReturned} />} label="Dikembalikan" tour="stat-returned" />
           </div>
         </section>
 
@@ -120,8 +120,8 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           {list.length === 0 && (
             <p className="text-sm text-slate-500">{emptyText}</p>
           )}
-          <div className="space-y-3.5">
-            {list.map((ca) => {
+          <div data-tour="request-list" className="space-y-3.5">
+            {list.map((ca, i) => {
               const tile = STATUS_TILE[ca.status] ?? STATUS_TILE.closed;
               const Icon = tile.icon;
               return (
@@ -129,6 +129,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                   key={ca.id}
                   type="button"
                   onClick={() => openView(ca.id)}
+                  data-tour={i === 0 ? "row-action" : undefined}
                   className="flex w-full items-center justify-between gap-3 text-left rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.03)] transition-colors hover:border-slate-300"
                 >
                   <div className="flex min-w-0 items-center gap-3.5">
@@ -184,10 +185,10 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
         </div>
 
         <div className="mt-7 grid grid-cols-4 gap-4 xl:gap-5">
-          <StatCard dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
-          <StatCard label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
-          <StatCard label="Belum Disetujui" value={stats.pendingCount} caption="Menunggu keputusan Operasional" icon={Info} />
-          <StatCard label="Dikembalikan" value={<CompactIdr value={stats.totalReturned} />} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
+          <StatCard tour="stat-balance" dark label="Sisa saldo aktif" value={formatCurrency(stats.totalOutstanding)} caption="" valueClass="text-xl mt-8 whitespace-nowrap" />
+          <StatCard tour="stat-active" label="CA aktif" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} />
+          <StatCard tour="stat-pending" label="Belum Disetujui" value={stats.pendingCount} caption="Menunggu keputusan Operasional" icon={Info} />
+          <StatCard tour="stat-returned" label="Dikembalikan" value={<CompactIdr value={stats.totalReturned} />} caption="Total pengembalian" icon={TrendingUp} valueClass="text-2xl mt-6" />
         </div>
 
         <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/30">
@@ -204,7 +205,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
             </div>
           </div>
 
-          <table className="w-full border-t border-slate-200 text-left">
+          <table data-tour="request-list" className="w-full border-t border-slate-200 text-left">
             <thead>
               <tr className="border-b border-slate-200">
                 <th className={TH}>Kegiatan</th>
@@ -223,7 +224,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                   </td>
                 </tr>
               )}
-              {list.map((ca) => (
+              {list.map((ca, i) => (
                 <tr
                   key={ca.id}
                   className="relative cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
@@ -254,7 +255,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
 </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className="inline-block rounded-lg bg-[#eef2f6] px-4 py-1.5 text-xs font-medium text-[#334155]">
+                    <span data-tour={i === 0 ? "row-action" : undefined} className="inline-block rounded-lg bg-[#eef2f6] px-4 py-1.5 text-xs font-medium text-[#334155]">
                       Lihat
                     </span>
                   </td>

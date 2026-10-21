@@ -67,9 +67,14 @@ export default function NewReimbursementPage() {
   // Autosave menunggu pilihan user (`restored`), supaya draft lama tidak tertimpa.
   const [pendingDraft, setPendingDraft] = useState(null);
   useEffect(() => {
-    const d = loadDraft(DRAFT_KIND);
-    if (d) setPendingDraft(d);
-    else setRestored(true);
+    // Dibaca dari localStorage setelah mount (bukan saat render, agar hidrasi cocok);
+    // setState ditunda ke callback supaya tidak dipanggil sinkron di badan efek.
+    const t = setTimeout(() => {
+      const d = loadDraft(DRAFT_KIND);
+      if (d) setPendingDraft(d);
+      else setRestored(true);
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   // Pulihkan draft: teks dari localStorage, file kwitansi dari IndexedDB.
@@ -493,7 +498,7 @@ export default function NewReimbursementPage() {
           </Field>
         )}
 
-        <div>
+        <div data-tour="req-receipts">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-900/80 pb-3 lg:border-0 lg:pb-0">
             <h2 className="text-base font-bold text-slate-900">
               Kwitansi &amp; Bukti Transfer ({drafts.length}) <span className="text-rose-500">*</span>

@@ -33,7 +33,7 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
       </div>
 
       <nav className="flex-1 px-3 py-5">
-        <ul className="space-y-1.5">
+        <ul data-tour="nav" className="space-y-1.5">
           {items.map(({ href, label, icon: Icon, badge, draft, also }) => {
             const active = isActive(pathname, href, also);
             return (

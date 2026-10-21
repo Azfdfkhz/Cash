@@ -97,6 +97,7 @@ function ReportsTableInner({
   return (
     <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <div className="space-y-3">
+        <div data-tour="report-filters" className="space-y-3">
         <div className="relative">
           <Search
             size={16}
@@ -175,7 +176,8 @@ function ReportsTableInner({
             </button>
           ))}
         </div>
-        <div className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-opacity ${pending ? "opacity-50" : ""}`}>
+        </div>
+        <div data-tour="report-summary" className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-opacity ${pending ? "opacity-50" : ""}`}>
           <span className="font-num text-sm text-slate-500">{total} kwitansi</span>
           <div className="flex items-center gap-3">
             <span className="font-num text-base font-bold text-slate-900">

@@ -58,6 +58,7 @@ export default function KindFilter({ counts = null, dots = null, className = "" 
   const { kind, select } = useContext(FilterContext);
   return (
     <div
+      data-tour="kind-filter"
       className={`flex border-b border-slate-200 ${className}`}
       role="tablist"
       aria-label="Jenis pengajuan"

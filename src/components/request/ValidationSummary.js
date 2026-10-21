@@ -49,7 +49,7 @@ export default function ValidationSummary({
 
   return (
     <>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:rounded-3xl lg:p-6">
+      <section data-tour="req-summary" className="rounded-2xl border border-slate-200 bg-white p-5 lg:rounded-3xl lg:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold tracking-tight text-slate-900">Ringkasan validasi</h2>
           <span
@@ -99,7 +99,7 @@ export default function ValidationSummary({
           ))}
         </ul>
 
-        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#fde68a] bg-[#fffbeb] p-4 text-sm leading-relaxed text-[#92400e]">
+        <label data-tour="req-agree" className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#fde68a] bg-[#fffbeb] p-4 text-sm leading-relaxed text-[#92400e]">
           <input
             type="checkbox"
             checked={agreed}
@@ -109,11 +109,11 @@ export default function ValidationSummary({
           <span>{declaration}</span>
         </label>
 
-        <div className="mt-5 hidden gap-3 lg:flex">{actions}</div>
+        <div data-tour="req-actions" className="mt-5 hidden gap-3 lg:flex">{actions}</div>
         {notice && <p className="mt-3 text-xs text-slate-500">{notice}</p>}
       </section>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex gap-3 border-t border-slate-200 bg-white px-5 pt-3 pb-3 lg:hidden">
+      <div data-tour="req-actions" className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex gap-3 border-t border-slate-200 bg-white px-5 pt-3 pb-3 lg:hidden">
         {actions}
       </div>
     </>

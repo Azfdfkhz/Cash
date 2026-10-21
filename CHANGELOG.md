@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+### Fitur
+- **Tur interaktif (Product Tour)**: menggantikan panduan modal lama. Tur menyorot elemen UI
+  nyata (atribut `data-tour`), meredupkan sisa halaman, menampilkan tooltip dengan progres
+  "Langkah n dari N", dan berpindah halaman otomatis. Requester: Beranda, Ajukan (Cash
+  Advance + kwitansi Reimbursement), Profil. Operasional: Beranda, Persetujuan/Pencairan,
+  Laporan, Profil (termasuk Kelola Pengguna).
+- Muncul sekali setelah login pertama (Mulai Tur / Lewati); status belum mulai / berlangsung /
+  selesai / dilewati disimpan di `user_metadata.tour` (tanpa migrasi DB, tanpa localStorage).
+  Tur yang terhenti ditawarkan lanjut. Ulang lewat Pusat Bantuan atau Profil > Panduan interaktif.
+  Pengguna yang sudah melihat panduan lama tidak dipaksa menonton ulang.
+- Tur tidak pernah mengklik tombol atas nama pengguna: sorotan hanya bisa diklik pada langkah
+  pengisian formulir, tombol Kirim/Setujui/Tolak tidak pernah dijalankan; tur jeda saat ada pop up
+  aplikasi, mendukung keyboard (Esc, panah, Tab terkunci), dan `prefers-reduced-motion`.
+
 ## 1.1.6
 ### Keamanan
 - **DB (0030)**: `profiles` tidak bisa lagi diubah kolom `role`/`email` oleh user (eskalasi

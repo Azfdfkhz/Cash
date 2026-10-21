@@ -15,7 +15,7 @@ export default function BottomNav({ role, pendingCounts, userId }) {
   const items = navFor(role);
 
   return (
-    <nav className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom">
+    <nav data-tour="nav" className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom">
       <ul className="flex px-4 pt-2 pb-3">
         {items.map(({ href, label, icon: Icon, badge, draft, also }) => {
           const active = isActive(pathname, href, also);

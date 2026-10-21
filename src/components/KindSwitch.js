@@ -12,7 +12,7 @@ export default function KindSwitch({ active }) {
     { kind: "reimbursement", href: "/reimbursements/new", label: "Reimbursement", hint: "Klaim uang pribadi yang sudah terpakai", icon: ReceiptText },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 lg:gap-5" role="radiogroup" aria-label="Jenis pengajuan">
+    <div data-tour="req-kind" className="grid grid-cols-2 gap-3 lg:gap-5" role="radiogroup" aria-label="Jenis pengajuan">
       {items.map(({ kind, href, label, hint, icon: Icon }) => {
         const selected = active === kind;
         return (

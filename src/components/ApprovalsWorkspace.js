@@ -210,7 +210,7 @@ function ApprovalsWorkspaceInner({
           </p>
         </div>
 
-        <div role="tablist" aria-label="Daftar pengajuan" className="flex border-b border-slate-200">
+        <div data-tour="approval-tabs" role="tablist" aria-label="Daftar pengajuan" className="flex border-b border-slate-200">
           {TABS.map((t) => {
             const active = t.id === tab;
             const n = counts[t.id] ?? 0;
@@ -268,7 +268,7 @@ function ApprovalsWorkspaceInner({
           </p>
         )}
 
-        <div className="space-y-3 lg:hidden">
+        <div data-tour="approval-list" className="space-y-3 lg:hidden">
           {items.map((ca) => (
             <CashAdvanceCard
               key={ca.id}
@@ -279,7 +279,7 @@ function ApprovalsWorkspaceInner({
           ))}
         </div>
 
-        <div className="hidden space-y-3 lg:block">
+        <div data-tour="approval-list" className="hidden space-y-3 lg:block">
           {items.map((ca) => {
             const active = ca.id === selected?.id;
             return (
@@ -326,7 +326,7 @@ function ApprovalsWorkspaceInner({
         </KindFilterContent>
       </section>
 
-      <aside className="hidden lg:block lg:sticky lg:top-8">
+      <aside data-tour="approval-detail" className="hidden lg:block lg:sticky lg:top-8">
         {navPending ? (
           <DetailPanelSkeleton />
         ) : selected ? (
@@ -367,7 +367,7 @@ function ApprovalsWorkspaceInner({
             </div>
 
             {selected.status === "pending" && selected.requester_id !== currentUserId && (
-              <div className="shrink-0 border-t border-slate-200 pb-1">
+              <div data-tour="approval-actions" className="shrink-0 border-t border-slate-200 pb-1">
                 <ApprovalActions
                   key={selected.id}
                   cashAdvanceId={selected.id}
