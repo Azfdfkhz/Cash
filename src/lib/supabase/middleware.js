@@ -4,6 +4,20 @@ import { NextResponse } from "next/server";
 const PUBLIC_PATHS = ["/login", "/register", "/auth", "/forgot-password", "/bantuan"];
 
 export async function updateSession(request) {
+  // Bila URL callback tidak ada di daftar Redirect URLs Supabase, Google/Supabase
+  // mengembalikan pengguna ke Site URL (mis. /login atau /) membawa ?code=.
+  // Tanpa penanganan ini kode terbuang dan pengguna harus klik login lagi.
+  // Teruskan ke /auth/callback SEBELUM pengecekan sesi/redirect lain, sebab
+  // pengguna yang belum login biasanya langsung dilempar ke /login?next=...
+  const incomingCode = request.nextUrl.searchParams.get("code");
+  if (incomingCode && !request.nextUrl.pathname.startsWith("/auth")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.search = "";
+    url.searchParams.set("code", incomingCode);
+    return NextResponse.redirect(url);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
