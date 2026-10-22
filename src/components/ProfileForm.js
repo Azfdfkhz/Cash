@@ -129,13 +129,13 @@ export default function ProfileForm({
     const number = newAccountNumber || saved.accountNumber;
     const anyBank = bank || holder || number;
 
-    // Format & panjang username: huruf kecil, angka, titik, underscore,
+    // Format & panjang username: huruf besar/kecil, angka, titik, underscore,
     // 3–30 karakter (sama dengan batas & pola yang dijaga di database).
     if (username) {
       if (username.length < 3 || username.length > 30) {
         next.username = "Username 3–30 karakter.";
-      } else if (!/^[a-z0-9_.]+$/.test(username)) {
-        next.username = "Username hanya huruf kecil, angka, titik, dan underscore.";
+      } else if (!/^[A-Za-z0-9_.]+$/.test(username)) {
+        next.username = "Username hanya huruf, angka, titik, dan underscore.";
       }
     }
 
@@ -164,9 +164,9 @@ export default function ProfileForm({
     setServerError("");
     const accountNumber = newAccountNumber || saved.accountNumber;
     // Username kosong -> tidak diubah (null hanya dikirim kalau memang
-    // sebelumnya belum diisi); dinormalisasi huruf kecil, sumber kebenaran
+    // sebelumnya belum diisi); huruf besar/kecil dipertahankan, sumber kebenaran
     // tetap kolom `username` di tabel profiles (bukan full_name).
-    const username = draft.username.trim().toLowerCase();
+    const username = draft.username.trim();
     const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
@@ -249,7 +249,7 @@ export default function ProfileForm({
                   autoComplete="username"
                   value={draft.username}
                   onChange={(e) =>
-                    set("username")(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""))
+                    set("username")(e.target.value.replace(/[^A-Za-z0-9_.]/g, ""))
                   }
                   className={valueCls}
                   placeholder="Contoh: rina.w"

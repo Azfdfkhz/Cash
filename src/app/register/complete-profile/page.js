@@ -43,15 +43,27 @@ export default function CompleteProfilePage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+
+    // Samakan dengan constraint database chk_profiles_username_format
+    // (huruf besar/kecil, angka, titik, underscore; 3-30 karakter).
+    // Huruf besar/kecil dianggap sama saat cek duplikat (index lower()).
+    const cleanUsername = username.trim();
+    if (cleanUsername && !/^[A-Za-z0-9_.]{3,30}$/.test(cleanUsername)) {
+      setError(
+        "Username 3-30 karakter, hanya huruf, angka, titik, dan underscore (tanpa spasi atau tanda -)."
+      );
+      return;
+    }
+
     setSaving(true);
 
     const supabase = createClient();
-    const displayName = bankHolderName || username;
+    const displayName = bankHolderName || cleanUsername;
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
-        full_name: displayName || username,
-        username: username.trim().toLowerCase() || null,
+        full_name: displayName || cleanUsername,
+        username: cleanUsername || null,
         // Menandai langkah 2 selesai; tanpa ini dashboard terus mengarahkan
         // kembali ke halaman ini.
         profile_completed_at: new Date().toISOString(),
@@ -68,7 +80,9 @@ export default function CompleteProfilePage() {
       setError(
         updateError.code === "23505"
           ? "Nama pengguna sudah dipakai. Coba yang lain."
-          : "Gagal menyimpan data. Coba lagi."
+          : updateError.code === "23514"
+            ? "Format data tidak valid. Username hanya boleh huruf, angka, titik, dan underscore (3-30 karakter); periksa juga panjang nama pemilik rekening."
+            : "Gagal menyimpan data. Coba lagi."
       );
       return;
     }
@@ -139,8 +153,10 @@ export default function CompleteProfilePage() {
           type="text"
           autoComplete="username"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="contoh: rina.w"
+          onChange={(e) =>
+            setUsername(e.target.value.replace(/[^A-Za-z0-9_.]/g, ""))
+          }
+          placeholder="contoh: Rina_W"
         />
 
         {/* Bank + account */}
