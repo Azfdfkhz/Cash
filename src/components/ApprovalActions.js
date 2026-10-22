@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoId } from "@/lib/tour/demoData";
 
 // `onDecided(status, note)` dipanggil setelah keputusan tersimpan, sebelum
 // data di-refresh (dipakai Persetujuan untuk menampilkan pop up lanjutan).
@@ -18,6 +19,7 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
   const busyRef = useRef(false);
 
   async function decide(status) {
+    if (isDemoId(cashAdvanceId)) return; // pengajuan contoh milik tur: tidak pernah disimpan
     if (busyRef.current) return;
     setError("");
     if (variant === "panel" && status === "rejected" && !note.trim()) {

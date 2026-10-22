@@ -17,6 +17,7 @@ import {
   Hourglass,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoCa } from "@/lib/tour/demoData";
 import StatusBadge from "@/components/StatusBadge";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
@@ -123,6 +124,7 @@ function CashAdvanceReviewModalContent({
     : categoryLabel;
 
   async function handleDecide(status) {
+    if (isDemoCa(ca)) return; // pengajuan contoh milik tur: tidak pernah disimpan
     if (decideBusyRef.current) return;
     setError("");
     if (status === "rejected" && !note.trim()) {
@@ -237,7 +239,7 @@ function CashAdvanceReviewModalContent({
       aria-modal="true"
       role="dialog"
     >
-      <div className="max-sm:animate-sheet-up sm:animate-slide-in-right relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:max-w-[420px] sm:rounded-l-[20px] sm:border-l sm:border-slate-200/80">
+      <div data-tour="review-panel" className="max-sm:animate-sheet-up sm:animate-slide-in-right relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:max-w-[420px] sm:rounded-l-[20px] sm:border-l sm:border-slate-200/80">
         {/* ── Header: kode + status sebaris, judul di bawah ── */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="min-w-0 flex-1">
@@ -480,7 +482,7 @@ function CashAdvanceReviewModalContent({
         </div>
 
         {/* ── Footer ── */}
-        <div className="border-t border-slate-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div data-tour="review-actions" className="border-t border-slate-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {canDecide ? (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button

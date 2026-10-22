@@ -4,6 +4,7 @@ import {
   TOUR_STATUS, TOUR_VERSION, normalizeTourRole, readTourState, resumeIndex,
   tourMetadata, tourStepsFor, welcomeCopy,
 } from "../src/lib/tour/tourConfig.js";
+import { DEMO_ID_PREFIX, demoDetailPayload, demoRequests, isDemoCa } from "../src/lib/tour/demoData.js";
 import {
   EDGE, computeTooltipPosition, needsScroll, scrollDelta, spotlightRect,
 } from "../src/lib/tour/placement.js";
@@ -74,6 +75,56 @@ test("tidak ada langkah yang menjanjikan aksi otomatis pada tombol keputusan/kir
       }
     }
   }
+});
+
+test("langkah clickToGo menyorot menu navigasi dan mengarah ke halaman berikutnya", () => {
+  for (const role of ["requester", "operational"]) {
+    const steps = tourStepsFor(role);
+    steps.forEach((s, i) => {
+      if (!s.clickToGo) return;
+      assert.ok(s.interactive, `${s.id}: clickToGo harus interaktif`);
+      assert.match(s.target, /^nav-/, `${s.id}: target harus menu navigasi`);
+      assert.ok(steps[i + 1], `${s.id}: harus ada langkah berikutnya`);
+      assert.notEqual(steps[i + 1].path, s.path, `${s.id}: langkah berikutnya harus di halaman lain`);
+    });
+  }
+  const req = tourStepsFor("requester").map((s) => s.id);
+  const ops = tourStepsFor("operational").map((s) => s.id);
+  assert.ok(req.includes("go-ajukan") && req.includes("go-profile-req"));
+  assert.ok(ops.includes("go-approvals") && ops.includes("go-reports") && ops.includes("go-profile-ops"));
+});
+
+test("langkah demo: konfigurasi valid dan target contoh jelas", () => {
+  for (const role of ["requester", "operational"]) {
+    for (const s of tourStepsFor(role)) {
+      if (!s.demo) continue;
+      assert.equal(s.demo.kind, "review", `${s.id}: kind`);
+      assert.ok(["always", "fallback"].includes(s.demo.mode), `${s.id}: mode`);
+      if (s.demo.mode === "always") assert.match(s.target, /^(review|detail)-/, `${s.id}: target di dalam contoh`);
+      if (s.demo.mode === "fallback") assert.ok(s.demo.target, `${s.id}: target contoh`);
+    }
+  }
+});
+
+test("data contoh tidak pernah terlihat seperti data nyata", () => {
+  for (const role of ["requester", "operational"]) {
+    const rows = demoRequests(role);
+    assert.ok(rows.length >= 2);
+    for (const r of rows) {
+      assert.ok(isDemoCa(r));
+      assert.ok(r.id.startsWith(DEMO_ID_PREFIX));
+      assert.match(r.purpose, /^Contoh:/);
+    }
+    assert.ok(demoRequests(role, "reimbursement").every((r) => r.kind === "reimbursement"));
+  }
+  assert.equal(isDemoCa({ id: "3f2c9d1e" }), false);
+  // isi pop up contoh lengkap dan konsisten (saldo = plafon - terpakai)
+  const ca = demoRequests("requester")[0];
+  const p = demoDetailPayload(ca);
+  assert.equal(p.forCa, ca);
+  assert.equal(p.rabItems.reduce((n, i) => n + i.total, 0), ca.amount_requested);
+  assert.equal(p.balanceRow.balance, ca.balance);
+  assert.ok(p.receipts.every((r) => r.drive_view_url === null), "tanpa berkas yang diunduh dari server");
 });
 
 test("status tur dibaca dari metadata", () => {

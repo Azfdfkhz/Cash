@@ -34,12 +34,13 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
 
       <nav className="flex-1 px-3 py-5">
         <ul data-tour="nav" className="space-y-1.5">
-          {items.map(({ href, label, icon: Icon, badge, draft, also }) => {
+          {items.map(({ href, label, icon: Icon, badge, draft, also, tour }) => {
             const active = isActive(pathname, href, also);
             return (
               <li key={href}>
                 <Link
                   href={href}
+                  data-tour={tour}
                   aria-current={active ? "page" : undefined}
                   className={`relative flex items-center gap-3.5 rounded-xl px-4 py-3 text-[13px] transition-colors ${
                     active
@@ -100,6 +101,7 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
       <div className="px-3 pb-3">
         <Link
           href={HELP_NAV.href}
+          data-tour="nav-help"
           aria-current={isActive(pathname, HELP_NAV.href) ? "page" : undefined}
           className={`flex items-center gap-3.5 rounded-xl px-4 py-3 text-[13px] transition-colors ${
             isActive(pathname, HELP_NAV.href)

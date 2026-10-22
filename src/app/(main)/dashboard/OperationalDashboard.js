@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Clock, CreditCard, TrendingUp, TriangleAlert } from "lucide-react";
@@ -23,6 +23,8 @@ import {
   requesterName,
 } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
+import { useTourDemo } from "@/lib/tour/tourStore";
+import { demoRequests, isDemoCa } from "@/lib/tour/demoData";
 import { RoleBadge, StatCard, FilterTabs, TH } from "./parts";
 
 // Tabel yang relevan untuk Beranda Tim Operasional: daftar pengajuan, status
@@ -43,10 +45,15 @@ const MOBILE_ACTION = {
   closed: { label: "Lihat Detail" },
 };
 
-function KindTag({ kind }) {
+function KindTag({ kind, demo = false }) {
   return (
     <p className="text-xs font-semibold uppercase tracking-wide text-brand">
       {KIND_LABEL[kind] ?? "Cash Advance"}
+      {demo && (
+        <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-bold normal-case tracking-normal text-white">
+          CONTOH
+        </span>
+      )}
     </p>
   );
 }
@@ -93,6 +100,13 @@ export default function OperationalDashboard({
   // pengembalian/penggantian, daftar & kartu statistik di halaman ini
   // memperbarui diri sendiri tanpa reload manual.
   useRealtimeRefresh(REALTIME_TABLES);
+  // Selama tur berjalan dan daftar asli kosong, tampilkan baris CONTOH (tidak
+  // dari database) supaya pengguna baru bisa melihat bentuk daftar pengajuan.
+  const tourOn = useTourDemo();
+  const rows = useMemo(
+    () => (list.length === 0 && tourOn ? demoRequests("operational", kind) : list),
+    [list, tourOn, kind]
+  );
   const basePath = filter === "pending" ? "/dashboard?filter=pending" : "/dashboard";
   const filterParams = { jenis: kind };
 
@@ -126,6 +140,7 @@ export default function OperationalDashboard({
   );
 
   function openReview(id) {
+    if (isDemoCa({ id })) return; // baris contoh tidak bisa dibuka
     setHeld(null);
     setAutoDetailId(null);
     setReviewCaId(id);
@@ -213,11 +228,11 @@ export default function OperationalDashboard({
           <KindFilter />
 
           <KindFilterContent>
-          {list.length === 0 && (
+          {rows.length === 0 && (
             <p className="text-sm text-slate-600">Belum ada pengajuan.</p>
           )}
           <div data-tour="request-list" className="space-y-4">
-            {list.map((ca, i) => {
+            {rows.map((ca, i) => {
               const action =
                 ca.status === "approved" && hasPendingReturn(ca)
                   ? { label: "Konfirmasi Pengembalian", primary: true }
@@ -229,7 +244,7 @@ export default function OperationalDashboard({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <KindTag kind={ca.kind} />
+                      <KindTag kind={ca.kind} demo={ca.__demo} />
                       <p className="truncate text-[15px] font-bold text-slate-900">
                         {requesterName(ca.profiles)}
                       </p>
@@ -334,14 +349,14 @@ export default function OperationalDashboard({
             </thead>
             <KindFilterContent fallback={<TableBodySkeleton rows={4} cols={6} />}>
             <tbody>
-              {list.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-600">
                     Belum ada pengajuan.
                   </td>
                 </tr>
               )}
-              {list.map((ca, i) => {
+              {rows.map((ca, i) => {
                 const isPending = ca.status === "pending";
                 return (
                   <tr
@@ -362,7 +377,7 @@ export default function OperationalDashboard({
                       </button>
                     </td>
                     <td className="px-5 py-4 text-[13px] text-slate-600">
-                      <KindTag kind={ca.kind} />
+                      <KindTag kind={ca.kind} demo={ca.__demo} />
                       {ca.purpose}
                     </td>
                     <td className="whitespace-nowrap px-5 py-4 text-[13px] text-slate-700">

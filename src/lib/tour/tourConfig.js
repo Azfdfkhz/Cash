@@ -32,6 +32,17 @@ export function normalizeTourRole(role) {
 //  interactive true = pengguna boleh mengklik/mengisi elemen yang disorot
 //  optional    true = dilewati diam-diam bila elemen tidak ada
 //  fallback    teks tambahan bila elemen tidak tampil (mis. belum ada data)
+//  clickToGo   true = sorotan adalah menu navigasi yang boleh diklik pengguna;
+//              mengkliknya memindahkan halaman dan tur lanjut ke langkah berikut
+//              (tombol Lanjut tetap membawa pengguna otomatis)
+//  demo        tampilan CONTOH (komponen asli + data statis, tidak masuk database)
+//              untuk menjelaskan bagian yang belum ada datanya:
+//                { kind: "review", mode: "always", detail?: true }
+//                  -> panel tinjau pengajuan contoh; `detail` juga membuka pop
+//                     up detail lengkapnya. `target` = elemen di dalam contoh.
+//                { kind, mode: "fallback", target, unless? }
+//                  -> pakai elemen asli bila ada; bila tidak ada (atau elemen
+//                     `unless` tidak ada) pakai contoh dan sorot `target`
 //  roles       batasi ke peran tertentu (kosong = semua)
 //  body        string, atau { requester, operational }
 const STEPS = [
@@ -158,16 +169,77 @@ const STEPS = [
     fallback: "Tombol aksi muncul pada setiap pengajuan di daftar. Saat ini belum ada pengajuan.",
   },
   {
+    id: "detail-demo",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "review-panel",
+    placement: "left",
+    demo: { kind: "review", mode: "always" },
+    title: "Contoh panel pengajuan",
+    body: {
+      requester:
+        "Seperti inilah panel yang terbuka saat Anda menekan Lihat. Ini hanya data contoh, tidak tersimpan dan bukan pengajuan Anda. Isinya ringkasan pengajuan, plafon, tenggat SPJ, dan rekening tujuan.",
+      operational:
+        "Seperti inilah panel yang terbuka saat Anda menekan Tinjau Pengajuan. Ini hanya data contoh, tidak tersimpan dan bukan pengajuan sungguhan. Isinya ringkasan pengajuan, plafon, dan rekening tujuan.",
+    },
+  },
+  {
     id: "spj",
     chapter: "Beranda",
     path: "/dashboard",
-    target: "row-action",
-    placement: "left",
+    target: "review-actions",
+    placement: "top",
     roles: ["requester"],
+    demo: { kind: "review", mode: "always" },
     title: "SPJ dan pengembalian dana",
-    body: "Untuk Cash Advance yang sudah cair, buka detailnya lalu pilih Scan Kwitansi, paling lambat 7 hari kalender setelah dana cair (Tenggat LPJ/SPJ tampil di detail). Bila ada sisa dana, transfer ke rekening organisasi lalu catat pengembalian beserta bukti transfer. Status Menunggu konfirmasi berubah setelah Tim Operasional memverifikasi, dan pengajuan Selesai setelah seluruh sisa dikonfirmasi. Reimbursement tidak punya langkah ini.",
-    fallback:
-      "Langkah ini dilakukan dari pop up detail Cash Advance yang sudah cair, jadi baru terlihat setelah Anda punya pengajuan.",
+    body: "Untuk Cash Advance yang sudah cair, tombol Catat kwitansi dan Kembalikan sisa muncul di panel ini, paling lambat 7 hari kalender setelah dana cair (Tenggat LPJ/SPJ tampil di panel). Bila ada sisa dana, transfer ke rekening organisasi lalu catat pengembaliannya beserta bukti transfer. Pengajuan Selesai setelah seluruh sisa dikonfirmasi Tim Operasional. Reimbursement tidak punya langkah ini.",
+  },
+  {
+    id: "review-actions-ops",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "review-actions",
+    placement: "top",
+    roles: ["operational"],
+    demo: { kind: "review", mode: "always" },
+    title: "Lihat Detail, Tolak, Setujui",
+    body: "Lihat Detail membuka rincian lengkap. Tolak dan Setujui Pengajuan adalah keputusan nyata pada pengajuan sungguhan; di contoh ini tombolnya tidak berfungsi dan tur tidak pernah menekannya.",
+  },
+  {
+    id: "detail-popup-demo",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "detail-popup",
+    placement: "right",
+    demo: { kind: "review", mode: "always", detail: true },
+    title: "Contoh pop up detail",
+    body: "Inilah pop up detail lengkap yang terbuka dari Lihat Detail. Ada tab Ringkasan, RAB, Kwitansi, dan Riwayat. Isinya data contoh, tidak tersimpan. Pop up memuat dulu sebentar sebelum isinya tampil.",
+  },
+  {
+    id: "go-ajukan",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "nav-ajukan",
+    placement: "right",
+    interactive: true,
+    clickToGo: true,
+    roles: ["requester"],
+    title: "Mau mengajukan dana? Klik Ajukan",
+    body: "Untuk membuat Cash Advance atau Reimbursement, klik menu Ajukan yang disorot ini. Anda juga bisa menekan Lanjut dan kami bukakan halamannya.",
+    fallback: "Menu Ajukan ada di menu utama. Tekan Lanjut dan kami bukakan halaman Ajukan.",
+  },
+  {
+    id: "go-approvals",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "nav-approvals",
+    placement: "right",
+    interactive: true,
+    clickToGo: true,
+    roles: ["operational"],
+    title: "Mau menyetujui pengajuan? Klik Persetujuan",
+    body: "Untuk meninjau, menyetujui, menolak, dan mencairkan dana, klik menu Persetujuan yang disorot ini. Anda juga bisa menekan Lanjut dan kami bukakan halamannya.",
+    fallback: "Menu Persetujuan ada di menu utama. Tekan Lanjut dan kami bukakan halamannya.",
   },
 
   // ───────── Ajukan (requester) ─────────
@@ -269,6 +341,21 @@ const STEPS = [
       "Pada Reimbursement, kwitansi dilampirkan saat mengajukan dan total klaim dihitung dari kwitansi tersebut.",
   },
 
+  {
+    id: "go-profile-req",
+    chapter: "Ajukan",
+    path: "/reimbursements/new",
+    target: "nav-profile",
+    placement: "right",
+    interactive: true,
+    clickToGo: true,
+    roles: ["requester"],
+    title: "Mengatur rekening? Klik Profil",
+    body: "Rekening bank dan notifikasi Telegram diatur di Profil. Klik menu Profil yang disorot ini, atau tekan Lanjut dan kami bukakan halamannya.",
+    fallback:
+      "Di ponsel, menu bawah disembunyikan di halaman Ajukan. Tekan Lanjut dan kami bukakan halaman Profil.",
+  },
+
   // ───────── Persetujuan (operasional) ─────────
   {
     id: "ap-tabs",
@@ -288,7 +375,7 @@ const STEPS = [
     placement: "right",
     roles: ["operational"],
     title: "Antrean pengajuan",
-    body: "Diurutkan dari yang paling lama menunggu. Di desktop, pilih pengajuan untuk melihat detailnya di panel kanan. Di ponsel, ketuk pengajuan untuk membuka pop up.",
+    body: "Diurutkan dari yang paling lama menunggu. Di desktop, pilih pengajuan untuk melihat detailnya di panel kanan. Di ponsel, ketuk pengajuan untuk membuka pop up. Bila antrean sedang kosong, tur menampilkan satu pengajuan contoh (tidak tersimpan).",
     fallback: "Antrean kosong: tidak ada pengajuan yang menunggu pada tab ini.",
   },
   {
@@ -326,6 +413,20 @@ const STEPS = [
     body: "Pada tab Pencairan, salin data rekening requester dengan tombol Salin, transfer lewat bank, lalu unggah bukti transfer dan konfirmasi pencairan. Pencairan hanya dapat dicatat sekali.",
   },
 
+  {
+    id: "go-reports",
+    chapter: "Persetujuan",
+    path: "/approvals",
+    target: "nav-reports",
+    placement: "right",
+    interactive: true,
+    clickToGo: true,
+    roles: ["operational"],
+    title: "Butuh rekap kwitansi? Klik Laporan",
+    body: "Rekap seluruh kwitansi ada di menu Laporan. Klik menu yang disorot ini, atau tekan Lanjut dan kami bukakan halamannya.",
+    fallback: "Menu Laporan ada di menu utama. Tekan Lanjut dan kami bukakan halamannya.",
+  },
+
   // ───────── Laporan (operasional) ─────────
   {
     id: "rp-filters",
@@ -347,6 +448,20 @@ const STEPS = [
     roles: ["operational"],
     title: "Total dan ekspor",
     body: "Menampilkan jumlah kwitansi dan total nilainya sesuai filter aktif. Tombol CSV mengunduh data sesuai filter yang sama.",
+  },
+
+  {
+    id: "go-profile-ops",
+    chapter: "Laporan",
+    path: "/reports",
+    target: "nav-profile",
+    placement: "right",
+    interactive: true,
+    clickToGo: true,
+    roles: ["operational"],
+    title: "Mengatur akun? Klik Profil",
+    body: "Data rekening, notifikasi Telegram, dan Kelola Pengguna ada di Profil. Klik menu yang disorot ini, atau tekan Lanjut dan kami bukakan halamannya.",
+    fallback: "Menu Profil ada di menu utama. Tekan Lanjut dan kami bukakan halamannya.",
   },
 
   // ───────── Profil ─────────

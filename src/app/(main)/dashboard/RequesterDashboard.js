@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Check, Clock, CheckCheck, X, Info, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
@@ -21,6 +21,8 @@ import {
   hasPendingReturn,
 } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
+import { useTourDemo } from "@/lib/tour/tourStore";
+import { demoRequests, isDemoCa } from "@/lib/tour/demoData";
 import { RoleBadge, StatCard, TH } from "./parts";
 
 // Requester perlu lihat langsung saat Ops memutuskan/mencairkan pengajuannya,
@@ -38,10 +40,15 @@ const STATUS_TILE = {
   rejected: { bg: "bg-[#fff0f2]", icon: X, color: "text-[#be123c]" },
 };
 
-function KindTag({ kind }) {
+function KindTag({ kind, demo = false }) {
   return (
     <p className="text-xs font-semibold uppercase tracking-wide text-brand">
       {KIND_LABEL[kind] ?? "Cash Advance"}
+      {demo && (
+        <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-bold normal-case tracking-normal text-white">
+          CONTOH
+        </span>
+      )}
     </p>
   );
 }
@@ -60,11 +67,19 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
   // pengembalian/penggantiannya dikonfirmasi -> tabel & badge status
   // perbarui diri sendiri tanpa reload manual.
   useRealtimeRefresh(REALTIME_TABLES);
+  // Selama tur berjalan dan daftar asli kosong, tampilkan baris CONTOH (tidak
+  // dari database) supaya pengguna baru bisa melihat bentuk daftar pengajuan.
+  const tourOn = useTourDemo();
+  const rows = useMemo(
+    () => (list.length === 0 && tourOn ? demoRequests("requester", kind) : list),
+    [list, tourOn, kind]
+  );
   const [viewCaId, setViewCaId] = useState(focusCa?.id ?? null);
   // Dibuka dari tautan (?ca=): langsung tampilkan pop up detail.
   const [autoDetailId, setAutoDetailId] = useState(focusCa?.id ?? null);
   const viewIndex = list.findIndex((ca) => ca.id === viewCaId);
   function openView(id) {
+    if (isDemoCa({ id })) return; // baris contoh tidak bisa dibuka
     setAutoDetailId(null);
     setViewCaId(id);
   }
@@ -130,11 +145,11 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           <KindFilter />
 
           <KindFilterContent>
-          {list.length === 0 && (
+          {rows.length === 0 && (
             <p className="text-sm text-slate-600">{emptyText}</p>
           )}
           <div data-tour="request-list" className="space-y-3.5">
-            {list.map((ca, i) => {
+            {rows.map((ca, i) => {
               const tile = STATUS_TILE[ca.status] ?? STATUS_TILE.closed;
               const Icon = tile.icon;
               return (
@@ -152,7 +167,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       <Icon size={22} strokeWidth={2} className={tile.color} />
                     </div>
                     <div className="min-w-0">
-                      <KindTag kind={ca.kind} />
+                      <KindTag kind={ca.kind} demo={ca.__demo} />
                       <p className="line-clamp-2 text-sm font-bold leading-snug text-slate-900">
                         {ca.purpose}
                       </p>
@@ -230,14 +245,14 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
             </thead>
             <KindFilterContent fallback={<TableBodySkeleton rows={4} cols={5} />}>
             <tbody>
-              {list.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-600">
                     {emptyText}
                   </td>
                 </tr>
               )}
-              {list.map((ca, i) => (
+              {rows.map((ca, i) => (
                 <tr
                   key={ca.id}
                   className="relative cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
@@ -248,7 +263,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       onClick={() => openView(ca.id)}
                       className="text-left after:absolute after:inset-0"
                     >
-                      <KindTag kind={ca.kind} />
+                      <KindTag kind={ca.kind} demo={ca.__demo} />
                       {ca.purpose}
                     </button>
                   </td>

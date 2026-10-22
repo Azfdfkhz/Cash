@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PendingLink, usePendingNav } from "@/components/PendingNav";
 import { DetailPanelSkeleton } from "@/components/skeletons/ListSkeletons";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,8 @@ import {
   requesterName,
 } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/useRealtimeRefresh";
+import { useTourDemo } from "@/lib/tour/tourStore";
+import { demoRequests } from "@/lib/tour/demoData";
 
 // Persetujuan & Pencairan: pengajuan baru masuk antrean, atau pengajuan lain
 // berubah status (mis. diputuskan operasional lain) harus langsung terlihat.
@@ -70,7 +72,7 @@ export default function ApprovalsWorkspace(props) {
 }
 
 function ApprovalsWorkspaceInner({
-  items,
+  items: realItems,
   tab = "persetujuan",
   counts = { persetujuan: 0, pencairan: 0 },
   kind = null,
@@ -81,6 +83,17 @@ function ApprovalsWorkspaceInner({
   currentUserId,
 }) {
   const router = useRouter();
+  // Selama tur berjalan dan antrean Persetujuan kosong, tampilkan satu
+  // pengajuan CONTOH (tidak dari database) supaya daftar, panel detail, dan
+  // tombol Setujui/Tolak tampil persis seperti aslinya.
+  const tourOn = useTourDemo();
+  const items = useMemo(
+    () =>
+      realItems.length === 0 && tourOn && tab === "persetujuan" && !query
+        ? demoRequests("operational", kind).filter((r) => r.status === "pending").slice(0, 1)
+        : realItems,
+    [realItems, tourOn, tab, query, kind]
+  );
   // Auto-refresh antrean persetujuan/pencairan tanpa reload manual.
   useRealtimeRefresh(REALTIME_TABLES);
   const badge = useApprovalBadge(null, currentUserId, true);

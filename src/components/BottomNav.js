@@ -17,12 +17,13 @@ export default function BottomNav({ role, pendingCounts, userId }) {
   return (
     <nav data-tour="nav" className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom">
       <ul className="flex px-4 pt-2 pb-3">
-        {items.map(({ href, label, icon: Icon, badge, draft, also }) => {
+        {items.map(({ href, label, icon: Icon, badge, draft, also, tour }) => {
           const active = isActive(pathname, href, also);
           return (
             <li key={href} className="flex-1">
               <Link
                 href={href}
+                data-tour={tour}
                 aria-current={active ? "page" : undefined}
                 className="relative flex flex-col items-center gap-1 px-2 py-1.5"
               >

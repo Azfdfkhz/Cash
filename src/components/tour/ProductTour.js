@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { MousePointerClick, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import TourDemo, { TourLoading } from "@/components/tour/TourDemo";
+import { setTourDemo } from "@/lib/tour/tourStore";
 import {
   START_TOUR_EVENT,
   TOUR_STATUS,
+  normalizeTourRole,
   resumeIndex,
   tourMetadata,
   tourStepsFor,
@@ -25,6 +28,13 @@ import {
 //  - Elemen target ditandai atribut data-tour="..." (stabil, bukan koordinat).
 //  - Tur menunggu elemen selesai dirender, berpindah halaman bila perlu, dan
 //    jatuh ke kartu penjelasan di tengah layar bila elemen tidak tampil.
+//  - Bagian yang belum ada datanya (daftar kosong, pop up detail) dijelaskan
+//    memakai data CONTOH statis (lib/tour/demoData.js) yang tidak pernah
+//    menyentuh database. Tampilannya komponen ASLI aplikasi (panel tinjau dan
+//    pop up detail), bukan tiruan, jadi sama persis dengan desain. Selama menunggu halaman/pop up siap, tampil kartu
+//    loading + skeleton supaya pengguna tahu tur sedang bekerja.
+//  - Langkah `clickToGo` menyorot menu navigasi (Ajukan, Profil, ...) dan
+//    meminta pengguna mengkliknya sendiri; tombol Lanjut tetap tersedia.
 //  - Tur TIDAK pernah mengklik apa pun atas nama pengguna. Di luar sorotan,
 //    halaman diredupkan dan tidak bisa diklik; sorotan hanya bisa diklik pada
 //    langkah `interactive` (mengisi formulir).
@@ -258,7 +268,9 @@ function TourLayer({ step, number, total, el, missing, onPrev, onNext, onSkip, o
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed z-[81] rounded-xl border-2 border-white shadow-[0_0_0_3px_rgba(37,99,235,0.9)] transition-[top,left,width,height] duration-150"
+            className={`pointer-events-none fixed z-[81] rounded-xl border-2 border-white shadow-[0_0_0_3px_rgba(37,99,235,0.9)] transition-[top,left,width,height] duration-150 ${
+              step.clickToGo ? "animate-pulse" : ""
+            }`}
             style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }}
           />
           {!step.interactive && (
@@ -309,10 +321,18 @@ function TourLayer({ step, number, total, el, missing, onPrev, onNext, onSkip, o
             Bagian ini sedang tidak tampil di layar, jadi tidak bisa disorot.
           </p>
         )}
-        {step.interactive && el && (
-          <p className="mt-2 text-xs font-medium text-brand">
-            Anda boleh mencoba langsung pada bagian yang disorot.
+        {step.clickToGo && el ? (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-brand">
+            <MousePointerClick size={14} aria-hidden="true" className="shrink-0" />
+            Klik menu yang disorot, atau tekan Lanjut.
           </p>
+        ) : (
+          step.interactive &&
+          el && (
+            <p className="mt-2 text-xs font-medium text-brand">
+              Anda boleh mencoba langsung pada bagian yang disorot.
+            </p>
+          )
         )}
 
         <div
@@ -370,13 +390,27 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
   const [resolved, setResolved] = useState(null); // { id, el, missing }
   const [attempt, setAttempt] = useState(0);
   const [blocked, setBlocked] = useState(false);
+  // Jenis tampilan contoh yang sedang dipakai sebagai pengganti elemen asli
+  // yang tidak tersedia (mis. antrean Persetujuan kosong).
+  const [demoKind, setDemoKind] = useState(null);
+  const normRole = normalizeTourRole(role);
 
   const persistTimer = useRef(null);
   const navRef = useRef("");
+  const armedRef = useRef(null);
   const dirRef = useRef(1);
   const actionsRef = useRef({});
 
   const step = mode === "running" ? steps[index] : null;
+  const demo = step?.demo ?? null;
+  const fallbackDemo = demo && demo.mode === "fallback" ? demo : null;
+  const demoActive = Boolean(demo && (demo.mode === "always" || demoKind === demo.kind));
+
+  // Beri tahu halaman bahwa tur berjalan: daftar kosong menampilkan baris contoh.
+  useEffect(() => {
+    setTourDemo(mode === "running");
+    return () => setTourDemo(false);
+  }, [mode]);
 
   // Simpan ke metadata akun. Setelah updateUser, sesi di-refresh supaya JWT
   // (yang dibaca server) memuat metadata terbaru; tanpa itu tur bisa muncul lagi
@@ -400,6 +434,7 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
     dirRef.current = 1;
     setIndex(0);
     setResolved(null);
+    setDemoKind(null);
     setMode("running");
     persist(TOUR_STATUS.IN_PROGRESS, steps[0]?.id ?? null, true);
   }
@@ -414,11 +449,13 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
   function finish(status) {
     setMode("idle");
     setResolved(null);
+    setDemoKind(null);
     persist(status, null, true);
   }
 
   function move(to, dir) {
     dirRef.current = dir;
+    if (steps[to].demo?.kind !== demoKind) setDemoKind(null);
     setIndex(to);
     persist(TOUR_STATUS.IN_PROGRESS, steps[to].id);
   }
@@ -442,7 +479,7 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
   }
 
   useEffect(() => {
-    actionsRef.current = { startTour, skipMissing };
+    actionsRef.current = { startTour, skipMissing, goNext };
   });
 
   // Mulai ulang dari Pusat Bantuan / Profil.
@@ -471,10 +508,18 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
     let tries = 0;
     const iv = setInterval(() => {
       tries += 1;
-      const el = findTarget(step.target);
-      if (el) {
+      const name = demoActive && fallbackDemo ? fallbackDemo.target : step.target;
+      const el = findTarget(name);
+      // Elemen asli baru dianggap siap bila elemen pembanding (`unless`) juga
+      // ada, mis. panel detail Persetujuan hanya berarti bila antreannya ada.
+      const gateOk = demoActive || !fallbackDemo?.unless || Boolean(findTarget(fallbackDemo.unless));
+      if (el && gateOk) {
         clearInterval(iv);
         setResolved({ id: step.id, el, missing: false });
+      } else if (fallbackDemo && !demoActive && tries >= 12) {
+        // Tidak ada data asli untuk disorot: pakai tampilan contoh.
+        clearInterval(iv);
+        setDemoKind(fallbackDemo.kind);
       } else if (tries >= 30) {
         clearInterval(iv);
         if (step.optional) actionsRef.current.skipMissing();
@@ -482,7 +527,22 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
       }
     }, 120);
     return () => clearInterval(iv);
-  }, [mode, step, pathname, router, attempt]);
+  }, [mode, step, pathname, router, attempt, demoActive, fallbackDemo]);
+
+  // Langkah `clickToGo`: pengguna mengklik menu yang disorot sendiri. Begitu
+  // halaman berpindah ke halaman langkah berikutnya, tur ikut lanjut.
+  useEffect(() => {
+    if (mode !== "running" || !step?.clickToGo) return;
+    if (pathname === step.path) {
+      armedRef.current = step.id;
+      return;
+    }
+    const next = steps[index + 1];
+    if (armedRef.current === step.id && next && pathname === next.path) {
+      armedRef.current = null;
+      actionsRef.current.goNext();
+    }
+  }, [mode, step, pathname, steps, index]);
 
   // Jeda selama ada pop up aplikasi (mis. konfirmasi draft) supaya tidak bertumpuk.
   useEffect(() => {
@@ -490,7 +550,11 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
     let raf = 0;
     const check = () => {
       raf = 0;
-      setBlocked(Boolean(document.querySelector('[aria-modal="true"]:not([data-tour-ui])')));
+      // Pop up milik tur (data-tour-ui / data-tour-demo) tidak menjeda tur.
+      const appModal = [...document.querySelectorAll('[aria-modal="true"]')].some(
+        (n) => !n.closest("[data-tour-ui], [data-tour-demo]")
+      );
+      setBlocked(appModal);
     };
     const obs = new MutationObserver(() => {
       if (!raf) raf = requestAnimationFrame(check);
@@ -560,23 +624,49 @@ export default function ProductTour({ role, initialStatus, initialStepId = null 
   if (mode !== "running" || !step || blocked) return null;
 
   const ready = resolved && resolved.id === step.id ? resolved : null;
+  const onPage = pathname === step.path;
+  const demoLayer =
+    demo && demoActive && onPage ? <TourDemo key={`${demo.kind}:${demo.detail ? 1 : 0}`} kind={demo.kind} detail={Boolean(demo.detail)} role={normRole} /> : null;
+
   if (!ready) {
-    // Menunggu navigasi / render elemen: redupkan halaman agar tidak bisa diklik.
-    return <div data-tour-ui aria-hidden="true" className="fixed inset-0 z-[80] bg-slate-900/40" />;
+    // Menunggu navigasi / render elemen / pop up contoh: redupkan halaman agar
+    // tidak bisa diklik, dan beri tahu pengguna bahwa tur sedang memuat.
+    return (
+      <>
+        {demoLayer}
+        {demoLayer ? (
+          // Pop up contoh menampilkan skeleton-nya sendiri.
+          <div data-tour-ui aria-hidden="true" className="fixed inset-0 z-[80] bg-slate-900/40" />
+        ) : (
+          <TourLoading
+            title={onPage ? "Menyiapkan penjelasan…" : `Membuka halaman ${step.chapter}…`}
+            hint={
+              onPage
+                ? "Sebentar ya, bagian yang dijelaskan sedang dimuat."
+                : "Sedang pindah halaman. Tur akan lanjut otomatis setelah halaman siap."
+            }
+            onStop={() => finish(TOUR_STATUS.SKIPPED)}
+          />
+        )}
+      </>
+    );
   }
 
   return (
-    <TourLayer
-      key={`${step.id}:${attempt}`}
-      step={step}
-      number={index + 1}
-      total={steps.length}
-      el={ready.el}
-      missing={ready.missing}
-      onPrev={goPrev}
-      onNext={goNext}
-      onSkip={() => finish(TOUR_STATUS.SKIPPED)}
-      onLost={onLost}
-    />
+    <>
+      {demoLayer}
+      <TourLayer
+        key={`${step.id}:${attempt}`}
+        step={step}
+        number={index + 1}
+        total={steps.length}
+        el={ready.el}
+        missing={ready.missing}
+        onPrev={goPrev}
+        onNext={goNext}
+        onSkip={() => finish(TOUR_STATUS.SKIPPED)}
+        onLost={onLost}
+      />
+    </>
   );
 }

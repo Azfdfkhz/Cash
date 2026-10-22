@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Calendar, Camera, ExternalLink, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { DEMO_LOAD_MS, demoDetailPayload, isDemoCa } from "@/lib/tour/demoData";
 import StatusBadge from "@/components/StatusBadge";
 import ReturnPendingBadge from "@/components/ReturnPendingBadge";
 import RabSection from "@/components/RabSection";
@@ -95,6 +96,17 @@ export default function CashAdvanceDetailPopup({
   // edit RAB, ajukan ulang, cairkan, dst.) tanpa mengosongkan tampilan.
   useEffect(() => {
     let cancelled = false;
+    // Pengajuan CONTOH milik tur: isi statis, tanpa query ke database. Ditunda
+    // sebentar supaya skeleton "memuat" tampil seperti pada data sungguhan.
+    if (isDemoCa(ca)) {
+      const t = setTimeout(() => {
+        if (!cancelled) setData(demoDetailPayload(ca));
+      }, DEMO_LOAD_MS);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+      };
+    }
     const supabase = createClient();
     const rel = (table, select, col, asc) =>
       supabase.from(table).select(select).eq("cash_advance_id", ca.id).order(col, { ascending: asc });
@@ -218,6 +230,7 @@ export default function CashAdvanceDetailPopup({
       aria-label={inline ? undefined : "Detail pengajuan"}
     >
       <div
+        data-tour="detail-popup"
         className={
           inline
             ? "flex h-full min-h-0 w-full flex-col overflow-hidden"
@@ -259,7 +272,7 @@ export default function CashAdvanceDetailPopup({
         </div>
 
         {/* ── Tab ── */}
-        <div role="tablist" className="flex gap-6 overflow-x-auto border-b border-slate-200 px-5 sm:px-6">
+        <div role="tablist" data-tour="detail-tabs" className="flex gap-6 overflow-x-auto border-b border-slate-200 px-5 sm:px-6">
           {tabs.map((t) => (
             <button
               key={t.id}

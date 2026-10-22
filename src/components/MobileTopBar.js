@@ -20,6 +20,7 @@ export default function MobileTopBar() {
       <div className="flex items-center gap-2">
         <Link
           href="/help"
+          data-tour="nav-help"
           aria-label="Pusat bantuan"
           className="h-11 w-11 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
         >
