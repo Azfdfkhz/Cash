@@ -17,9 +17,9 @@ export default function ProfileTourRow() {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold text-slate-900">Panduan interaktif</span>
-        <span className="block text-sm text-slate-500">Mulai tur ulang langsung di aplikasi</span>
+        <span className="block text-sm text-slate-600">Mulai tur ulang langsung di aplikasi</span>
       </span>
-      <ChevronRight size={18} className="shrink-0 text-slate-500" />
+      <ChevronRight size={18} className="shrink-0 text-slate-600" />
     </button>
   );
 }

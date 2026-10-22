@@ -33,7 +33,7 @@ export default function BottomNav({ role, pendingCounts, userId }) {
                   <Icon
                     size={20}
                     strokeWidth={1.75}
-                    className={active ? "text-[#0f172a]" : "text-slate-500"}
+                    className={active ? "text-[#0f172a]" : "text-slate-600"}
                   />
                   {draft && hasDraft && (
                     <span
@@ -46,8 +46,8 @@ export default function BottomNav({ role, pendingCounts, userId }) {
                   )}
                 </span>
                 <span
-                  className={`text-[11px] font-semibold ${
-                    active ? "text-[#0f172a]" : "text-slate-500"
+                  className={`text-xs font-semibold ${
+                    active ? "text-[#0f172a]" : "text-slate-600"
                   }`}
                 >
                   {label}

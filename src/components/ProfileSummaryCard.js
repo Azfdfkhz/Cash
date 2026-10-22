@@ -21,8 +21,8 @@ export default function ProfileSummaryCard({ fullName, email, role }) {
         </span>
       </div>
       <p className="mt-5 text-lg font-bold text-slate-900">{fullName}</p>
-      <p className="mt-1 break-all text-xs text-slate-500">{maskEmail(email)}</p>
-      <span className="mt-3 inline-block rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600">
+      <p className="mt-1 break-all text-xs text-slate-600">{maskEmail(email)}</p>
+      <span className="mt-3 inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
         {role === "operational" ? "Operasional" : "Requester"}
       </span>
 

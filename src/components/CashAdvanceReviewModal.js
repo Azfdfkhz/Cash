@@ -227,7 +227,7 @@ function CashAdvanceReviewModalContent({
     }
   }
 
-  const lbl = "mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500";
+  const lbl = "mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600";
 
   return (
     <div
@@ -242,19 +242,19 @@ function CashAdvanceReviewModalContent({
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="min-w-0 flex-1">
             <div className="flex flex-nowrap items-center gap-1.5">
-              <span className="shrink-0 rounded bg-[#eff6ff] px-1.5 py-0.5 text-[11px] font-bold text-[#2563eb]">
+              <span className="shrink-0 rounded bg-[#eff6ff] px-1.5 py-0.5 text-xs font-bold text-[#2563eb]">
                 {formatCaCode(ca)}
               </span>
-              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold text-slate-600">
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-600">
                 {KIND_LABEL[ca.kind] ?? "Cash Advance"}
               </span>
               {isPending ? (
-                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-[11px] font-semibold text-[#b45309]">
+                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#fde8c3] bg-[#fff9ed] px-2 py-px text-xs font-semibold text-[#b45309]">
                   <span className="h-1 w-1 rounded-full bg-[#f59e0b]" />
                   Belum Disetujui
                 </span>
               ) : (
-                <StatusBadge status={ca.status} className="!px-2 !py-px !text-[11px] whitespace-nowrap" />
+                <StatusBadge status={ca.status} className="!px-2 !py-px !text-xs whitespace-nowrap" />
               )}
             </div>
             <h2 className="mt-1.5 truncate text-sm font-bold tracking-tight text-slate-900">
@@ -298,10 +298,10 @@ function CashAdvanceReviewModalContent({
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
           {!isPending && ca.reviewed_at && justDecided && (
             <div
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold ${
+              className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${
                 ca.status === "approved"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border-rose-200 bg-rose-50 text-rose-700"
+                  ? "bg-emerald-50 text-emerald-800"
+                  : "bg-rose-50 text-rose-800"
               }`}
             >
               {ca.status === "approved" ? <Check size={14} /> : <X size={14} />}
@@ -311,7 +311,7 @@ function CashAdvanceReviewModalContent({
             </div>
           )}
           {pendingReturn && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+            <div className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
               <Hourglass size={14} className="mt-px shrink-0" />
               {canReview
                 ? "Ada pengembalian sisa saldo yang menunggu konfirmasi Anda."
@@ -319,16 +319,16 @@ function CashAdvanceReviewModalContent({
             </div>
           )}
           {/* Plafon + tenggat (sebaris seperti desain) */}
-          <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 {isReimbursement ? "NOMINAL DIAJUKAN" : "PLAFON DIAJUKAN"}
               </p>
               <p className="mt-0.5 text-lg font-extrabold leading-tight tracking-tight text-slate-900">
                 {formatCurrency(ca.amount_requested)}
               </p>
               {!isReimbursement && (
-                <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
+                <p className="mt-0.5 truncate text-xs font-medium text-slate-600">
                   Kategori: {categoryFull}
                 </p>
               )}
@@ -337,7 +337,7 @@ function CashAdvanceReviewModalContent({
             <div className="flex shrink-0 items-center gap-2 border-l border-slate-300 pl-3">
               <Calendar size={13} strokeWidth={2} className="text-[#2563eb]" />
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                   TENGGAT LPJ / SPJ
                 </p>
                 <p className="text-xs font-bold text-slate-900">
@@ -350,17 +350,17 @@ function CashAdvanceReviewModalContent({
 
           {/* Pemohon & rekening berdampingan */}
           <div className="grid grid-cols-[1fr_1.4fr] gap-2">
-            <div className="rounded-xl border border-slate-200/90 bg-white p-2.5">
-              <p className="text-[11px] font-medium text-slate-500">Nama Pemohon</p>
+            <div>
+              <p className="text-xs font-medium text-slate-600">Nama Pemohon</p>
               <p className="mt-0.5 break-words text-xs font-bold text-slate-900">
                 {requesterName(ca.profiles)}
               </p>
             </div>
-            <div className="min-w-0 rounded-xl border border-slate-200/90 bg-white p-2.5">
+            <div className="min-w-0">
               <div className="flex items-start justify-between gap-1">
-                <p className="text-[11px] font-medium text-slate-500">{isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}</p>
+                <p className="text-xs font-medium text-slate-600">{isReimbursement ? "Rekening Penggantian" : "Rekening Pencairan"}</p>
                 {(ca.bank_name || ca.bank_account_number) && (
-                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-[11px] font-semibold text-[#1fa653]">
+                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200 bg-[#ebf9f0] px-1 py-px text-xs font-semibold text-[#15803d]">
                     <Check size={9} strokeWidth={3} />
                     Terverifikasi
                   </span>
@@ -369,7 +369,7 @@ function CashAdvanceReviewModalContent({
               <p className="mt-0.5 break-words text-xs font-bold text-slate-900">
                 {[ca.bank_name, ca.bank_account_number].filter(Boolean).join(" ") || "-"}
               </p>
-              <p className="text-[11px] text-slate-500">a.n {holderName}</p>
+              <p className="text-xs text-slate-600">a.n {holderName}</p>
             </div>
           </div>
 
@@ -386,23 +386,23 @@ function CashAdvanceReviewModalContent({
                 href={ca.rab_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between rounded-xl border border-slate-200/90 bg-white p-2 hover:border-slate-300 transition-colors"
+                className="group flex items-center justify-between rounded-lg py-1.5 hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eafaf1] text-[#12a150]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eafaf1] text-[#15803d]">
                     <FileSpreadsheet size={16} strokeWidth={1.75} />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-900">Link Spreadsheet</p>
-                    <p className="text-[11px] text-slate-500">Spreadsheet Google Sheets</p>
+                    <p className="text-xs text-slate-600">Spreadsheet Google Sheets</p>
                   </div>
                 </div>
-                <ExternalLink size={14} strokeWidth={2} className="mr-1 text-slate-500 group-hover:text-slate-600" />
+                <ExternalLink size={14} strokeWidth={2} className="mr-1 text-slate-600 group-hover:text-slate-600" />
               </a>
             ) : (
-              <p className="text-xs text-slate-500">Tidak ada link spreadsheet.</p>
+              <p className="text-xs text-slate-600">Tidak ada link spreadsheet.</p>
             )}
-            <p className="mt-1.5 text-[11px] text-slate-500">
+            <p className="mt-1.5 text-xs text-slate-600">
               Rincian pos RAB lengkap ada di{" "}
               <button type="button" onClick={() => modals.open(MODAL.DETAIL, { focus: null })} className="font-semibold text-brand hover:underline">
                 Lihat Detail
@@ -411,7 +411,7 @@ function CashAdvanceReviewModalContent({
             </p>
           </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center text-[11px] text-slate-500">
+            <div className="text-xs text-slate-600">
               Kwitansi reimbursement dilihat di detail pengajuan.
             </div>
           )}
@@ -434,10 +434,10 @@ function CashAdvanceReviewModalContent({
           {canDecide ? (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label htmlFor="review-note-input" className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  CATATAN <span className="font-semibold text-rose-500">(WAJIB DIISI JIKA MENOLAK)</span>
+                <label htmlFor="review-note-input" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  CATATAN <span className="font-semibold text-rose-600">(WAJIB DIISI JIKA MENOLAK)</span>
                 </label>
-                <span className="text-[11px] text-slate-500">Opsional untuk persetujuan</span>
+                <span className="text-xs text-slate-600">Opsional untuk persetujuan</span>
               </div>
               <textarea
                 id="review-note-input"
@@ -448,22 +448,22 @@ function CashAdvanceReviewModalContent({
                 }}
                 rows={2}
                 placeholder="Tulis catatan verifikasi atau alasan spesifik jika pengajuan ini ditolak..."
-                className="w-full rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-xs placeholder:text-slate-500 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+                className="w-full rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-xs placeholder:text-slate-600 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
-              {error && <p className="mt-1 text-[11px] font-semibold text-rose-600">{error}</p>}
+              {error && <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>}
             </div>
           ) : (
             !isPending && ca.review_note && (
               <div>
                 <p className={lbl}>CATATAN OPERASIONAL</p>
-                <p className="rounded-xl bg-slate-50 px-3 py-2.5 text-[13px] leading-relaxed text-slate-700">
+                <p className="text-[13px] leading-relaxed text-slate-800">
                   {ca.review_note}
                 </p>
               </div>
             )
           )}
 
-          <div className="space-y-1 border-t border-slate-100 pt-3 text-[11px] text-slate-500">
+          <div className="space-y-1 border-t border-slate-100 pt-3 text-xs text-slate-600">
             <div className="flex items-center gap-1.5">
               <Clock size={12} strokeWidth={1.75} />
               <span>Diajukan pada {formatDateTimeFull(ca.created_at)}</span>
@@ -510,7 +510,7 @@ function CashAdvanceReviewModalContent({
             </div>
           ) : isPending ? (
             <div className="space-y-2">
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-[11px] font-semibold text-amber-800">
+              <div className="rounded-md bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-800">
                 {isOwner && canReview
                   ? "Menunggu persetujuan admin lain. Anda tidak bisa menyetujui pengajuan sendiri."
                   : "Menunggu verifikasi tim operasional."}
@@ -704,7 +704,7 @@ export function DecisionDialog({
       <div className="animate-scale-up w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
         {result.step === "disburse" ? (
           <>
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
               <Banknote size={20} />
             </span>
             <h3 className="mt-3 text-sm font-bold text-slate-900">

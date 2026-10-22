@@ -305,11 +305,11 @@ export function DriveInlinePreview({ url, title, className = "", variant = "full
           ref={ref}
           type="button"
           onClick={() => setOpen(true)}
-          className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 ${className}`}
+          className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 ${className}`}
           aria-label={`Lihat ${title || "file"}`}
         >
           <FileText size={20} />
-          <span className="text-[11px] font-medium">Buka</span>
+          <span className="text-xs font-medium">Buka</span>
         </button>
         <FilePreviewModal open={open} onClose={() => setOpen(false)} title={title} url={url} />
       </>
@@ -336,7 +336,7 @@ export function DriveInlinePreview({ url, title, className = "", variant = "full
           />
         ) : (
           <div
-            className={`flex items-center justify-center gap-2 text-xs text-slate-500 ${
+            className={`flex items-center justify-center gap-2 text-xs text-slate-600 ${
               thumb ? "h-full w-full" : "h-40"
             }`}
           >
@@ -344,7 +344,7 @@ export function DriveInlinePreview({ url, title, className = "", variant = "full
           </div>
         )}
         {!thumb && file.status === "ready" && file.pageCount > 1 && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm">
             <FileText size={12} /> PDF · {file.pageCount} halaman
           </span>
         )}
@@ -395,7 +395,7 @@ export function LocalFilePreview({ file, className = "" }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={pages[0]} alt={file.name} className="mx-auto max-h-80 w-full object-contain" />
         ) : (
-          <div className="flex h-32 items-center justify-center gap-2 text-xs text-slate-500">
+          <div className="flex h-32 items-center justify-center gap-2 text-xs text-slate-600">
             {pages ? (
               <>
                 <FileText size={16} /> Pratinjau tidak tersedia
@@ -408,7 +408,7 @@ export function LocalFilePreview({ file, className = "" }) {
           </div>
         )}
         {isPdf && pages?.length > 1 && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm">
             <FileText size={12} /> PDF · {pages.length} halaman
           </span>
         )}

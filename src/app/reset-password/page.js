@@ -70,7 +70,7 @@ function ResetPasswordForm() {
       type="button"
       onClick={() => setShow(!show)}
       aria-label={show ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-      className="text-slate-500 hover:text-slate-700"
+      className="text-slate-600 hover:text-slate-700"
     >
       {show ? <EyeOff size={20} strokeWidth={1.75} /> : <Eye size={20} strokeWidth={1.75} />}
     </button>

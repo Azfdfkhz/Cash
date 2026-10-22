@@ -9,8 +9,8 @@ import { compareRab, formatVolume, OUTSIDE_RAB, receiptLines } from "@/lib/rab";
 
 function remainingClass(value) {
   if (value < 0) return "text-rose-600";
-  if (value > 0) return "text-amber-600";
-  return "text-emerald-600";
+  if (value > 0) return "text-amber-700";
+  return "text-emerald-700";
 }
 
 export default function RabComparison({ items, receipts, canAssign }) {
@@ -59,7 +59,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         Perbandingan bukti (kwitansi) terhadap RAB yang diajukan.
       </p>
 
@@ -78,7 +78,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
                 <p className="text-sm font-medium text-slate-900 min-w-0">
                   {index + 1}. {item.description}
                 </p>
-                <span className="text-xs text-slate-500 shrink-0">
+                <span className="text-xs text-slate-600 shrink-0">
                   {receiptCount} bukti
                 </span>
               </div>
@@ -92,21 +92,21 @@ export default function RabComparison({ items, receipts, canAssign }) {
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
                 <div>
-                  <p className="text-slate-500">RAB</p>
+                  <p className="text-slate-600">RAB</p>
                   <p className="font-medium text-slate-900">{formatCurrency(budget)}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500">Realisasi</p>
+                  <p className="text-slate-600">Realisasi</p>
                   <p className="font-medium text-slate-900">{formatCurrency(realized)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-slate-500">Sisa</p>
+                  <p className="text-slate-600">Sisa</p>
                   <p className={`font-semibold ${remainingClass(remaining)}`}>
                     {formatCurrency(remaining)}
                   </p>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1.5">
+              <p className="text-xs text-slate-600 mt-1.5">
                 <span className={usedVolume > volume ? "text-rose-600 font-medium" : ""}>
                   Volume {formatVolume(usedVolume)} / {formatVolume(volume)} {item.unit ?? ""}
                   {usedVolume > volume ? " (melebihi RAB)" : ""}
@@ -135,7 +135,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
             <p className="text-sm font-medium text-slate-900">
               Di luar RAB (tak terduga)
             </p>
-            <span className="text-xs text-slate-500 shrink-0">
+            <span className="text-xs text-slate-600 shrink-0">
               {result.outside.length} rincian
             </span>
           </div>
@@ -145,7 +145,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
                 <p className="text-slate-900 truncate">
                   {r.vendor || "Kwitansi"} · {formatDate(r.receipt_date || r.created_at)}
                 </p>
-                <p className="text-slate-500">
+                <p className="text-slate-600">
                   Volume {formatVolume(r.quantity ?? 1)} · Alasan: {r.notes}
                 </p>
               </div>
@@ -155,7 +155,7 @@ export default function RabComparison({ items, receipts, canAssign }) {
             </div>
           ))}
           <div className="flex justify-between border-t border-slate-100 pt-2 text-xs">
-            <span className="text-slate-500">Total di luar RAB</span>
+            <span className="text-slate-600">Total di luar RAB</span>
             <span className="font-semibold text-rose-600">
               {formatCurrency(result.outsideTotal)}
             </span>
@@ -220,7 +220,7 @@ function UnassignedReceipt({ receipt, items, canAssign, saving, onAssign }) {
           <p className="text-sm text-slate-900 truncate">
             {receipt.vendor || "Kwitansi"} · {formatCurrency(receipt.amount)}
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-600">
             {formatDate(receipt.receipt_date || receipt.created_at)}
           </p>
         </div>

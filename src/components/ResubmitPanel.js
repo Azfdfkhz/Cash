@@ -36,17 +36,17 @@ export default function ResubmitPanel({ cashAdvanceId, kind }) {
   }
 
   return (
-    <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-3">
+    <div className="space-y-3 border-t border-slate-200 pt-4">
       <div>
         <p className="text-sm font-semibold text-rose-800">Pengajuan ditolak</p>
-        <p className="text-xs text-rose-700/80 mt-1">
+        <p className="text-xs text-slate-700 mt-1">
           {kind === "reimbursement"
             ? "Perbaiki kwitansi di bawah (edit, hapus, atau tambah kwitansi) sesuai catatan penolakan, lalu ajukan ulang."
             : "Revisi RAB di atas sesuai catatan penolakan, lalu ajukan ulang."}
         </p>
       </div>
       {error && (
-        <div role="alert" className="font-medium text-sm text-rose-700 bg-white border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}

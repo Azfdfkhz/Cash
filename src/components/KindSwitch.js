@@ -25,7 +25,7 @@ export default function KindSwitch({ active }) {
             className={`relative flex flex-col gap-2 rounded-2xl bg-white p-4 transition-colors lg:flex-row lg:items-center lg:gap-4 lg:rounded-3xl lg:px-5 lg:py-5 ${
               selected
                 ? "border-2 border-[#0f172a]"
-                : "border border-slate-200 opacity-60 hover:opacity-90"
+                : "border border-slate-200 hover:border-slate-400"
             }`}
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 lg:h-12 lg:w-12 lg:bg-slate-50">
@@ -35,12 +35,12 @@ export default function KindSwitch({ active }) {
               <span className="flex items-center gap-1.5 text-sm font-bold text-slate-900 lg:text-base">
                 {label}
                 {drafts[kind] && (
-                  <span className="rounded-full bg-amber-100 px-1.5 py-px text-[11px] font-bold text-amber-700">
+                  <span className="rounded-full bg-amber-100 px-1.5 py-px text-xs font-bold text-amber-700">
                     Draft
                   </span>
                 )}
               </span>
-              <span className="mt-0.5 block text-xs leading-snug text-slate-500 lg:text-sm">{hint}</span>
+              <span className="mt-0.5 block text-xs leading-snug text-slate-600 lg:text-sm">{hint}</span>
             </span>
             <span
               aria-hidden="true"

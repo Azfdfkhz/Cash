@@ -14,7 +14,7 @@ export function RoleBadge({ children, dot = false, dark = false }) {
 }
 
 // Kartu ringkasan desktop. `dark` = kartu utama bernuansa navy.
-export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-500", valueClass = "text-3xl mt-5", tour }) {
+export function StatCard({ label, value, caption, icon: Icon, dark = false, dot = false, iconClass = "text-slate-600", valueClass = "text-3xl mt-5", tour }) {
   return (
     <div
       data-tour={tour}
@@ -26,8 +26,8 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
     >
       <div className="flex items-start justify-between">
         <p
-          className={`text-[11px] uppercase tracking-[0.65px] ${
-            dark ? "font-medium text-slate-300" : "font-semibold text-slate-500"
+          className={`text-xs uppercase tracking-[0.65px] ${
+            dark ? "font-medium text-slate-300" : "font-semibold text-slate-600"
           }`}
         >
           {label}
@@ -36,7 +36,7 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
         {Icon && <Icon size={16} strokeWidth={1.75} className={iconClass} />}
       </div>
       <p className={`break-words font-bold tracking-tight ${valueClass}`}>{value}</p>
-      <p className={`mt-2.5 text-xs leading-relaxed ${dark ? "text-slate-300" : "text-slate-500"}`}>
+      <p className={`mt-2.5 text-xs leading-relaxed ${dark ? "text-slate-300" : "text-slate-600"}`}>
         {caption}
       </p>
     </div>
@@ -54,7 +54,7 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
     `${base} rounded-full font-semibold transition-colors ${
       active
         ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80"
-        : "text-slate-500 hover:text-slate-700"
+        : "text-slate-600 hover:text-slate-700"
     }`;
   return (
     <div data-tour="status-filter" className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1">
@@ -74,4 +74,4 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
 
 // Sel tabel desktop: header & body
 export const TH =
-  "whitespace-nowrap px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.55px] text-slate-500";
+  "whitespace-nowrap px-6 py-4 text-xs font-semibold uppercase tracking-[0.55px] text-slate-600";

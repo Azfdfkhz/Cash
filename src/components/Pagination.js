@@ -88,7 +88,7 @@ export default function Pagination({
 
           {pageItems(page, totalPages).map((item, i) =>
             item === "…" ? (
-              <span key={`gap-${i}`} aria-hidden="true" className={`${cell} text-slate-500`}>
+              <span key={`gap-${i}`} aria-hidden="true" className={`${cell} text-slate-600`}>
                 …
               </span>
             ) : item === page ? (
@@ -144,7 +144,7 @@ export default function Pagination({
           </form>
         )}
       </div>
-      <p className="font-num text-center text-xs text-slate-500">
+      <p className="font-num text-center text-xs text-slate-600">
         Halaman {page} dari {totalPages} · {total} data
       </p>
     </nav>

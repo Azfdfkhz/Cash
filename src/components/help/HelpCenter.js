@@ -26,7 +26,7 @@ function RoleTabs({ roles, role, onChange }) {
             className={`flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold transition-colors sm:flex-none ${
               active
                 ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-slate-600 hover:text-slate-700"
             }`}
           >
             {r.label}
@@ -74,7 +74,7 @@ function Topic({ topic, role, roleLabel, open, onToggle }) {
           </span>
           <ChevronDown
             size={18}
-            className={`shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`shrink-0 text-slate-600 transition-transform ${open ? "rotate-180" : ""}`}
             aria-hidden="true"
           />
         </button>
@@ -83,7 +83,7 @@ function Topic({ topic, role, roleLabel, open, onToggle }) {
         <div id={panelId} className="space-y-3 border-t border-slate-100 px-5 pb-5 pt-4">
           <p className="text-base font-semibold leading-relaxed text-slate-900">{topic.common}</p>
           {topic.details?.length > 0 && (
-            <ul className="list-disc space-y-1.5 pl-5 text-base leading-relaxed text-slate-700 marker:text-slate-500">
+            <ul className="list-disc space-y-1.5 pl-5 text-base leading-relaxed text-slate-700 marker:text-slate-600">
               {topic.details.map((t) => (
                 <li key={t}>{t}</li>
               ))}
@@ -94,7 +94,7 @@ function Topic({ topic, role, roleLabel, open, onToggle }) {
               <h4 className="pt-1 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Langkah untuk {roleLabel}
               </h4>
-              <ol className="list-decimal space-y-1.5 pl-5 text-base leading-relaxed text-slate-700 marker:text-slate-500">
+              <ol className="list-decimal space-y-1.5 pl-5 text-base leading-relaxed text-slate-700 marker:text-slate-600">
                 {items.map((t) => (
                   <li key={t}>{t}</li>
                 ))}
@@ -195,14 +195,14 @@ export default function HelpCenter({ content, canReplayTour = false }) {
             <Search
               size={15}
               aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
             />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari istilah"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none"
             />
           </label>
         </div>

@@ -104,7 +104,7 @@ export default function RabSection({
         >
           <ChevronDown
             size={18}
-            className={`mt-0.5 shrink-0 text-slate-500 transition-transform ${
+            className={`mt-0.5 shrink-0 text-slate-600 transition-transform ${
               expanded ? "rotate-180" : ""
             } ${bare ? "hidden" : ""}`}
           />
@@ -112,7 +112,7 @@ export default function RabSection({
             <span className="block text-sm font-semibold text-slate-700">
               {showRealization ? "RAB vs Realisasi" : "Detail RAB"}
             </span>
-            <span className="block text-xs text-slate-500 mt-0.5">
+            <span className="block text-xs text-slate-600 mt-0.5">
               {items.length} pos · {formatCurrency(total)}
               {summary && (
                 <>
@@ -122,8 +122,8 @@ export default function RabSection({
                       summary.totalRemaining < 0
                         ? "text-rose-600"
                         : summary.totalRemaining > 0
-                          ? "text-amber-600"
-                          : "text-emerald-600"
+                          ? "text-amber-700"
+                          : "text-emerald-700"
                     }
                   >
                     {summary.totalRemaining < 0 ? "Lebih " : "Sisa "}
@@ -154,7 +154,7 @@ export default function RabSection({
         <>
 
       {error && (
-        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div className="text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}
@@ -167,7 +167,7 @@ export default function RabSection({
             sourceUrl={draftUrl}
             onSourceUrlChange={setDraftUrl}
           />
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600">
             Nominal diajukan akan mengikuti total RAB.
           </p>
           <div className="flex gap-2">
@@ -203,7 +203,7 @@ export default function RabSection({
           )}
 
           {!items.length && (
-            <p className="text-sm text-slate-500">Belum ada rincian RAB.</p>
+            <p className="text-sm text-slate-600">Belum ada rincian RAB.</p>
           )}
 
           {showRealization ? (
@@ -224,7 +224,7 @@ export default function RabSection({
                       <p className="text-sm font-medium text-slate-900">
                         {index + 1}. {item.description}
                       </p>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-xs text-slate-600 mt-0.5">
                         {formatQty(item.quantity)} {item.unit ?? ""} ×{" "}
                         {formatQty(item.frequency)} ×{" "}
                         {formatCurrency(item.unit_price)}
@@ -237,7 +237,7 @@ export default function RabSection({
                 ))}
               </div>
               {items.length > 0 && (
-                <div className="flex justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                <div className="flex justify-between border-t border-slate-200 px-0 py-3 text-sm">
                   <span className="text-slate-600">Total RAB</span>
                   <span className="font-semibold text-slate-900">
                     {formatCurrency(total)}

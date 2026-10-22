@@ -32,15 +32,15 @@ const REALTIME_TABLES = [
 ];
 
 const STATUS_TILE = {
-  approved: { bg: "bg-[#e8f8ee]", icon: Check, color: "text-[#1fa653]" },
-  pending: { bg: "bg-[#fff7e8]", icon: Clock, color: "text-[#d98a0b]" },
-  closed: { bg: "bg-[#eef2f6]", icon: CheckCheck, color: "text-slate-500" },
-  rejected: { bg: "bg-[#fff0f2]", icon: X, color: "text-[#e11d48]" },
+  approved: { bg: "bg-[#e8f8ee]", icon: Check, color: "text-[#15803d]" },
+  pending: { bg: "bg-[#fff7e8]", icon: Clock, color: "text-[#b45309]" },
+  closed: { bg: "bg-[#eef2f6]", icon: CheckCheck, color: "text-slate-600" },
+  rejected: { bg: "bg-[#fff0f2]", icon: X, color: "text-[#be123c]" },
 };
 
 function KindTag({ kind }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+    <p className="text-xs font-semibold uppercase tracking-wide text-brand">
       {KIND_LABEL[kind] ?? "Cash Advance"}
     </p>
   );
@@ -50,7 +50,7 @@ function Metric({ value, label, tour }) {
   return (
     <div data-tour={tour} className="min-w-0 flex-1">
       <p className="break-words text-lg font-bold leading-tight text-slate-900">{value}</p>
-      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="text-xs font-medium text-slate-600">{label}</p>
     </div>
   );
 }
@@ -90,7 +90,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
       <div className="lg:hidden space-y-5">
         <div className="flex items-end justify-between pt-2">
           <div>
-            <p className="text-sm font-medium text-slate-500">Selamat datang</p>
+            <p className="text-sm font-medium text-slate-600">Selamat datang</p>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               {name}
             </h1>
@@ -101,7 +101,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
         </div>
 
         <section data-tour="stat-balance" className="rounded-[28px] border border-slate-200/90 bg-white px-6 pb-6 pt-7 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)]">
-          <p className="text-[13px] font-medium text-slate-500">Sisa saldo aktif</p>
+          <p className="text-[13px] font-medium text-slate-600">Sisa saldo aktif</p>
           <p className="pb-4 pt-1.5 text-[32px] font-extrabold leading-8 tracking-tight text-[#0d1b2a]">
             {formatCurrency(stats.totalOutstanding)}
           </p>
@@ -131,7 +131,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
 
           <KindFilterContent>
           {list.length === 0 && (
-            <p className="text-sm text-slate-500">{emptyText}</p>
+            <p className="text-sm text-slate-600">{emptyText}</p>
           )}
           <div data-tour="request-list" className="space-y-3.5">
             {list.map((ca, i) => {
@@ -156,7 +156,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
                       <p className="line-clamp-2 text-sm font-bold leading-snug text-slate-900">
                         {ca.purpose}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-600">
                         {formatDateShort(ca.created_at)}
                       </p>
                     </div>
@@ -184,7 +184,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
       <div className="hidden lg:block">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xl font-light text-slate-500">Selamat Datang</p>
+            <p className="text-xl font-normal text-slate-600">Selamat Datang</p>
             <h1 className="mt-1 text-3xl leading-tight font-bold tracking-tight text-slate-900 2xl:text-4xl">
               {name}
             </h1>
@@ -208,7 +208,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
           <div className="flex items-center justify-between gap-4 px-5 py-4 xl:px-6 xl:py-5">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Pengajuan terbaru</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-slate-600">
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
             </div>
@@ -232,7 +232,7 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
             <tbody>
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-600">
                     {emptyText}
                   </td>
                 </tr>

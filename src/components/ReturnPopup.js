@@ -11,7 +11,7 @@ import { formatCaCode, formatCurrency, formatDate } from "@/lib/utils";
 function Row({ label, children }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-2 text-xs">
-      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-600">{label}</span>
       <span className="text-right font-semibold text-slate-900">{children}</span>
     </div>
   );
@@ -30,7 +30,7 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
         </span>
         <div className="min-w-0">
           <h4 className="text-sm font-bold text-slate-900">Bukti Berhasil Terkirim</h4>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600">
             Diteruskan ke Tim Operasional &amp; Keuangan untuk verifikasi.
           </p>
         </div>
@@ -40,10 +40,10 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
         <div className="min-w-0 space-y-3">
           <div className="rounded-xl border border-slate-200 px-4 py-3">
             <div className="mb-1 flex items-center justify-between gap-2 border-b border-dashed border-slate-200 pb-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-600">
                 Rincian Pengembalian
               </p>
-              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+              <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                 Menunggu Verifikasi
               </span>
             </div>
@@ -61,7 +61,7 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold text-slate-900">{sent.file.name}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-600">
                     {sizeMb} MB · Tersimpan di Google Drive
                   </p>
                 </div>
@@ -162,7 +162,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
       label="Kembalikan sisa saldo"
       title={sent ? "Status Pengembalian" : "Kembalikan Sisa Saldo"}
       badge={
-        <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-[11px] font-bold text-[#2563eb]">
+        <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-xs font-bold text-[#2563eb]">
           {formatCaCode(c)}
         </span>
       }
@@ -176,7 +176,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
       ) : (
       <div className="space-y-5">
         {!loaded ? (
-          <p className="flex items-center gap-2 text-xs text-slate-500">
+          <p className="flex items-center gap-2 text-xs text-slate-600">
             <Loader2 size={14} className="animate-spin" /> Memuat data pengembalian...
           </p>
         ) : (

@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.2.2
+### Ajukan
+- Tanggal kebutuhan dana berformat Indonesia **dd/mm/yyyy** di semua browser (`DateInput`: ketik angka
+  atau pilih dari kalender; tanggal tidak nyata seperti 31/02 ditolak). Dipakai juga di kolom tanggal
+  kwitansi dan pengembalian. Nilai internal tetap ISO.
+- Tombol **Kirim Pengajuan** abu-abu selama isian belum lengkap; kliknya menampilkan apa yang kurang.
+- **Nomor rekening** bisa dilihat dengan password (alur sama seperti Profil), tertutup lagi setelah 30 detik.
+  Logika dipisah ke `useAccountReveal` dan dipakai bersama `ProfileForm`.
+- Form dibagi per bagian dengan dua kolom dan lebar teks dibatasi (`max-w-4xl`, `max-w-prose`),
+  tidak lagi satu kolom panjang.
+
+### Tampilan & aksesibilitas
+- Poppins di-host sendiri (`src/app/fonts`), Inter dihapus, font dipaksa untuk semua kontrol formulir.
+- Ukuran teks minimal: `text-xs` 12 px, `text-sm` 13 px. Semua `text-[8..12px]` menjadi `text-xs`.
+- Kontras: abu-abu pudar menjadi slate-600; hijau/kuning/oranye/merah teks dinaikkan ke -700/-600.
+- Kartu di dalam kartu diratakan (form Ajukan, RAB, panel detail & tinjau Persetujuan).
+- Persetujuan: urutan heading h1 > h2 > h3 tidak lagi melompat.
+- Zoom pengguna tidak lagi dikunci.
+
+### Production
+- Metadata `noindex`, halaman `not-found` dan `global-error`.
+- Dibuang: `src/lib/supabase/.temp` (ref project) dan SVG bawaan Next.js yang tidak dipakai.
+
 ## 1.3.0
 ### Persetujuan
 - Pencarian (`?q=`, ditunda 400 ms, desktop & mobile): username / nama / email pemohon,

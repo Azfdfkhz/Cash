@@ -154,7 +154,7 @@ function LoginForm() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-              className="text-slate-500 hover:text-slate-700"
+              className="text-slate-600 hover:text-slate-700"
             >
               {showPassword ? (
                 <EyeOff size={20} strokeWidth={1.75} />

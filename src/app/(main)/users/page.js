@@ -20,7 +20,7 @@ export default async function UsersPage() {
         <h1 className="text-lg font-semibold text-slate-900 lg:text-2xl lg:font-bold">
           Kelola Pengguna
         </h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <p className="text-sm text-slate-600 mt-0.5">
           Atur siapa yang punya akses Tim Operasional.
         </p>
       </div>

@@ -24,9 +24,9 @@ function MenuRow({ href, icon: Icon, title, subtitle, tour }) {
         <span className="block text-[15px] font-semibold text-slate-900">
           {title}
         </span>
-        <span className="block text-sm text-slate-500">{subtitle}</span>
+        <span className="block text-sm text-slate-600">{subtitle}</span>
       </span>
-      <ChevronRight size={18} className="shrink-0 text-slate-500" />
+      <ChevronRight size={18} className="shrink-0 text-slate-600" />
     </Link>
   );
 }
@@ -68,7 +68,7 @@ export default async function ProfilePage() {
           />
 
           <section>
-            <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-slate-600">
               Lainnya
             </h2>
             <div data-tour="profile-help" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">

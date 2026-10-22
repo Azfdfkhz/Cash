@@ -45,7 +45,7 @@ const MOBILE_ACTION = {
 
 function KindTag({ kind }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+    <p className="text-xs font-semibold uppercase tracking-wide text-brand">
       {KIND_LABEL[kind] ?? "Cash Advance"}
     </p>
   );
@@ -55,7 +55,7 @@ function Metric({ value, label, divider, tour }) {
   return (
     <div data-tour={tour} className={`flex-1 ${divider ? "border-l border-slate-100 pl-4" : ""}`}>
       <p className="text-xl font-bold text-slate-900">{value}</p>
-      <p className="mt-0.5 text-xs font-medium leading-snug text-slate-500">{label}</p>
+      <p className="mt-0.5 text-xs font-medium leading-snug text-slate-600">{label}</p>
     </div>
   );
 }
@@ -71,7 +71,7 @@ function QuickTile({ href, icon: Icon, tone, title, caption }) {
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-bold leading-tight text-slate-900">{title}</span>
-        <span className="mt-0.5 block text-[11px] leading-tight text-slate-500">{caption}</span>
+        <span className="mt-0.5 block text-xs leading-tight text-slate-600">{caption}</span>
       </span>
     </Link>
   );
@@ -168,7 +168,7 @@ export default function OperationalDashboard({
       <div className="lg:hidden space-y-5">
         <div className="flex items-end justify-between pt-2">
           <div>
-            <p className="text-sm font-medium text-slate-500">Selamat Datang</p>
+            <p className="text-sm font-medium text-slate-600">Selamat Datang</p>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{name}</h1>
           </div>
           <div className="pb-1">
@@ -177,7 +177,7 @@ export default function OperationalDashboard({
         </div>
 
         <section data-tour="stat-balance" className="rounded-[28px] border border-slate-200/90 bg-white px-6 pb-6 pt-6 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)]">
-          <p className="text-[13px] font-medium text-slate-500">Total Saldo Berjalan</p>
+          <p className="text-[13px] font-medium text-slate-600">Total Saldo Berjalan</p>
           <p className="pb-4 pt-1.5 text-[32px] font-extrabold leading-8 tracking-tight text-[#0d1b2a]">
             {formatCurrency(stats.totalOutstanding)}
           </p>
@@ -192,7 +192,7 @@ export default function OperationalDashboard({
           <QuickTile
             href="/approvals"
             icon={Clock}
-            tone="bg-[#fff4dc] text-[#d98a0b]"
+            tone="bg-[#fff4dc] text-[#b45309]"
             title="Approval Antrean"
             caption={`${stats.pendingCount} pengajuan menunggu`}
           />
@@ -214,7 +214,7 @@ export default function OperationalDashboard({
 
           <KindFilterContent>
           {list.length === 0 && (
-            <p className="text-sm text-slate-500">Belum ada pengajuan.</p>
+            <p className="text-sm text-slate-600">Belum ada pengajuan.</p>
           )}
           <div data-tour="request-list" className="space-y-4">
             {list.map((ca, i) => {
@@ -233,7 +233,7 @@ export default function OperationalDashboard({
                       <p className="truncate text-[15px] font-bold text-slate-900">
                         {requesterName(ca.profiles)}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-600">
                         {formatDateTimeShort(ca.created_at)}
                       </p>
                     </div>
@@ -250,7 +250,7 @@ export default function OperationalDashboard({
                     <p className="text-[13px] font-semibold leading-snug text-slate-900">
                       {ca.purpose}
                     </p>
-                    <p className="shrink-0 text-right text-[11px] font-bold leading-tight text-slate-900">
+                    <p className="shrink-0 text-right text-xs font-bold leading-tight text-slate-900">
                       Rp
                       <span className="block text-sm">{formatNumber(ca.amount_requested)}</span>
                     </p>
@@ -301,17 +301,17 @@ export default function OperationalDashboard({
             caption="Total sisa saldo CA berjalan"
             valueClass="text-2xl mt-6"
             icon={TrendingUp}
-            iconClass="text-emerald-500"
+            iconClass="text-emerald-700"
           />
           <StatCard tour="stat-active" label="CA berjalan" value={stats.activeCount} caption="Dalam proses kegiatan" icon={Clock} iconClass="text-brand" />
-          <StatCard tour="stat-spj" label="Perlu SPJ" value={stats.needsSpjCount} caption="Menunggu pelaporan kuitansi" icon={TriangleAlert} iconClass="text-amber-500" />
+          <StatCard tour="stat-spj" label="Perlu SPJ" value={stats.needsSpjCount} caption="Menunggu pelaporan kuitansi" icon={TriangleAlert} iconClass="text-amber-700" />
         </div>
 
         <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between px-5 py-5">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Pengajuan terbaru</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-slate-600">
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
             </div>
@@ -336,7 +336,7 @@ export default function OperationalDashboard({
             <tbody>
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-600">
                     Belum ada pengajuan.
                   </td>
                 </tr>
@@ -390,7 +390,7 @@ export default function OperationalDashboard({
                         }}
                         className={
                           isPending
-                            ? "inline-block whitespace-nowrap rounded-xl bg-[#0f172a] px-4 py-2.5 text-[11px] font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
+                            ? "inline-block whitespace-nowrap rounded-xl bg-[#0f172a] px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
                             : "inline-block rounded-lg bg-slate-100 px-5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
                         }
                       >

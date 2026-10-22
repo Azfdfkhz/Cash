@@ -265,12 +265,10 @@ function ApprovalsWorkspaceInner({
     <div className="space-y-4 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <section className="space-y-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-slate-900 lg:text-xl lg:font-bold">
-              Persetujuan
-            </h1>
-          </div>
-          <p className="mt-0.5 text-sm text-slate-500 lg:text-xs">
+          <h1 className="text-lg font-semibold text-slate-900 lg:text-xl lg:font-bold">
+            Persetujuan
+          </h1>
+          <p className="mt-0.5 text-sm text-slate-600">
             {isDisburseTab
               ? `${count} pengajuan menunggu pencairan dana.`
               : `${count} pengajuan menunggu persetujuan Anda.`}
@@ -281,7 +279,7 @@ function ApprovalsWorkspaceInner({
           <Search
             size={16}
             aria-hidden="true"
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
           />
           <input
             type="search"
@@ -290,14 +288,14 @@ function ApprovalsWorkspaceInner({
             placeholder="Cari username, nomor pengajuan, keperluan..."
             aria-label="Cari pengajuan"
             enterKeyHint="search"
-            className="h-11 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-10 text-base text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 lg:h-10 lg:text-sm [&::-webkit-search-cancel-button]:hidden"
+            className="h-11 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-10 text-base text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 lg:h-10 lg:text-sm [&::-webkit-search-cancel-button]:hidden"
           />
           {searchText && (
             <button
               type="button"
               onClick={() => setSearchText("")}
               aria-label="Hapus pencarian"
-              className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-700"
             >
               <X size={15} />
             </button>
@@ -320,17 +318,17 @@ function ApprovalsWorkspaceInner({
                 className={`-mb-px flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
                   active
                     ? "border-brand text-brand"
-                    : "border-transparent text-slate-500 hover:text-slate-800"
+                    : "border-transparent text-slate-600 hover:text-slate-800"
                 }`}
               >
                 <span className="truncate">{t.label}</span>
                 <span
-                  className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                  className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-bold ${
                     active
                       ? "bg-brand/10 text-brand"
                       : n > 0
-                        ? "bg-orange-50 text-orange-600"
-                        : "bg-slate-100 text-slate-500"
+                        ? "bg-orange-50 text-orange-700"
+                        : "bg-slate-100 text-slate-600"
                   }`}
                 >
                   {n}
@@ -340,7 +338,7 @@ function ApprovalsWorkspaceInner({
           })}
         </div>
 
-        <p className="text-xs text-slate-500">{TABS.find((t) => t.id === tab)?.hint}</p>
+        <p className="text-xs text-slate-600">{TABS.find((t) => t.id === tab)?.hint}</p>
 
         {/* Desktop: Cash Advance / Reimbursement ada di sub-menu Persetujuan (sidebar). */}
         <div className="lg:hidden">
@@ -354,8 +352,11 @@ function ApprovalsWorkspaceInner({
         </div>
 
         <KindFilterContent skeletons={4}>
+        <h2 className="sr-only">
+          {isDisburseTab ? "Daftar pengajuan menunggu pencairan" : "Daftar pengajuan menunggu persetujuan"}
+        </h2>
         {items.length === 0 && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             {query
               ? `Tidak ada pengajuan yang cocok dengan "${query}".`
               : isDisburseTab
@@ -392,12 +393,12 @@ function ApprovalsWorkspaceInner({
                 <p className="truncate text-sm font-semibold text-slate-900">
                   {requesterName(ca.profiles)}
                 </p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">{ca.purpose}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-600">{ca.purpose}</p>
                 <p className="mt-1.5 text-base font-bold text-slate-900">
                   <CompactIdr value={ca.amount_requested} />
                 </p>
                 <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-600">
                     {formatDateTimeShort(ca.created_at)}
                     <span className="font-num"> · {formatCaCode(ca)}</span>
                   </span>
@@ -425,7 +426,7 @@ function ApprovalsWorkspaceInner({
         </KindFilterContent>
       </section>
 
-      <aside data-tour="approval-detail" className="hidden lg:block lg:sticky lg:top-8">
+      <aside data-tour="approval-detail" aria-label="Detail pengajuan" className="hidden lg:block lg:sticky lg:top-8">
         {navPending ? (
           <DetailPanelSkeleton />
         ) : selected ? (
@@ -477,7 +478,7 @@ function ApprovalsWorkspaceInner({
             )}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600">
             {isDisburseTab
               ? "Tidak ada pengajuan untuk dicairkan."
               : "Tidak ada pengajuan untuk ditinjau."}

@@ -15,6 +15,7 @@ import {
 } from "@/lib/utils";
 import { compareRab, describeReceiptLines, receiptLines } from "@/lib/rab";
 import { toJpegFile } from "@/lib/imageConvert";
+import DateInput from "@/components/request/DateInput";
 
 async function downloadClosureReport(supabase, cashAdvanceId) {
   const { data: ca } = await supabase
@@ -515,18 +516,18 @@ export default function ReturnsSection({
     <div className="space-y-3">
       {(hasReturns || remaining > 0) && (
         <div>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
             Pengembalian Sisa Saldo
-          </h2>
+          </h3>
 
           {remaining > 0 && !showReturnForm && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2 text-sm text-amber-800">
+            <div className="mb-2 text-sm text-amber-800">
               Sisa saldo yang perlu dikembalikan:{" "}
               <span className="font-semibold">
                 {formatCurrency(Math.max(remaining, 0))}
               </span>
               {remaining > 0 && (
-                <div className="mt-2 border-t border-amber-200 pt-2">
+                <div className="mt-2 border-t border-slate-200 pt-2">
                   <p className="text-xs">
                     Transfer sisa dana ke salah satu rekening berikut, lalu
                     unggah bukti transfernya:
@@ -548,11 +549,11 @@ export default function ReturnsSection({
           )}
 
           {hasReturns && (
-            <div className="space-y-2 mb-2">
+            <div className="mb-2">
               {returns.map((r) => (
                 <div
                   key={r.id}
-                  className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-3"
+                  className="flex items-center gap-3 border-t border-slate-200 py-3 first:border-t-0"
                 >
                   {r.proof_drive_view_url && (
                     <DriveInlinePreview
@@ -565,7 +566,7 @@ export default function ReturnsSection({
                     <p className="font-medium text-slate-900">
                       {formatCurrency(r.amount)}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       {formatDate(r.return_date ?? r.created_at)}
                       {r.note ? ` · ${r.note}` : ""}
                     </p>
@@ -624,12 +625,12 @@ export default function ReturnsSection({
 
       {(hasReimbursements || deficit > 0) && (
         <div>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
             Penggantian Kelebihan Belanja
-          </h2>
+          </h3>
 
           {balance < 0 && (
-            <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 mb-2 text-sm text-rose-800">
+            <div className="mb-2 text-sm text-rose-800">
               Kekurangan yang perlu diganti ke requester:{" "}
               <span className="font-semibold">
                 {formatCurrency(Math.max(deficit, 0))}
@@ -650,11 +651,11 @@ export default function ReturnsSection({
           )}
 
           {hasReimbursements && (
-            <div className="space-y-2 mb-2">
+            <div className="mb-2">
               {reimbursements.map((r) => (
                 <div
                   key={r.id}
-                  className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-3"
+                  className="flex items-center gap-3 border-t border-slate-200 py-3 first:border-t-0"
                 >
                   {r.proof_drive_view_url && (
                     <DriveInlinePreview
@@ -667,7 +668,7 @@ export default function ReturnsSection({
                     <p className="font-medium text-slate-900">
                       {formatCurrency(r.amount)}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       {formatDate(r.created_at)}
                       {r.note ? ` · ${r.note}` : ""}
                     </p>
@@ -694,7 +695,7 @@ export default function ReturnsSection({
       )}
 
       {error && (
-        <div role="alert" className="font-medium text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}
@@ -702,18 +703,18 @@ export default function ReturnsSection({
       {showReturnForm && (
         <form id="return-form" onSubmit={handleSubmitReturn} className="space-y-7">
           {/* Sisa dana */}
-          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
-            <p className="text-sm text-slate-500">Sisa dana yang perlu dikembalikan</p>
+          <div className="border-b border-slate-200 pb-5">
+            <p className="text-sm text-slate-600">Sisa dana yang perlu dikembalikan</p>
             <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">
               {formatCurrency(Math.max(remaining, 0))}
             </p>
             <dl className="mt-5 space-y-3 border-t border-slate-200 pt-4 text-sm">
               <div className="flex items-baseline justify-between gap-3">
-                <dt className="text-slate-500">Total Plafon Diajukan</dt>
+                <dt className="text-slate-600">Total Plafon Diajukan</dt>
                 <dd className="font-bold text-slate-900">{formatCurrency(amountRequested)}</dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
-                <dt className="text-slate-500">Total Realisasi Terpakai</dt>
+                <dt className="text-slate-600">Total Realisasi Terpakai</dt>
                 <dd className="font-bold text-slate-900">{formatCurrency(totalSpent)}</dd>
               </div>
             </dl>
@@ -723,7 +724,7 @@ export default function ReturnsSection({
           <div className="space-y-2.5">
             <label className="block text-sm font-bold text-slate-900">Jumlah yang Dikembalikan</label>
             <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
-              <span className="font-semibold text-slate-500">Rp</span>
+              <span className="font-semibold text-slate-600">Rp</span>
               <CurrencyInput
                 required
                 value={amount}
@@ -738,23 +739,23 @@ export default function ReturnsSection({
                 Semua
               </button>
             </div>
-            <p className="text-xs text-slate-500">Maksimal pengembalian sebesar sisa saldo.</p>
+            <p className="text-xs text-slate-600">Maksimal pengembalian sebesar sisa saldo.</p>
           </div>
 
           {/* Metode */}
           <div className="space-y-2.5">
             <label className="block text-sm font-bold text-slate-900">Metode Pengembalian</label>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               Transfer ke salah satu rekening berikut, lalu unggah bukti transfernya.
             </p>
-            <div className="space-y-3">
+            <div className="divide-y divide-slate-200 border-y border-slate-200">
               {COMPANY_RETURN_ACCOUNTS.map((acc) => (
                 <div
                   key={acc.number}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5"
+                  className="flex items-center justify-between gap-3 py-3.5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="truncate text-xs text-slate-600">
                       {acc.bank} · a.n. {acc.holder}
                     </p>
                     <p className="mt-1 select-all text-base font-bold tracking-wide text-slate-900">
@@ -768,7 +769,7 @@ export default function ReturnsSection({
                   >
                     {copiedAcc === acc.number ? (
                       <>
-                        <Check size={14} className="text-emerald-600" /> Tersalin
+                        <Check size={14} className="text-emerald-700" /> Tersalin
                       </>
                     ) : (
                       <>
@@ -786,13 +787,12 @@ export default function ReturnsSection({
             <label htmlFor="return-date" className="block text-sm font-bold text-slate-900">
               Tanggal Pengembalian
             </label>
-            <input
+            <DateInput
               id="return-date"
-              type="date"
               required
               value={returnDate}
               max={new Date().toLocaleDateString("en-CA")}
-              onChange={(e) => setReturnDate(e.target.value)}
+              onChange={setReturnDate}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 font-semibold text-slate-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
           </div>
@@ -812,7 +812,7 @@ export default function ReturnsSection({
                 <span className="block truncate text-sm font-bold text-slate-900">
                   {file ? file.name : "Pilih atau Unggah Dokumen"}
                 </span>
-                <span className="mt-0.5 block text-xs text-slate-500">
+                <span className="mt-0.5 block text-xs text-slate-600">
                   {file
                     ? `${(file.size / (1024 * 1024)).toFixed(1)} MB · ketuk untuk mengganti`
                     : "JPG, PNG, atau PDF · Maks 5 MB"}
@@ -844,7 +844,7 @@ export default function ReturnsSection({
           {/* Catatan */}
           <div className="space-y-2.5">
             <label htmlFor="return-note" className="block text-sm font-bold text-slate-900">
-              Catatan Tambahan <span className="font-normal text-slate-500">(Opsional)</span>
+              Catatan Tambahan <span className="font-normal text-slate-600">(Opsional)</span>
             </label>
             <textarea
               id="return-note"
@@ -852,7 +852,7 @@ export default function ReturnsSection({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Contoh: Sisa dana kegiatan telah ditransfer dari rekening orang"
-              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
           </div>
 
@@ -872,7 +872,7 @@ export default function ReturnsSection({
       {showReimburseForm && (
         <form
           onSubmit={handleSubmitReimbursement}
-          className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3"
+          className="space-y-3 border-t border-slate-200 pt-4"
         >
           <p className="text-sm font-semibold text-slate-700">
             Catat Penggantian ke Requester
@@ -906,7 +906,7 @@ export default function ReturnsSection({
             <button
               type="button"
               onClick={() => reimburseFileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-slate-500 text-sm"
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-slate-600 text-sm"
             >
               <Upload size={16} />
               {reimburseFile ? reimburseFile.name : "Unggah foto bukti transfer"}
@@ -946,7 +946,7 @@ export default function ReturnsSection({
 
       {status === "closed" && (
         <div className="space-y-2.5">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Laporan</h2>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Laporan</h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {reportUrl ? (
               <FilePreviewLink
@@ -982,7 +982,7 @@ export default function ReturnsSection({
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
             <button
               onClick={handleDownload}
-              className="inline-flex items-center gap-1.5 font-medium text-slate-500 hover:text-brand"
+              className="inline-flex items-center gap-1.5 font-medium text-slate-600 hover:text-brand"
             >
               <Download size={13} />
               Unduh data (CSV)
@@ -996,7 +996,7 @@ export default function ReturnsSection({
                 }}
                 disabled={archiving}
                 title="Buat ulang laporan di Drive dari data terbaru"
-                className="font-medium text-slate-500 hover:text-brand disabled:opacity-60"
+                className="font-medium text-slate-600 hover:text-brand disabled:opacity-60"
               >
                 {archiving ? "Membuat ulang laporan..." : "Perbarui laporan di Drive"}
               </button>

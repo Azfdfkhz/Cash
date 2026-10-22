@@ -37,7 +37,7 @@
   --dark-navy:   #172033;
   --surface: #ffffff;
   --border-subtle: #e7ebf0;
-  --text-muted: #667085;
+  --text-muted: #475569; /* slate-600, kontras 7,6:1 di atas putih */
 }
 
 @theme inline {
@@ -57,14 +57,16 @@
   --color-foreground: var(--foreground);
   --color-dark-navy:  var(--dark-navy);
 
-  /* Ukuran teks minimum 11px. Ukuran Tailwind berbasis rem dan root dikecilkan
-     jadi 14px di desktop, sehingga text-xs (0.75rem) menjadi 10,5px. max()
-     menjaga 12px di mobile dan 11px di desktop. */
-  --text-xs: max(0.75rem, 11px);
+  /* Ukuran teks minimum. Ukuran Tailwind berbasis rem dan root dikecilkan jadi
+     14px di desktop, sehingga text-xs (0.75rem) menjadi 10,5px dan text-sm
+     12,25px. max() menjaga text-xs minimal 12px dan text-sm minimal 13px di
+     semua layar (teks isi tidak boleh lebih kecil dari itu). */
+  --text-xs: max(0.75rem, 12px);
+  --text-sm: max(0.875rem, 13px);
 
-  /* Fonts */
-  --font-sans: var(--font-poppins);
-  --font-num: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  /* Fonts: satu keluarga (Poppins) untuk semua teks, termasuk angka. */
+  --font-sans: var(--font-poppins), "Poppins", system-ui, Arial, sans-serif;
+  --font-num: var(--font-poppins), "Poppins", system-ui, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -79,10 +81,21 @@
   }
 }
 
+/* Poppins dipaksa untuk semua elemen, termasuk kontrol formulir yang di
+   beberapa browser (Safari, Firefox, Android) memakai font sistem sendiri. */
+html,
+body,
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: var(--font-poppins), "Poppins", system-ui, Arial, sans-serif;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -114,7 +127,7 @@ input, select, textarea {
 }
 
 input::placeholder, textarea::placeholder {
-  color: #667085; /* kontras 4,8:1 di atas putih (sebelumnya #98a2b3 = 2,6:1) */
+  color: #64748b; /* slate-500, kontras 4,8:1 di atas putih */
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -197,10 +210,9 @@ textarea {
   .animate-slide-in-right, .animate-sheet-up, .animate-fade-in { animation: none; }
 }
 
-/* Angka profesional: lebar seragam & angka sejajar (untuk nominal/tanggal di laporan). */
+/* Angka rapi: lebar seragam & angka sejajar (untuk nominal/tanggal di laporan). */
 .font-num {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
-  letter-spacing: -0.01em;
 }

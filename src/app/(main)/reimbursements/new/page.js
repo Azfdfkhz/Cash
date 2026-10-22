@@ -16,11 +16,12 @@ import { Field, SelectField, inputCls, maskedAccount } from "@/components/reques
 import { clearDraft, loadDraft, loadDraftFiles } from "@/lib/draft";
 import { useAutoDraft } from "@/lib/useAutoDraft";
 import { useLeaveGuard } from "@/lib/useLeaveGuard";
-import { formatCurrency, formatDateLong, formatDateShort } from "@/lib/utils";
+import { formatCurrency, formatDateNumeric, formatDateShort } from "@/lib/utils";
 import ReceiptLinesEditor, { newLine, toLinesPayload } from "@/components/ReceiptLinesEditor";
 import { renderPdfPreview } from "@/lib/pdfPreview";
 import { notifyOps, scanReceiptFile, uploadProof } from "@/lib/receiptScan";
 import { toJpegFile } from "@/lib/imageConvert";
+import DateInput from "@/components/request/DateInput";
 
 const FORM_ID = "new-reimbursement-form";
 const DRAFT_KIND = "reimbursement";
@@ -407,12 +408,12 @@ export default function NewReimbursementPage() {
           rows={[
             { label: "Jumlah kwitansi", value: String(drafts.length) },
             { label: "Rekening", value: bankOk ? maskedAccount(bankName, bankAccountNumber) : "" },
-            { label: "Tgl transaksi", value: latestReceiptDate ? formatDateLong(latestReceiptDate) : "" },
+            { label: "Tgl transaksi", value: latestReceiptDate ? formatDateNumeric(latestReceiptDate) : "" },
           ]}
           checks={checks}
           declaration={
             <>
-              <strong className="text-[#78350f]">Pernyataan.</strong> Saya menyatakan kwitansi yang
+              <strong>Pernyataan.</strong> Saya menyatakan kwitansi yang
               dilampirkan asli dan sesuai dengan transaksi yang saya bayarkan.
             </>
           }
@@ -501,31 +502,31 @@ export default function NewReimbursementPage() {
         <div data-tour="req-receipts">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-900/80 pb-3 lg:border-0 lg:pb-0">
             <h2 className="text-base font-bold text-slate-900">
-              Kwitansi &amp; Bukti Transfer ({drafts.length}) <span className="text-rose-500">*</span>
+              Kwitansi &amp; Bukti Transfer ({drafts.length}) <span className="text-rose-600">*</span>
             </h2>
-            <span className="hidden text-xs text-slate-500 lg:inline">Total klaim dihitung dari kwitansi</span>
+            <span className="hidden text-xs text-slate-600 lg:inline">Total klaim dihitung dari kwitansi</span>
           </div>
           <div className="space-y-3">
             {drafts.map((d, i) => (
               <div key={d.key} className="rounded-2xl border border-slate-200 bg-white">
                 <div className="flex items-center gap-3 p-3 lg:p-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                     <FileText size={20} strokeWidth={1.75} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-slate-900">
                       {d.vendor || `Kwitansi ${i + 1}`}
                     </p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="truncate text-xs text-slate-600">
                       {d.receiptDate ? formatDateShort(d.receiptDate) : d.file.name}
                     </p>
                     {d.scanning ? (
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-600">
                         <Loader2 size={12} className="animate-spin" /> Membaca dokumen...
                       </p>
                     ) : (
                       d.rawText && (
-                        <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-600">
+                        <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-700">
                           <Check size={12} strokeWidth={3} /> Terpindai otomatis
                         </p>
                       )
@@ -546,7 +547,7 @@ export default function NewReimbursementPage() {
                   <button
                     type="button"
                     onClick={() => removeDraft(d.key)}
-                    className="shrink-0 p-1.5 text-slate-500 hover:text-rose-600"
+                    className="shrink-0 p-1.5 text-slate-600 hover:text-rose-600"
                     aria-label={`Hapus kwitansi ${i + 1}`}
                   >
                     <Trash2 size={17} />
@@ -570,10 +571,9 @@ export default function NewReimbursementPage() {
                         className={smallInput}
                         placeholder="Toko / penerima transfer"
                       />
-                      <input
-                        type="date"
+                      <DateInput
                         value={d.receiptDate}
-                        onChange={(e) => updateDraft(d.key, { receiptDate: e.target.value })}
+                        onChange={(v) => updateDraft(d.key, { receiptDate: v })}
                         className={smallInput}
                       />
                       <div className="col-span-2">
@@ -596,10 +596,10 @@ export default function NewReimbursementPage() {
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 py-4 text-sm font-semibold text-slate-700 hover:border-brand hover:text-brand"
             >
               <Camera size={18} /> Tambah Kwitansi / Bukti Transfer
-              <span className="hidden font-normal text-slate-500 lg:inline">Foto, unggah, atau isi manual</span>
+              <span className="hidden font-normal text-slate-600 lg:inline">Foto, unggah, atau isi manual</span>
             </button>
             {preparing > 0 && (
-              <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
+              <p className="flex items-center justify-center gap-1.5 text-xs text-slate-600">
                 <Loader2 size={14} className="animate-spin" /> Menyiapkan {preparing} foto...
                 {slowHeic && " (foto iPhone/HEIC, bisa sampai 1 menit per foto)"}
               </p>

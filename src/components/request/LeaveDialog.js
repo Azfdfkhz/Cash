@@ -14,7 +14,7 @@ export default function LeaveDialog({ open, onSave, onDiscard, onCancel }) {
       aria-labelledby="leave-dialog-title"
     >
       <div className="animate-scale-up w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-700">
           <FileClock size={20} />
         </span>
         <h3 id="leave-dialog-title" className="mt-3 text-sm font-bold text-slate-900">

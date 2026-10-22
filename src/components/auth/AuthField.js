@@ -1,7 +1,7 @@
 // Pill-shaped labelled input with a leading icon and optional trailing slot,
 // matching the mobile auth design. Extra props are passed to <input>.
 export const authInputClass =
-  "w-full h-13 rounded-full border border-slate-300 bg-white pl-12 pr-5 text-base text-slate-900 placeholder:text-slate-500 transition-colors focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 lg:pl-11 lg:text-sm";
+  "w-full h-13 rounded-full border border-slate-300 bg-white pl-12 pr-5 text-base text-slate-900 placeholder:text-slate-600 transition-colors focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 lg:pl-11 lg:text-sm";
 
 // Bentuk input desktop per frame Figma:
 //  "round" (default) = Daftar/Lengkapi data -> tinggi 51px, radius 16px
@@ -40,7 +40,7 @@ export default function AuthField({
           <Icon
             size={20}
             strokeWidth={1.75}
-            className="pointer-events-none absolute left-4.5 lg:left-4 top-1/2 -translate-y-1/2 text-slate-500"
+            className="pointer-events-none absolute left-4.5 lg:left-4 top-1/2 -translate-y-1/2 text-slate-600"
           />
         )}
         <input
@@ -54,7 +54,7 @@ export default function AuthField({
           </div>
         )}
       </div>
-      {hint && <p className="text-xs text-slate-500 mt-2">{hint}</p>}
+      {hint && <p className="text-xs text-slate-600 mt-2">{hint}</p>}
     </div>
   );
 }

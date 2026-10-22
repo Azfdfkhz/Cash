@@ -27,7 +27,7 @@ export function OrDivider({ children }) {
   return (
     <div className="flex items-center gap-4 my-7 lg:my-5">
       <div className="h-px flex-1 bg-slate-200" />
-      <span className="text-[13px] lg:text-xs text-slate-500 lg:text-[#64748b]">{children}</span>
+      <span className="text-[13px] lg:text-xs text-slate-600 lg:text-[#64748b]">{children}</span>
       <div className="h-px flex-1 bg-slate-200" />
     </div>
   );

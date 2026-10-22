@@ -24,7 +24,7 @@ function CopyRow({ label, value, copyValue, strong = false }) {
   return (
     <div className="flex items-center gap-3 border-t border-slate-100 px-1 py-2.5 first:border-t-0">
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-slate-500">{label}</p>
+        <p className="text-xs text-slate-600">{label}</p>
         <p
           className={`select-all break-words text-sm text-slate-900 ${
             strong ? "font-bold tabular-nums tracking-wide" : "font-semibold"
@@ -40,7 +40,7 @@ function CopyRow({ label, value, copyValue, strong = false }) {
           aria-label={`Salin ${label}`}
           className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
         >
-          {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+          {copied ? <Check size={13} className="text-emerald-700" /> : <Copy size={13} />}
           {copied ? "Tersalin" : "Salin"}
         </button>
       ) : null}
@@ -84,7 +84,7 @@ export default function DisbursementSection({
 
   if (disbursedAt) {
     return (
-      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+      <div className="border-t border-slate-200 pt-4">
         <div className="flex items-start gap-3">
           <Banknote size={20} className="text-emerald-700 shrink-0 mt-0.5" />
           <div className="min-w-0">
@@ -128,7 +128,7 @@ export default function DisbursementSection({
 
   if (!canDisburse) {
     return (
-      <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+      <div className="border-t border-slate-200 pt-4 text-sm text-amber-800">
         {isReimbursement
           ? "Disetujui, menunggu transfer reimbursement dari Tim Operasional ke"
           : "Disetujui, menunggu pencairan dana dari Tim Operasional ke"}{" "}
@@ -203,13 +203,13 @@ export default function DisbursementSection({
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 lg:rounded-2xl lg:p-5"
+      className="space-y-3 border-t border-slate-200 pt-4"
     >
       <div>
         <p className="text-sm font-semibold text-slate-700">
           {isReimbursement ? "Transfer Reimbursement" : "Cairkan Dana"}
         </p>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <p className="mt-0.5 text-xs text-slate-600">
           Transfer ke rekening di bawah, unggah bukti transfer, lalu konfirmasi. Requester akan
           mendapat notifikasi.
           {isReimbursement && " Pengajuan otomatis selesai setelah dikonfirmasi."}
@@ -224,7 +224,7 @@ export default function DisbursementSection({
       </div>
 
       {error && (
-        <div role="alert" className="font-medium text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}

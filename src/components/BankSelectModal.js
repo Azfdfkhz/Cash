@@ -6,10 +6,10 @@ import { X, Search, Check } from "lucide-react";
 // Logo tiles: white badge + colored wordmark (text only, no remote assets).
 const BANKS = [
   { id: "bca", name: "BCA", label: "BCA", color: "#0060af", style: "font-extrabold tracking-tight" },
-  { id: "mandiri", name: "Mandiri", label: "mandiri", color: "#003d79", style: "font-bold tracking-tighter text-[11px] lg:text-[11px]" },
+  { id: "mandiri", name: "Mandiri", label: "mandiri", color: "#003d79", style: "font-bold tracking-tighter text-xs lg:text-xs" },
   { id: "bri", name: "BRI", label: "BRI", color: "#00529c", style: "font-extrabold" },
   { id: "bni", name: "BNI", label: "BNI", color: "#f15a22", style: "font-extrabold" },
-  { id: "cimb", name: "CIMB Niaga", label: "CIMB", color: "#ec1c24", style: "font-extrabold text-xs lg:text-[11px]" },
+  { id: "cimb", name: "CIMB Niaga", label: "CIMB", color: "#ec1c24", style: "font-extrabold text-xs lg:text-xs" },
   { id: "bsi", name: "BSI", label: "BSI", color: "#00a39d", style: "font-extrabold" },
   { id: "btn", name: "BTN", label: "BTN", color: "#f5a000", style: "font-extrabold" },
   { id: "danamon", name: "Danamon", label: "DNN", color: "#e8590c", style: "font-extrabold" },
@@ -28,7 +28,7 @@ function BankLogo({ bank, large = false }) {
       } lg:border-[color-mix(in_srgb,var(--c)_25%,white)] lg:bg-[color-mix(in_srgb,var(--c)_6%,white)]`}
     >
       <span
-        className={`leading-none ${bank.style} ${large ? "text-base lg:text-xs" : "text-[13px] lg:text-[11px]"}`}
+        className={`leading-none ${bank.style} ${large ? "text-base lg:text-xs" : "text-[13px] lg:text-xs"}`}
         style={{ color: bank.color }}
       >
         {bank.label}
@@ -122,14 +122,14 @@ function BankSheet({
               <Search
                 size={20}
                 strokeWidth={1.75}
-                className="pointer-events-none absolute left-4 lg:left-3.5 lg:size-4 top-1/2 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute left-4 lg:left-3.5 lg:size-4 top-1/2 -translate-y-1/2 text-slate-600"
               />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari bank"
-                className="w-full h-12 rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-base placeholder:text-slate-500 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 lg:h-[37px] lg:rounded-xl lg:border-[#e2e8f0] lg:pl-[41px] lg:pr-3 lg:text-xs"
+                className="w-full h-12 rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-base placeholder:text-slate-600 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 lg:h-[37px] lg:rounded-xl lg:border-[#e2e8f0] lg:pl-[41px] lg:pr-3 lg:text-xs"
               />
             </div>
 
@@ -183,9 +183,9 @@ function BankSheet({
                           value={holderName}
                           onChange={(e) => setHolderName(e.target.value)}
                           placeholder="Nama pemilik rekening"
-                          className="w-full h-12 rounded-2xl border border-brand bg-white px-4 text-base text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-brand/15"
+                          className="w-full h-12 rounded-2xl border border-brand bg-white px-4 text-base text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-4 focus:ring-brand/15"
                         />
-                        <p className="text-[13px] text-slate-500 mt-2">
+                        <p className="text-[13px] text-slate-600 mt-2">
                           Harus sama dengan nama pemilik rekening.
                         </p>
                       </div>
@@ -195,7 +195,7 @@ function BankSheet({
               })}
 
               {filtered.length === 0 && (
-                <p className="text-center text-sm text-slate-500 py-8">
+                <p className="text-center text-sm text-slate-600 py-8">
                   Bank tidak ditemukan
                 </p>
               )}
@@ -204,7 +204,7 @@ function BankSheet({
 
           {/* ── Right (desktop): selected bank detail ── */}
           <div className="hidden lg:flex flex-1 flex-col p-6">
-            <p className="text-[11px] leading-[16.5px] font-bold uppercase tracking-[0.55px] text-[#2563eb]">
+            <p className="text-xs leading-[16.5px] font-bold uppercase tracking-[0.55px] text-[#2563eb]">
               Bank dipilih
             </p>
 
@@ -228,14 +228,14 @@ function BankSheet({
                   value={holderName}
                   onChange={(e) => setHolderName(e.target.value)}
                   placeholder="Nama pemilik rekening"
-                  className="w-full h-12 rounded-xl border border-[#3b82f6] bg-white px-[17px] text-sm text-[#0f172a] placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/10"
+                  className="w-full h-12 rounded-xl border border-[#3b82f6] bg-white px-[17px] text-sm text-[#0f172a] placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/10"
                 />
-                <p className="text-[11px] leading-[16.5px] text-[#64748b] mt-2">
+                <p className="text-xs leading-[16.5px] text-[#64748b] mt-2">
                   Harus sama dengan nama pemilik rekening.
                 </p>
               </>
             ) : (
-              <p className="mt-4 text-slate-500">
+              <p className="mt-4 text-slate-600">
                 Pilih bank di daftar sebelah kiri.
               </p>
             )}

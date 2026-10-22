@@ -7,6 +7,7 @@ import { BANKS, normalizeBankName } from "@/lib/banks";
 // mencari). Saat keluar dari isian, ketikan dinormalkan ke nama baku
 // (mis. "bca" -> "BCA"). Bank di luar daftar tetap bisa diketik manual.
 export default function BankInput({
+  id,
   value,
   onChange,
   required,
@@ -17,6 +18,7 @@ export default function BankInput({
   return (
     <>
       <input
+        id={id}
         type="text"
         required={required}
         list={listId}

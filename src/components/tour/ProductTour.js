@@ -292,7 +292,7 @@ function TourLayer({ step, number, total, el, missing, onPrev, onNext, onSkip, o
             type="button"
             onClick={onSkip}
             aria-label="Tutup tur"
-            className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <X size={16} />
           </button>
@@ -305,7 +305,7 @@ function TourLayer({ step, number, total, el, missing, onPrev, onNext, onSkip, o
           {missing && step.fallback ? step.fallback : step.body}
         </p>
         {missing && (
-          <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-500">
+          <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
             Bagian ini sedang tidak tampil di layar, jadi tidak bisa disorot.
           </p>
         )}
@@ -333,7 +333,7 @@ function TourLayer({ step, number, total, el, missing, onPrev, onNext, onSkip, o
           <button
             type="button"
             onClick={onSkip}
-            className="text-sm font-semibold text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="text-sm font-semibold text-slate-600 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             Lewati Tur
           </button>

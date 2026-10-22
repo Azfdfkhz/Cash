@@ -17,7 +17,7 @@ export default function SubmitSuccessModal({ open, rows = [], onDone }) {
           type="button"
           onClick={onDone}
           aria-label="Tutup"
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
         >
           <X size={16} strokeWidth={2.25} />
         </button>
@@ -28,13 +28,13 @@ export default function SubmitSuccessModal({ open, rows = [], onDone }) {
         <h2 id="submit-success-title" className="mt-5 text-center text-2xl font-bold text-slate-900">
           Pengajuan Terkirim
         </h2>
-        <p className="mx-auto mt-2 max-w-[17rem] text-center text-sm leading-relaxed text-slate-500">
+        <p className="mx-auto mt-2 max-w-[17rem] text-center text-sm leading-relaxed text-slate-600">
           Pengajuan telah diteruskan ke tim operasional untuk menunggu verifikasi.
         </p>
 
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between gap-2 border-b border-dashed border-slate-300 pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Pengajuan</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Pengajuan</span>
             <span className="rounded-full border border-emerald-200 bg-[#e8f8ee] px-3 py-1 text-xs font-bold text-[#047857]">
               Belum Disetujui
             </span>
@@ -42,7 +42,7 @@ export default function SubmitSuccessModal({ open, rows = [], onDone }) {
           <dl className="mt-3 space-y-3 text-sm">
             {rows.map((r) => (
               <div key={r.label} className="flex justify-between gap-3">
-                <dt className="text-slate-500">{r.label}</dt>
+                <dt className="text-slate-600">{r.label}</dt>
                 <dd className="text-right font-bold text-slate-900">{r.value}</dd>
               </div>
             ))}

@@ -51,7 +51,7 @@ export function useLogout() {
             <h2 id="logout-title" className="font-semibold text-slate-900">
               Keluar dari akun?
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-slate-600 mt-1">
               Anda perlu masuk lagi untuk menggunakan aplikasi.
             </p>
           </div>

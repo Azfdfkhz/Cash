@@ -12,6 +12,7 @@ import SubmitSuccessModal from "@/components/request/SubmitSuccessModal";
 import BankAccountField from "@/components/request/BankAccountField";
 import DraftPrompt from "@/components/request/DraftPrompt";
 import LeaveDialog from "@/components/request/LeaveDialog";
+import DateInput from "@/components/request/DateInput";
 import {
   Field,
   SelectField,
@@ -22,7 +23,7 @@ import {
 import { clearDraft, loadDraft } from "@/lib/draft";
 import { useAutoDraft } from "@/lib/useAutoDraft";
 import { useLeaveGuard } from "@/lib/useLeaveGuard";
-import { formatCurrency, formatDateLong } from "@/lib/utils";
+import { formatCurrency, formatDateNumeric } from "@/lib/utils";
 import { rabTotal } from "@/lib/rab";
 
 const FORM_ID = "new-cash-advance-form";
@@ -261,7 +262,7 @@ export default function NewCashAdvancePage() {
       rows: [
         { label: "Nominal pengajuan", value: formatCurrency(numericAmount) },
         { label: "Metode Pencairan", value: `Transfer Bank (${bankName})` },
-        { label: "Tanggal Kebutuhan Dana", value: formatDateLong(fundUsageDate) },
+        { label: "Tanggal Kebutuhan Dana", value: formatDateNumeric(fundUsageDate) },
       ],
     });
   }
@@ -312,14 +313,14 @@ export default function NewCashAdvancePage() {
           total={formatCurrency(total)}
           rows={[
             { label: "Rekening", value: bankOk ? maskedAccount(bankName, bankAccountNumber) : "" },
-            { label: "Dibutuhkan", value: fundUsageDate ? formatDateLong(fundUsageDate) : "" },
+            { label: "Dibutuhkan", value: fundUsageDate ? formatDateNumeric(fundUsageDate) : "" },
           ]}
           checks={checks}
           declaration={
             <>
-              <strong className="text-[#78350f]">Kebijakan SPJ.</strong> Saya akan mengunggah
+              <strong>Kebijakan SPJ.</strong> Saya akan mengunggah
               kwitansi dan bukti pengeluaran maksimal{" "}
-              <strong className="text-[#78350f]">7 hari kalender</strong> setelah dana cair.
+              <strong>7 hari kalender</strong> setelah dana cair.
             </>
           }
           agreed={agreed}
@@ -332,86 +333,109 @@ export default function NewCashAdvancePage() {
         />
       }
     >
+      {/* Satu permukaan, dipisah garis tipis per bagian (bukan kartu di dalam kartu). */}
       <form
         id={FORM_ID}
         onSubmit={handleSubmit}
-        className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 lg:rounded-3xl lg:p-8"
+        className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white lg:rounded-3xl"
       >
         {error && (
           <div
             ref={errorRef}
-            className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+            role="alert"
+            className="bg-rose-50 px-5 py-3 text-sm text-rose-800 lg:px-8"
           >
             {error}
           </div>
         )}
 
-        <div data-tour="req-basic" className="space-y-6">
-        <Field label="Keperluan / judul kegiatan" required hint={`${purpose.length}/80`} htmlFor="purpose">
-          <input
-            id="purpose"
-            type="text"
-            required
-            maxLength={80}
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            className={inputCls}
-            placeholder="Contoh: Operasional perjalanan dinas ke Surabaya"
-          />
-        </Field>
+        <section data-tour="req-basic" aria-labelledby="sec-basic" className="space-y-5 p-5 lg:p-8">
+          <h2 id="sec-basic" className="text-base font-bold text-slate-900">
+            Informasi kegiatan
+          </h2>
 
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-4">
-          <Field label="Tujuan pengajuan" required htmlFor="objective">
-            <SelectField id="objective" required value={objective} onChange={(e) => setObjective(e.target.value)}>
-              <option value="" disabled>
-                Pilih tujuan
-              </option>
-              <option value="penyaluran">Penyaluran</option>
-              <option value="event">Event</option>
-              <option value="lainnya">Lainnya</option>
-            </SelectField>
-          </Field>
-          <Field label="Sumber dana" required htmlFor="funding-source">
-            <SelectField
-              id="funding-source"
-              required
-              value={fundingSource}
-              onChange={(e) => {
-                setFundingSource(e.target.value);
-                if (e.target.value !== "program") setProgramRef("");
-              }}
-            >
-              <option value="" disabled>
-                Pilih sumber dana
-              </option>
-              <option value="program">Program</option>
-              <option value="marketing_operasional">Marketing / Operasional</option>
-              <option value="program_lainnya">Program Lainnya</option>
-            </SelectField>
-          </Field>
-        </div>
-
-        {fundingSource === "program" && (
-          <Field label="ID campaign / dana program" required htmlFor="program-ref">
+          <Field label="Keperluan / judul kegiatan" required hint={`${purpose.length}/80`} htmlFor="purpose">
             <input
-              id="program-ref"
+              id="purpose"
               type="text"
               required
-              value={programRef}
-              onChange={(e) => setProgramRef(e.target.value)}
+              maxLength={80}
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
               className={inputCls}
-              placeholder="Contoh: CMP-2026-014 atau nama dana program"
+              placeholder="Contoh: Operasional perjalanan dinas ke Surabaya"
             />
           </Field>
-        )}
-        </div>
 
-        <div data-tour="req-rab">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3">
-            <h2 className="text-base font-bold text-slate-900">
-              Rencana Anggaran Biaya (RAB) <span className="text-rose-500">*</span>
+          <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-4">
+            <Field label="Tujuan pengajuan" required htmlFor="objective">
+              <SelectField id="objective" required value={objective} onChange={(e) => setObjective(e.target.value)}>
+                <option value="" disabled>
+                  Pilih tujuan
+                </option>
+                <option value="penyaluran">Penyaluran</option>
+                <option value="event">Event</option>
+                <option value="lainnya">Lainnya</option>
+              </SelectField>
+            </Field>
+            <Field label="Sumber dana" required htmlFor="funding-source">
+              <SelectField
+                id="funding-source"
+                required
+                value={fundingSource}
+                onChange={(e) => {
+                  setFundingSource(e.target.value);
+                  if (e.target.value !== "program") setProgramRef("");
+                }}
+              >
+                <option value="" disabled>
+                  Pilih sumber dana
+                </option>
+                <option value="program">Program</option>
+                <option value="marketing_operasional">Marketing / Operasional</option>
+                <option value="program_lainnya">Program Lainnya</option>
+              </SelectField>
+            </Field>
+
+            {fundingSource === "program" && (
+              <div className="lg:col-span-2">
+                <Field label="ID campaign / dana program" required htmlFor="program-ref">
+                  <input
+                    id="program-ref"
+                    type="text"
+                    required
+                    value={programRef}
+                    onChange={(e) => setProgramRef(e.target.value)}
+                    className={inputCls}
+                    placeholder="Contoh: CMP-2026-014 atau nama dana program"
+                  />
+                </Field>
+              </div>
+            )}
+
+            <div data-tour="req-date">
+              <Field
+                label="Tanggal kebutuhan dana"
+                required
+                htmlFor="fund-date"
+                helper={
+                  fundUsageDate && (
+                    <p className="mt-2 text-xs text-slate-600">{formatWeekdayDate(fundUsageDate)}</p>
+                  )
+                }
+              >
+                <DateInput id="fund-date" required value={fundUsageDate} onChange={setFundUsageDate} />
+              </Field>
+            </div>
+          </div>
+        </section>
+
+        <section data-tour="req-rab" aria-labelledby="sec-rab" className="p-5 lg:p-8">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3">
+            <h2 id="sec-rab" className="text-base font-bold text-slate-900">
+              Rencana Anggaran Biaya (RAB) <span className="text-rose-600">*</span>
             </h2>
-            <span className="text-xs text-slate-500">Nominal pengajuan mengikuti total RAB</span>
+            <span className="text-xs text-slate-600">Nominal pengajuan mengikuti total RAB</span>
           </div>
           <RabEditor
             items={rabItems}
@@ -420,41 +444,22 @@ export default function NewCashAdvancePage() {
             onSourceUrlChange={setRabUrl}
             onImported={({ title }) => setPurpose((prev) => prev || title)}
           />
-        </div>
+        </section>
 
-        <div data-tour="req-date" className="grid gap-6 lg:grid-cols-2 lg:gap-4">
-          <Field
-            label="Tanggal kebutuhan dana"
-            required
-            htmlFor="fund-date"
-            helper={
-              fundUsageDate && (
-                <p className="mt-2 text-xs text-slate-500">{formatWeekdayDate(fundUsageDate)}</p>
-              )
-            }
-          >
-            <input
-              id="fund-date"
-              type="date"
-              required
-              value={fundUsageDate}
-              onChange={(e) => setFundUsageDate(e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-        </div>
-
-        <div data-tour="req-bank">
-        <BankAccountField
-          bankName={bankName}
-          onBankName={setBankName}
-          accountNumber={bankAccountNumber}
-          onAccountNumber={setBankAccountNumber}
-          accountHolder={bankAccountHolder}
-          onAccountHolder={setBankAccountHolder}
-          profileBankMissing={profileBankMissing}
-        />
-        </div>
+        <section data-tour="req-bank" aria-labelledby="sec-bank" className="space-y-5 p-5 lg:p-8">
+          <h2 id="sec-bank" className="text-base font-bold text-slate-900">
+            Rekening tujuan transfer
+          </h2>
+          <BankAccountField
+            bankName={bankName}
+            onBankName={setBankName}
+            accountNumber={bankAccountNumber}
+            onAccountNumber={setBankAccountNumber}
+            accountHolder={bankAccountHolder}
+            onAccountHolder={setBankAccountHolder}
+            profileBankMissing={profileBankMissing}
+          />
+        </section>
       </form>
 
       <SubmitSuccessModal open={Boolean(success)} rows={success?.rows} onDone={handleDone} />

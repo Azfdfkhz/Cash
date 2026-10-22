@@ -12,6 +12,7 @@ import ReceiptLinesEditor, {
 } from "@/components/ReceiptLinesEditor";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { formatVolume, receiptLines } from "@/lib/rab";
+import DateInput from "@/components/request/DateInput";
 
 const inputClass =
   "w-full rounded-lg border border-slate-300 px-3 py-2 lg:rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand";
@@ -124,7 +125,7 @@ export default function ReceiptCard({
   const previewTitle = `Kwitansi ${receipt.vendor || ""}`.trim();
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+    <div className="space-y-3 py-4 first:pt-0 last:pb-0">
       <div className="flex items-start gap-3">
         {receipt.drive_view_url && (
           <DriveInlinePreview url={receipt.drive_view_url} title={previewTitle} variant="thumb" />
@@ -135,7 +136,7 @@ export default function ReceiptCard({
               <p className="truncate text-[15px] font-semibold text-slate-900">
                 {receipt.vendor || "Kwitansi"}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {formatDate(receipt.receipt_date || receipt.created_at)}
                 {split && ` · dibagi ${savedLines.length} rincian`}
               </p>
@@ -171,10 +172,10 @@ export default function ReceiptCard({
             )
           )}
           {!split && savedLines[0].notes && (
-            <p className="mt-0.5 truncate text-xs text-slate-500">{savedLines[0].notes}</p>
+            <p className="mt-0.5 truncate text-xs text-slate-600">{savedLines[0].notes}</p>
           )}
           {receipt.notes && receipt.notes !== savedLines[0].notes && (
-            <p className="mt-0.5 truncate text-xs text-slate-500">{receipt.notes}</p>
+            <p className="mt-0.5 truncate text-xs text-slate-600">{receipt.notes}</p>
           )}
 
           {receipt.drive_view_url && (
@@ -190,7 +191,7 @@ export default function ReceiptCard({
       </div>
 
       {error && (
-        <div role="alert" className="font-medium text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-xs text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}
@@ -218,7 +219,7 @@ export default function ReceiptCard({
       )}
 
       {mode === "confirm-delete" && (
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 rounded-md bg-rose-50 px-3 py-2">
           <p className="text-xs text-rose-800">Hapus kwitansi ini?</p>
           <div className="flex gap-2 shrink-0">
             <button
@@ -245,7 +246,7 @@ export default function ReceiptCard({
         <form onSubmit={handleSave} className="border-t border-slate-100 pt-3 space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <label className="block col-span-2">
-              <span className="text-[11px] text-slate-500">Nominal Kwitansi (Rp)</span>
+              <span className="text-xs text-slate-600">Nominal Kwitansi (Rp)</span>
               <CurrencyInput
                 required
                 value={form.amount}
@@ -254,7 +255,7 @@ export default function ReceiptCard({
               />
             </label>
             <label className="block">
-              <span className="text-[11px] text-slate-500">Toko / Penerima</span>
+              <span className="text-xs text-slate-600">Toko / Penerima</span>
               <input
                 type="text"
                 value={form.vendor}
@@ -263,11 +264,10 @@ export default function ReceiptCard({
               />
             </label>
             <label className="block">
-              <span className="text-[11px] text-slate-500">Tanggal</span>
-              <input
-                type="date"
+              <span className="text-xs text-slate-600">Tanggal</span>
+              <DateInput
                 value={form.receiptDate}
-                onChange={(e) => set({ receiptDate: e.target.value })}
+                onChange={(v) => set({ receiptDate: v })}
                 className={inputClass}
               />
             </label>
@@ -282,7 +282,7 @@ export default function ReceiptCard({
           />
 
           <label className="block">
-            <span className="text-[11px] text-slate-500">Catatan kwitansi (opsional)</span>
+            <span className="text-xs text-slate-600">Catatan kwitansi (opsional)</span>
             <textarea
               rows={2}
               value={form.notes}
@@ -291,7 +291,7 @@ export default function ReceiptCard({
             />
           </label>
 
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-600">
             Foto salah? Hapus kwitansi ini lalu scan ulang.
           </p>
           <div className="flex gap-2">

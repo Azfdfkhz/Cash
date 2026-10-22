@@ -47,7 +47,7 @@ const EVENT_DOT = {
 function Info({ label, children, className = "" }) {
   return (
     <div className={`min-w-0 ${className}`}>
-      <dt className="text-[11px] font-medium text-slate-500">{label}</dt>
+      <dt className="text-xs font-medium text-slate-600">{label}</dt>
       <dd className="mt-0.5 break-words text-[13px] font-semibold text-slate-900">{children}</dd>
     </div>
   );
@@ -55,9 +55,9 @@ function Info({ label, children, className = "" }) {
 
 function Title({ children, className = "" }) {
   return (
-    <h4 className={`mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 ${className}`}>
+    <h3 className={`mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 ${className}`}>
       {children}
-    </h4>
+    </h3>
   );
 }
 
@@ -228,19 +228,19 @@ export default function CashAdvanceDetailPopup({
         <div className="flex items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-[11px] font-bold text-[#2563eb]">
+              <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-xs font-bold text-[#2563eb]">
                 {formatCaCode(c)}
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 {KIND_LABEL[c.kind] ?? "Cash Advance"}
               </span>
-              <StatusBadge status={c.status} className="!px-2 !py-px !text-[11px]" />
+              <StatusBadge status={c.status} className="!px-2 !py-px !text-xs" />
               {c.status === "approved" && hasPendingReturn && (
                 <ReturnPendingBadge operational={isOperational} />
               )}
             </div>
-            <h3 className="mt-2 break-words text-lg font-bold leading-snug text-slate-900">{c.purpose}</h3>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h2 className="mt-2 break-words text-lg font-bold leading-snug text-slate-900">{c.purpose}</h2>
+            <p className="mt-0.5 text-xs text-slate-600">
               Diajukan oleh {requesterName(c.profiles)} · {formatDate(c.created_at)}
             </p>
           </div>
@@ -270,14 +270,14 @@ export default function CashAdvanceDetailPopup({
               className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 py-2.5 text-[13px] font-semibold transition-colors ${
                 tab === t.id
                   ? "border-brand text-brand"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  : "border-transparent text-slate-600 hover:text-slate-800"
               }`}
             >
               {t.label}
               {t.count > 0 && (
                 <span
-                  className={`rounded-full px-1.5 text-[11px] font-bold ${
-                    tab === t.id ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-500"
+                  className={`rounded-full px-1.5 text-xs font-bold ${
+                    tab === t.id ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-600"
                   }`}
                 >
                   {t.count}
@@ -300,17 +300,17 @@ export default function CashAdvanceDetailPopup({
             <>
               {/* Catatan penolakan paling atas supaya requester langsung tahu apa yang direvisi */}
               {c.status === "rejected" && c.review_note && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                <div className="rounded-md bg-rose-50 px-4 py-3">
                   <p className="text-xs font-bold text-rose-800">Catatan tim operasional</p>
                   <p className="mt-0.5 text-[13px] text-rose-900">{c.review_note}</p>
                 </div>
               )}
 
               {/* Ringkasan angka: satu blok */}
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="border-b border-slate-200 pb-5">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-medium text-slate-500">
+                    <p className="text-xs font-medium text-slate-600">
                       {isReimbursement ? "Nominal Diajukan" : "Plafon Diajukan"}
                     </p>
                     <p className="mt-0.5 text-2xl font-extrabold tracking-tight text-slate-900">
@@ -321,7 +321,7 @@ export default function CashAdvanceDetailPopup({
                     <div className="flex items-center gap-2 border-l border-slate-300 pl-3">
                       <Calendar size={14} className="text-brand" />
                       <div>
-                        <p className="text-[11px] font-medium text-slate-500">Tenggat LPJ / SPJ</p>
+                        <p className="text-xs font-medium text-slate-600">Tenggat LPJ / SPJ</p>
                         <p className="text-xs font-bold text-slate-900">{formatLpjDeadline(c)}</p>
                       </div>
                     </div>
@@ -339,22 +339,22 @@ export default function CashAdvanceDetailPopup({
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-3">
                       <div>
-                        <p className="text-[11px] text-slate-500">Terpakai ({spentPct}%)</p>
+                        <p className="text-xs text-slate-600">Terpakai ({spentPct}%)</p>
                         <p className="text-sm font-bold text-slate-900">{formatCurrency(totalSpent)}</p>
                       </div>
                       <div>
-                        <p className="text-[11px] text-slate-500">Dikembalikan</p>
+                        <p className="text-xs text-slate-600">Dikembalikan</p>
                         <p className="text-sm font-bold text-slate-900">{formatCurrency(totalReturned)}</p>
                       </div>
                       <div>
-                        <p className="text-[11px] text-slate-500">Sisa Saldo</p>
+                        <p className="text-xs text-slate-600">Sisa Saldo</p>
                         <p
                           className={`text-sm font-bold ${
                             netBalance < 0
                               ? "text-rose-600"
                               : netBalance > 0
-                                ? "text-amber-600"
-                                : "text-emerald-600"
+                                ? "text-amber-700"
+                                : "text-emerald-700"
                           }`}
                         >
                           {formatCurrency(netBalance)}
@@ -382,7 +382,7 @@ export default function CashAdvanceDetailPopup({
                 {(c.bank_name || c.bank_account_number) && (
                   <Info label="Rekening Tujuan" className="col-span-2 sm:col-span-3">
                     {[c.bank_name, c.bank_account_number].filter(Boolean).join(" ")}
-                    <span className="ml-1.5 font-normal text-slate-500">a.n {holder}</span>
+                    <span className="ml-1.5 font-normal text-slate-600">a.n {holder}</span>
                   </Info>
                 )}
               </dl>
@@ -390,7 +390,7 @@ export default function CashAdvanceDetailPopup({
               {isReimbursement && categoryTotals.length > 0 && (
                 <section>
                   <Title>Rekap per Kategori</Title>
-                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 px-4 text-[13px]">
+                  <div className="divide-y divide-slate-200 border-y border-slate-200 text-[13px]">
                     {categoryTotals.map(([category, amount]) => (
                       <div key={category} className="flex justify-between py-2">
                         <span className="text-slate-600">{category}</span>
@@ -416,7 +416,7 @@ export default function CashAdvanceDetailPopup({
                   )}
 
                   {isOwner && isOperational && c.status === "pending" && (
-                    <p className="rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-600 ring-1 ring-slate-100">
+                    <p className="text-xs text-slate-700">
                       Menunggu persetujuan admin lain. Anda tidak bisa menyetujui pengajuan sendiri.
                     </p>
                   )}
@@ -485,20 +485,20 @@ export default function CashAdvanceDetailPopup({
           {tab === "kwitansi" && loaded && (
             <section>
               {!isReimbursement && c.status === "approved" && hasPendingReturn && (isOwner || isOperational) && (
-                <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   Kwitansi tidak bisa diedit atau dihapus selama ada pengembalian yang menunggu
                   konfirmasi. Batalkan pengembalian itu dulu kalau perlu mengoreksi kwitansi.
                 </p>
               )}
               {receipts.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
+                <div className="px-4 py-8 text-center">
                   <p className="text-[13px] font-medium text-slate-600">Belum ada kwitansi</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-600">
                     Kwitansi dan bukti transfer yang dicatat akan muncul di sini.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-slate-200">
                   {receipts.map((receipt) => (
                     <ReceiptCard
                       key={receipt.id}
@@ -524,7 +524,7 @@ export default function CashAdvanceDetailPopup({
                       }`}
                     />
                     <p className="font-semibold text-slate-900">{EVENT_LABEL[ev.action] ?? ev.action}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       oleh {ev.profiles?.full_name ?? "-"} · {formatDateTimeShort(ev.created_at)}
                     </p>
                     {ev.note && (
@@ -547,7 +547,7 @@ export default function CashAdvanceDetailPopup({
                 href={c.rab_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-brand"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-brand"
               >
                 Spreadsheet RAB <ExternalLink size={12} />
               </a>

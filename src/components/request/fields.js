@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 
 // Gaya isian untuk form pengajuan (sesuai Figma: radius besar, border tipis).
 export const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
 
 export function Field({ label, required = false, hint, htmlFor, helper, children }) {
   return (
@@ -10,9 +10,9 @@ export function Field({ label, required = false, hint, htmlFor, helper, children
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <label htmlFor={htmlFor} className="text-sm font-semibold text-slate-900">
           {label}
-          {required && <span className="ml-0.5 text-rose-500">*</span>}
+          {required && <span className="ml-0.5 text-rose-600">*</span>}
         </label>
-        {hint && <span className="text-xs text-slate-500">{hint}</span>}
+        {hint && <span className="text-xs text-slate-600">{hint}</span>}
       </div>
       {children}
       {helper}
@@ -34,7 +34,7 @@ export function SelectField({ id, value, onChange, required, children }) {
       </select>
       <ChevronDown
         size={18}
-        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-600"
       />
     </div>
   );

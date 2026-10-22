@@ -108,7 +108,7 @@ export default function OnboardingTour({ role, seen }) {
           <button
             type="button"
             onClick={finish}
-            className="text-sm font-semibold text-slate-500 hover:text-slate-700"
+            className="text-sm font-semibold text-slate-600 hover:text-slate-700"
           >
             Lewati
           </button>

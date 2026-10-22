@@ -137,11 +137,11 @@ export default function ReceiptLinesEditor({
           >
             {split && (
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Rincian {i + 1}</span>
+                <span className="text-xs font-medium text-slate-600">Rincian {i + 1}</span>
                 <button
                   type="button"
                   onClick={() => removeLine(line.key)}
-                  className="p-1 text-slate-500 hover:text-rose-600"
+                  className="p-1 text-slate-600 hover:text-rose-600"
                   aria-label={`Hapus rincian ${i + 1}`}
                 >
                   <Trash2 size={14} />
@@ -227,7 +227,7 @@ export default function ReceiptLinesEditor({
             </div>
 
             {item?.remainingVolume != null && (
-              <p className={`text-[11px] ${qty > item.remainingVolume ? "text-amber-700" : "text-slate-500"}`}>
+              <p className={`text-xs ${qty > item.remainingVolume ? "text-amber-700" : "text-slate-600"}`}>
                 Sisa volume pos ini: {formatVolume(item.remainingVolume)} dari{" "}
                 {formatVolume(item.volume)} {item.unit ?? ""}
                 {qty > item.remainingVolume &&

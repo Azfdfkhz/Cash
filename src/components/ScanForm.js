@@ -12,6 +12,7 @@ import { renderPdfPreview } from "@/lib/pdfPreview";
 import { FilePreviewModal } from "@/components/FilePreview";
 import { scanReceiptFile, uploadProof } from "@/lib/receiptScan";
 import { toJpegFile } from "@/lib/imageConvert";
+import DateInput from "@/components/request/DateInput";
 
 // Kwitansi + rinciannya (pos RAB untuk Cash Advance, kategori untuk
 // Reimbursement -- dipakai saat requester merevisi reimbursement). Satu
@@ -206,7 +207,7 @@ export default function ScanForm({
   return (
     <div className={`${embedded ? "@container " : ""}space-y-4`}>
       {embedded ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-600">
           Kwitansi, struk, nota, atau bukti transfer (foto, screenshot, atau PDF). File
           disimpan ke shared drive dan datanya dibaca otomatis.
         </p>
@@ -219,14 +220,14 @@ export default function ScanForm({
               {scanned ? "Periksa Data Kwitansi" : "Scan Kwitansi / Bukti Transfer"}
             </span>
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5 lg:mt-1">
+          <p className="text-sm text-slate-600 mt-0.5 lg:mt-1">
             Kwitansi, struk, nota, atau bukti transfer (foto, screenshot, atau
             PDF). File disimpan ke shared drive dan datanya dibaca otomatis.
           </p>
         </div>
         {balance !== null && !isReimbursement && (
           <div className="hidden shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm lg:block">
-            <span className="text-slate-500">Sisa Saldo </span>
+            <span className="text-slate-600">Sisa Saldo </span>
             <span className="font-bold text-slate-900">{formatCurrency(balance)}</span>
           </div>
         )}
@@ -243,7 +244,7 @@ export default function ScanForm({
         {/* Pratinjau (kanan di desktop) */}
         <div className={embedded ? "@2xl:col-start-2 @2xl:row-start-1" : "lg:col-start-2 lg:row-start-1"}>
           {preparing ? (
-            <div className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-2xl py-14 text-slate-500">
+            <div className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-2xl py-14 text-slate-600">
               <Loader2 size={28} className="animate-spin" />
               <span className="text-sm font-medium text-center px-4">{preparing}</span>
             </div>
@@ -251,7 +252,7 @@ export default function ScanForm({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-2xl py-14 text-slate-500"
+              className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-2xl py-14 text-slate-600"
             >
               <Camera size={32} />
               <span className="text-sm font-medium">
@@ -273,14 +274,14 @@ export default function ScanForm({
                       />
                     ))}
                     {pdfPreview.pageCount > pdfPreview.pages.length && (
-                      <p className="text-center text-xs text-slate-500 py-1">
+                      <p className="text-center text-xs text-slate-600 py-1">
                         +{pdfPreview.pageCount - pdfPreview.pages.length} halaman
                         lagi, buka PDF untuk melihat semuanya
                       </p>
                     )}
                   </div>
                 ) : (
-                  <div className="w-full h-40 flex flex-col items-center justify-center gap-2 bg-slate-50 text-slate-500">
+                  <div className="w-full h-40 flex flex-col items-center justify-center gap-2 bg-slate-50 text-slate-600">
                     {pdfPreview?.failed ? (
                       <FileText size={32} />
                     ) : (
@@ -366,7 +367,7 @@ export default function ScanForm({
           )}
 
           {!scanned && (
-            <div className={`hidden rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 ${embedded ? "@2xl:block" : "lg:block"}`}>
+            <div className={`hidden rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600 ${embedded ? "@2xl:block" : "lg:block"}`}>
               Pilih foto atau PDF kwitansi di panel kanan. Nominal, vendor, dan
               tanggal akan terisi otomatis.
             </div>
@@ -404,7 +405,7 @@ export default function ScanForm({
                   className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand ${embedded ? "@2xl:font-semibold" : "lg:font-semibold"}`}
                 />
                 {balance !== null && !isReimbursement && (
-                  <p className={`mt-1.5 hidden text-xs text-slate-500 ${embedded ? "@2xl:block" : "lg:block"}`}>
+                  <p className={`mt-1.5 hidden text-xs text-slate-600 ${embedded ? "@2xl:block" : "lg:block"}`}>
                     Sisa pagu saldo saat ini: {formatCurrency(balance)}
                   </p>
                 )}
@@ -434,10 +435,9 @@ export default function ScanForm({
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Tanggal Kwitansi
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={receiptDate}
-                  onChange={(e) => setReceiptDate(e.target.value)}
+                  onChange={setReceiptDate}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
                 />
               </div>

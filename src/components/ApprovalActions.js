@@ -68,10 +68,10 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
       <>
         <div className="px-6 pt-5">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
-              Catatan <span className="text-rose-500">(wajib diisi jika menolak)</span>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+              Catatan <span className="text-rose-600">(wajib diisi jika menolak)</span>
             </label>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-xs text-slate-600">
               Opsional untuk persetujuan
             </span>
           </div>
@@ -109,12 +109,12 @@ export default function ApprovalActions({ cashAdvanceId, variant = "card", onDec
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+    <div className="space-y-3 p-4">
       <p className="text-sm font-semibold text-slate-700">
         Tindakan Persetujuan
       </p>
       {error && (
-        <div role="alert" className="font-medium text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}

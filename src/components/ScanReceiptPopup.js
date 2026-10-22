@@ -134,10 +134,10 @@ export default function ScanReceiptPopup({ ca, onClose, onSaved, onOpenReturn, o
       title="Catat Kwitansi / Bukti Transfer"
       badge={
         <>
-          <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-[11px] font-bold text-[#2563eb]">
+          <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-xs font-bold text-[#2563eb]">
             {formatCaCode(ca)}
           </span>
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+          <span className="text-xs font-semibold uppercase tracking-wide text-brand">
             {KIND_LABEL[ca.kind] ?? "Cash Advance"}
           </span>
         </>
@@ -146,7 +146,7 @@ export default function ScanReceiptPopup({ ca, onClose, onSaved, onOpenReturn, o
       headerRight={
         data?.balance != null && !isReimbursement ? (
           <div className="hidden rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs sm:block">
-            <span className="text-slate-500">Sisa Saldo </span>
+            <span className="text-slate-600">Sisa Saldo </span>
             <span className="font-bold text-slate-900">{formatCurrency(data.balance)}</span>
           </div>
         ) : null

@@ -33,7 +33,7 @@ export default function CashAdvanceCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           {!compact && (
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand">
               {KIND_LABEL[ca.kind] ?? "Cash Advance"}
             </p>
           )}
@@ -43,7 +43,7 @@ export default function CashAdvanceCard({
               {requesterName(ca.profiles)}
             </p>
           )}
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-600 mt-0.5">
             {formatDate(ca.created_at)}
             {compact && <span className="font-num"> · {formatCaCode(ca)}</span>}
           </p>
@@ -57,19 +57,19 @@ export default function CashAdvanceCard({
 
       <div className="mt-3 flex items-end justify-between">
         <div>
-          <p className="text-xs text-slate-500">Diajukan</p>
+          <p className="text-xs text-slate-600">Diajukan</p>
           <p className="font-semibold text-slate-900">
             {formatCurrency(ca.amount_requested)}
           </p>
         </div>
         {ca.status === "approved" && ca.kind !== "reimbursement" && (
           <div className="text-right">
-            <p className="text-xs text-slate-500">Sisa Saldo</p>
+            <p className="text-xs text-slate-600">Sisa Saldo</p>
             <p
               className={`font-semibold ${
                 (ca.balance ?? ca.amount_requested) < 0
                   ? "text-rose-600"
-                  : "text-emerald-600"
+                  : "text-emerald-700"
               }`}
             >
               {formatCurrency(ca.balance ?? ca.amount_requested)}

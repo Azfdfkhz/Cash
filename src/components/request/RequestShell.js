@@ -26,14 +26,14 @@ export default function RequestShell({ active, summary, children, onBack }) {
 
       <div className="hidden lg:block">
         <h1 className="text-4xl font-bold tracking-tight text-slate-900">Pengajuan baru</h1>
-        <p className="mt-1 text-base text-slate-500">
-          Isi semua kolom bertanda <span className="text-rose-500">*</span>. Ringkasan di samping
+        <p className="mt-1 max-w-prose text-base text-slate-600">
+          Isi semua kolom bertanda <span className="text-rose-600">*</span>. Ringkasan di samping
           diperbarui secara otomatis.
         </p>
       </div>
 
       <div className="mt-2 grid gap-5 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6">
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0 max-w-4xl space-y-5">
           <KindSwitch active={active} />
           {children}
         </div>

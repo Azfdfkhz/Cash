@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -16,19 +16,18 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BankInput from "@/components/BankInput";
+import { useAccountReveal } from "@/components/useAccountReveal";
 import { maskAccountNumber, maskChatId, maskEmail } from "@/lib/utils";
-
-const REVEAL_SECONDS = 30;
 
 // Satu baris isian: kotak ikon + label kecil + nilai (sesuai desain Figma).
 function Row({ icon: Icon, label, children, trailing }) {
   return (
     <div className="flex items-center gap-4 border-t border-slate-100 px-4 py-3.5 first:border-t-0 focus-within:bg-slate-50/60">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-600">
         <Icon size={20} strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
-        <span className="block text-xs text-slate-500">{label}</span>
+        <span className="block text-xs text-slate-600">{label}</span>
         {children}
       </div>
       {trailing}
@@ -37,10 +36,10 @@ function Row({ icon: Icon, label, children, trailing }) {
 }
 
 const valueCls =
-  "mt-0.5 block w-full bg-transparent text-[15px] font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-500 focus:outline-none";
+  "mt-0.5 block w-full bg-transparent text-[15px] font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-600 focus:outline-none";
 const textCls = `${valueCls} truncate`;
 const sectionLabel =
-  "mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500";
+  "mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-slate-600";
 const cardCls = "overflow-hidden rounded-2xl border border-slate-200 bg-white";
 
 function Dialog({ title, children, actions }) {
@@ -76,10 +75,11 @@ export default function ProfileForm({
   botUsername,
   canReauthWithPassword = true,
 }) {
-  // Akun email punya password sejak awal; akun Google bisa membuatnya sendiri
-  // (dikonfirmasi lewat kode yang dikirim ke email) untuk membuka nomor rekening.
-  const [hasPassword, setHasPassword] = useState(canReauthWithPassword);
   const router = useRouter();
+  // Lihat nomor rekening lengkap (butuh autentikasi ulang). Logikanya dipakai
+  // bersama halaman Ajukan: lihat useAccountReveal.
+  const reveal = useAccountReveal({ email, canReauthWithPassword, returnTo: "/profile" });
+  const { revealed } = reveal;
 
   // Nilai tersimpan (dipakai tampilan baca). Draft hanya ada saat mode edit.
   const [saved, setSaved] = useState({
@@ -100,135 +100,9 @@ export default function ProfileForm({
   const [serverError, setServerError] = useState("");
   const [justSaved, setJustSaved] = useState(false);
 
-  // Lihat nomor rekening lengkap (butuh autentikasi ulang).
-  const [revealed, setRevealed] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [password, setPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authInfo, setAuthInfo] = useState("");
-  // Alur buat password (akun Google): "ask" -> "code" (kode email + password baru)
-  const [setupStep, setSetupStep] = useState("ask");
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const hideTimer = useRef(null);
-
-  useEffect(() => () => clearTimeout(hideTimer.current), []);
-
-  function hideAccount() {
-    clearTimeout(hideTimer.current);
-    setRevealed(false);
-  }
-
-  function showAccount() {
-    setRevealed(true);
-    clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setRevealed(false), REVEAL_SECONDS * 1000);
-  }
-
   function startReveal() {
     if (!saved.accountNumber) return;
-    setPassword("");
-    setAuthError("");
-    setAuthInfo("");
-    setSetupStep("ask");
-    setCode("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setAuthOpen(true);
-  }
-
-  async function submitReauth(e) {
-    e?.preventDefault();
-    setAuthError("");
-    if (hasPassword) {
-      if (!password) {
-        setAuthError("Masukkan password Anda.");
-        return;
-      }
-      setAuthBusy(true);
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      setAuthBusy(false);
-      if (error) {
-        setAuthError("Password salah.");
-        return;
-      }
-    }
-    setPassword("");
-    setAuthOpen(false);
-    showAccount();
-  }
-
-  // Lupa password: kirim tautan reset ke email akun. Setelah mengatur password
-  // baru, user kembali ke Profil dan bisa membuka nomor rekening.
-  async function sendResetLink() {
-    setAuthError("");
-    setAuthInfo("");
-    setAuthBusy(true);
-    const supabase = createClient();
-    const next = encodeURIComponent("/reset-password?next=/profile");
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=${next}`,
-    });
-    setAuthBusy(false);
-    if (error) {
-      setAuthError("Gagal mengirim tautan reset. Coba lagi sebentar lagi.");
-      return;
-    }
-    setAuthInfo(`Tautan reset password dikirim ke ${maskEmail(email)}. Buka email itu untuk membuat password baru.`);
-  }
-
-  // Akun Google: minta kode konfirmasi ke email sebelum membuat password.
-  async function sendSetupCode() {
-    setAuthError("");
-    setAuthInfo("");
-    setAuthBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.reauthenticate();
-    setAuthBusy(false);
-    if (error) {
-      setAuthError("Gagal mengirim kode ke email. Coba lagi sebentar lagi.");
-      return;
-    }
-    setAuthInfo(`Kode konfirmasi dikirim ke ${maskEmail(email)}.`);
-    setSetupStep("code");
-  }
-
-  async function submitSetup(e) {
-    e?.preventDefault();
-    setAuthError("");
-    if (!/^\d{6,10}$/.test(code.trim())) {
-      setAuthError("Kode dari email berupa 6 angka. Periksa kembali kode Anda.");
-      return;
-    }
-    if (newPassword.length < 8) {
-      setAuthError("Password minimal 8 karakter.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setAuthError("Konfirmasi password tidak sama.");
-      return;
-    }
-    setAuthBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-      nonce: code.trim(),
-      data: { has_password: true },
-    });
-    setAuthBusy(false);
-    if (error) {
-      setAuthError("Kode salah atau sudah kedaluwarsa. Kirim ulang kode lalu coba lagi.");
-      return;
-    }
-    setHasPassword(true);
-    setCode("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setAuthOpen(false);
-    showAccount();
+    reveal.request();
   }
 
   function startEdit() {
@@ -237,7 +111,7 @@ export default function ProfileForm({
     setErrors({});
     setServerError("");
     setJustSaved(false);
-    hideAccount();
+    reveal.hide();
     setEditing(true);
   }
 
@@ -351,7 +225,7 @@ export default function ProfileForm({
 
       <section data-tour="profile-account">
         <div className="mb-2 flex items-center justify-between px-1">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-600">
             Informasi Akun
           </h2>
           {!editing && (
@@ -414,10 +288,10 @@ export default function ProfileForm({
               !editing && saved.accountNumber ? (
                 <button
                   type="button"
-                  onClick={revealed ? hideAccount : startReveal}
+                  onClick={revealed ? reveal.hide : startReveal}
                   aria-label={revealed ? "Sembunyikan nomor rekening" : "Lihat nomor rekening lengkap"}
                   aria-pressed={revealed}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
                 >
                   {revealed ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -469,7 +343,7 @@ export default function ProfileForm({
             )}
           </Row>
         </div>
-        <p className="mt-2 px-1 text-xs leading-relaxed text-slate-500">
+        <p className="mt-2 px-1 text-xs leading-relaxed text-slate-600">
           Rekening ini otomatis terisi saat mengajukan Cash Advance atau Reimbursement, jadi tidak
           perlu diketik ulang dan tidak perlu ditampilkan penuh di sini. Tetap bisa diubah per
           pengajuan.
@@ -485,10 +359,10 @@ export default function ProfileForm({
             trailing={
               !editing ? (
                 <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
                     saved.chatId
                       ? "bg-emerald-50 text-emerald-700"
-                      : "bg-slate-100 text-slate-500"
+                      : "bg-slate-100 text-slate-600"
                   }`}
                 >
                   {saved.chatId ? "Terhubung" : "Belum terhubung"}
@@ -530,7 +404,7 @@ export default function ProfileForm({
                 />
                 {fieldError("chatId")}
               </Row>
-              <div className="border-t border-slate-100 px-5 py-4 text-xs leading-relaxed text-slate-500">
+              <div className="border-t border-slate-100 px-5 py-4 text-xs leading-relaxed text-slate-600">
                 <p>
                   Diisi supaya Anda dapat notifikasi Telegram saat pengajuan Cash Advance disetujui
                   atau ditolak. Caranya:
@@ -597,7 +471,7 @@ export default function ProfileForm({
           }
         >
           <p>Data rekening dan Telegram baru akan dipakai untuk pengajuan dan notifikasi berikutnya.</p>
-          <ul className="mt-3 space-y-1 text-xs text-slate-500">
+          <ul className="mt-3 space-y-1 text-xs text-slate-600">
             <li>Username: {draft.username.trim() || "tidak diatur"}</li>
             <li>
               Rekening: {draft.bankName.trim() || "-"}{" "}
@@ -609,108 +483,7 @@ export default function ProfileForm({
         </Dialog>
       )}
 
-      {authOpen && (
-        <Dialog
-          title={hasPassword || setupStep === "ask" ? "Lihat nomor rekening lengkap" : "Buat password konfirmasi"}
-          actions={
-            <>
-              <button type="button" onClick={() => setAuthOpen(false)} disabled={authBusy} className={ghostBtn}>
-                Batal
-              </button>
-              {hasPassword ? (
-                <button type="button" onClick={submitReauth} disabled={authBusy} className={primaryBtn}>
-                  {authBusy ? "Memeriksa..." : "Tampilkan"}
-                </button>
-              ) : setupStep === "ask" ? (
-                <button type="button" onClick={sendSetupCode} disabled={authBusy} className={primaryBtn}>
-                  {authBusy ? "Mengirim..." : "Kirim kode ke email"}
-                </button>
-              ) : (
-                <button type="button" onClick={submitSetup} disabled={authBusy} className={primaryBtn}>
-                  {authBusy ? "Menyimpan..." : "Simpan & tampilkan"}
-                </button>
-              )}
-            </>
-          }
-        >
-          {hasPassword ? (
-            <>
-              <p>Masukkan password untuk melanjutkan. Nomor akan disembunyikan lagi otomatis dalam {REVEAL_SECONDS} detik.</p>
-              <input
-                type="password"
-                autoFocus
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitReauth(e)}
-                className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-                placeholder="Password"
-              />
-              {authError && <p className="mt-1 text-xs text-rose-600">{authError}</p>}
-              {authInfo && <p className="mt-2 text-xs text-emerald-700">{authInfo}</p>}
-              <button
-                type="button"
-                onClick={sendResetLink}
-                disabled={authBusy}
-                className="mt-2 text-xs font-semibold text-brand hover:underline disabled:opacity-60"
-              >
-                Lupa password? Kirim tautan reset ke email
-              </button>
-            </>
-          ) : setupStep === "ask" ? (
-            <>
-              <p>
-                Akun Anda masuk lewat Google, jadi belum punya password. Untuk melihat nomor
-                rekening lengkap, buat password konfirmasi dulu. Kami kirim kode ke{" "}
-                <span className="font-semibold">{maskEmail(email)}</span> untuk memastikan ini Anda.
-              </p>
-              {authError && <p className="mt-2 text-xs text-rose-600">{authError}</p>}
-            </>
-          ) : (
-            <>
-              {authInfo && <p className="text-xs text-emerald-700">{authInfo}</p>}
-              <input
-                type="text"
-                inputMode="numeric"
-                autoFocus
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\s/g, ""))}
-                onKeyDown={(e) => e.key === "Enter" && submitSetup(e)}
-                className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-                placeholder="Kode dari email"
-              />
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitSetup(e)}
-                className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-                placeholder="Password baru (min. 8 karakter)"
-              />
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitSetup(e)}
-                className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-                placeholder="Ulangi password baru"
-              />
-              {authError && <p className="mt-1 text-xs text-rose-600">{authError}</p>}
-              <button
-                type="button"
-                onClick={sendSetupCode}
-                disabled={authBusy}
-                className="mt-2 text-xs font-semibold text-brand hover:underline disabled:opacity-60"
-              >
-                Kirim ulang kode
-              </button>
-            </>
-          )}
-        </Dialog>
-      )}
+      {reveal.dialog}
     </form>
   );
 }

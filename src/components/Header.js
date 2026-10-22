@@ -27,7 +27,7 @@ export default function Header({ fullName, role }) {
             <p className="text-sm font-semibold text-slate-900">
               {fullName}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               {role === "operational" ? "Tim Operasional" : "Requester"}
             </p>
           </div>
@@ -36,14 +36,14 @@ export default function Header({ fullName, role }) {
           <Link
             href="/profile"
             aria-label="Profil"
-            className="h-9 w-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+            className="h-9 w-9 flex items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"
           >
             <Settings size={18} />
           </Link>
           <button
             onClick={handleLogout}
             aria-label="Keluar"
-            className="h-9 w-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+            className="h-9 w-9 flex items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"
           >
             <LogOut size={18} />
           </button>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, Loader2, Plus, Trash2, TriangleAlert } from "lucide-react";
 import CurrencyInput from "@/components/CurrencyInput";
 import UnitSelect from "@/components/UnitSelect";
 import { formatCurrency, LARGE_AMOUNT_WARNING, terbilangRupiah } from "@/lib/utils";
 import { RAB_TEMPLATE_URL, rabItemTotal, rabTotal } from "@/lib/rab";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
+  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30";
 
 let keySeq = 0;
 export function newRabItem(fields = {}) {
@@ -95,7 +95,7 @@ export default function RabEditor({
       <div>
         <div className="mb-2 flex items-baseline justify-between">
           <p className="text-sm font-semibold text-slate-900">Import dari Google Spreadsheet</p>
-          <span className="text-xs text-slate-500">Opsional</span>
+          <span className="text-xs text-slate-600">Opsional</span>
         </div>
         <div className="flex gap-2">
           <input
@@ -123,9 +123,9 @@ export default function RabEditor({
           <p className="text-xs text-rose-600 mt-1">{importError}</p>
         )}
 
-        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+        <div className="mt-4">
           <p className="text-xs font-semibold text-slate-900">Template RAB</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+          <p className="mt-0.5 max-w-prose text-xs leading-relaxed text-slate-600">
             Kolom: No, Uraian, Jumlah, Satuan, Frekuensi, Harga Satuan, Total. Template
             langsung dibuat di Google Spreadsheet Anda. Isi, lalu tempel linknya di atas.
           </p>
@@ -143,10 +143,10 @@ export default function RabEditor({
       {items.map((item, index) => (
         <div
           key={item._key}
-          className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3"
+          className="space-y-3 border-t border-slate-200 pt-4"
         >
           <div className="flex items-center gap-3">
-            <span className="w-4 shrink-0 text-sm font-medium text-slate-500">
+            <span className="w-4 shrink-0 text-sm font-medium text-slate-600">
               {index + 1}
             </span>
             <input
@@ -159,7 +159,7 @@ export default function RabEditor({
             <button
               type="button"
               onClick={() => onItemsChange(items.filter((it) => it._key !== item._key))}
-              className="shrink-0 p-2 text-slate-500 hover:text-rose-600"
+              className="shrink-0 p-2 text-slate-600 hover:text-rose-600"
               aria-label={`Hapus baris ${index + 1}`}
             >
               <Trash2 size={17} />
@@ -167,7 +167,7 @@ export default function RabEditor({
           </div>
           <div className="grid grid-cols-6 gap-x-3 gap-y-3 lg:grid-cols-[84px_minmax(0,1fr)_84px_minmax(0,1.3fr)_auto] lg:pl-7">
             <label className="col-span-2 block lg:col-span-1">
-              <span className="text-xs text-slate-500">Jumlah</span>
+              <span className="text-xs text-slate-600">Jumlah</span>
               <input
                 type="number"
                 min="0"
@@ -178,7 +178,7 @@ export default function RabEditor({
               />
             </label>
             <label className="col-span-2 block lg:col-span-1">
-              <span className="text-xs text-slate-500">Satuan</span>
+              <span className="text-xs text-slate-600">Satuan</span>
               <div className="mt-1">
                 <UnitSelect
                   value={item.unit ?? ""}
@@ -188,7 +188,7 @@ export default function RabEditor({
               </div>
             </label>
             <label className="col-span-2 block lg:col-span-1">
-              <span className="text-xs text-slate-500">Frekuensi</span>
+              <span className="text-xs text-slate-600">Frekuensi</span>
               <input
                 type="number"
                 min="0"
@@ -199,7 +199,7 @@ export default function RabEditor({
               />
             </label>
             <label className="col-span-4 block lg:col-span-1">
-              <span className="text-xs text-slate-500">Harga Satuan (Rp)</span>
+              <span className="text-xs text-slate-600">Harga Satuan (Rp)</span>
               <CurrencyInput
                 value={item.unit_price === "" ? "" : String(Math.round(Number(item.unit_price)))}
                 onValueChange={(v) => updateItem(item._key, { unit_price: v })}
@@ -207,7 +207,7 @@ export default function RabEditor({
               />
             </label>
             <div className="col-span-2 self-end pb-3 text-right lg:col-span-1">
-              <span className="block text-xs text-slate-500">Total</span>
+              <span className="block text-xs text-slate-600">Total</span>
               <span className="text-sm font-bold text-slate-900">
                 {formatCurrency(rabItemTotal(item))}
               </span>
@@ -225,7 +225,7 @@ export default function RabEditor({
       </button>
 
       {items.length > 0 && (
-        <div className="rounded-2xl bg-[#f1f5f9] px-5 py-4">
+        <div className="border-t border-slate-300 pt-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-600">Total RAB</span>
             <span className="text-lg font-bold text-slate-900">
@@ -233,17 +233,20 @@ export default function RabEditor({
             </span>
           </div>
           {terbilangRupiah(rabTotal(items)) && (
-            <p className="mt-1 text-right text-xs text-slate-500">
+            <p className="mt-1 text-right text-xs text-slate-600">
               {terbilangRupiah(rabTotal(items))}
             </p>
           )}
           {rabTotal(items) >= LARGE_AMOUNT_WARNING && (
             <p
               role="alert"
-              className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+              className="mt-3 flex max-w-prose gap-2 text-xs font-medium text-amber-800"
             >
-              Nominal besar. Periksa lagi jumlah, frekuensi, dan harga satuan — pastikan tidak ada
-              angka nol yang berlebih.
+              <TriangleAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span>
+                Nominal besar. Periksa lagi jumlah, frekuensi, dan harga satuan — pastikan tidak ada
+                angka nol yang berlebih.
+              </span>
             </p>
           )}
         </div>

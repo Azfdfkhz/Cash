@@ -106,13 +106,13 @@ export default function CompleteProfilePage() {
       }
       step={{ current: 2, total: 2, label: "Data rekening dan notifikasi" }}
     >
-      <p className="hidden lg:block text-xs leading-4 font-bold uppercase tracking-[0.6px] text-[#1a68ff] mb-2">
+      <p className="hidden lg:block text-xs leading-4 font-bold uppercase tracking-[0.6px] text-[#1d4ed8] mb-2">
         Langkah 2 dari 2
       </p>
       <h2 className="text-2xl lg:text-4xl font-bold lg:font-extrabold tracking-tight lg:leading-10 lg:tracking-[-0.9px] text-slate-900 lg:text-[#111827] mb-2 lg:mb-3">
         Lengkapi data Anda
       </h2>
-      <p className="text-[15px] lg:text-[13.5px] leading-relaxed lg:leading-[21.94px] text-slate-500 lg:text-[#596579] mb-6 lg:mb-6">
+      <p className="text-[15px] lg:text-[13.5px] leading-relaxed lg:leading-[21.94px] text-slate-600 lg:text-[#596579] mb-6 lg:mb-6">
         <span className="lg:hidden">
           Dipakai untuk pencairan dana dan notifikasi persetujuan.
         </span>
@@ -155,14 +155,14 @@ export default function CompleteProfilePage() {
             <Building2
               size={20}
               strokeWidth={1.75}
-              className="text-slate-500 shrink-0"
+              className="text-slate-600 shrink-0"
             />
             <span className="flex-1 truncate">
               {bankName
                 ? `${bankName}${bankHolderName ? ` - ${bankHolderName}` : ""}`
                 : "Pilih bank"}
             </span>
-            <ChevronRight size={18} className="text-slate-500 shrink-0" />
+            <ChevronRight size={18} className="text-slate-600 shrink-0" />
           </button>
         </div>
 
@@ -188,7 +188,7 @@ export default function CompleteProfilePage() {
               <Send
                 size={20}
                 strokeWidth={1.75}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"
               />
               <input
                 id="telegram"
@@ -198,14 +198,14 @@ export default function CompleteProfilePage() {
                 onChange={(e) =>
                   setTelegramChatId(e.target.value.replace(/\D/g, ""))
                 }
-                className="w-full h-13 lg:h-[51px] rounded-full lg:rounded-2xl border border-slate-300 lg:border-[#d1d5db] bg-white pl-11.5 lg:pl-11 pr-3 text-base lg:text-sm text-slate-900 placeholder:text-slate-500 lg:shadow-xs focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+                className="w-full h-13 lg:h-[51px] rounded-full lg:rounded-2xl border border-slate-300 lg:border-[#d1d5db] bg-white pl-11.5 lg:pl-11 pr-3 text-base lg:text-sm text-slate-900 placeholder:text-slate-600 lg:shadow-xs focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
                 placeholder="Contoh: 123456789"
               />
             </div>
             <button
               type="button"
               onClick={openTelegram}
-              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[114px] lg:px-0 text-[13px] lg:text-[11px] font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
+              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[114px] lg:px-0 text-[13px] lg:text-xs font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
             >
               Open Telegram
             </button>

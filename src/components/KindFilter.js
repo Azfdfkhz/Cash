@@ -76,7 +76,7 @@ export default function KindFilter({ counts = null, dots = null, className = "" 
             className={`-mb-px flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
               selected
                 ? "border-brand text-brand"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                : "border-transparent text-slate-600 hover:text-slate-800"
             }`}
           >
             {opt.label}
@@ -88,8 +88,8 @@ export default function KindFilter({ counts = null, dots = null, className = "" 
             )}
             {n !== undefined && (
               <span
-                className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${
-                  selected ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-500"
+                className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold tabular-nums ${
+                  selected ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-600"
                 }`}
               >
                 {n}

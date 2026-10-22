@@ -116,7 +116,7 @@ function ReportsTableInner({
         <div className="relative">
           <Search
             size={16}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
           />
           <input
             type="search"
@@ -131,7 +131,7 @@ function ReportsTableInner({
               type="button"
               onClick={() => setQuery("")}
               aria-label="Hapus pencarian"
-              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-600"
             >
               <X size={14} />
             </button>
@@ -144,10 +144,10 @@ function ReportsTableInner({
           <div className="relative min-w-0 flex-1">
             <div
               className={`flex items-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-sm ${
-                filters.date ? "border-brand text-slate-900" : "border-slate-300 text-slate-500"
+                filters.date ? "border-brand text-slate-900" : "border-slate-300 text-slate-600"
               }`}
             >
-              <Calendar size={15} className="shrink-0 text-slate-500" />
+              <Calendar size={15} className="shrink-0 text-slate-600" />
               <span className="font-num truncate">
                 {filters.date ? formatDateNumeric(filters.date) : "Semua tanggal kwitansi"}
               </span>
@@ -184,7 +184,7 @@ function ReportsTableInner({
               className={`-mb-px flex flex-1 items-center justify-center border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
                 filters.kind === value
                   ? "border-brand text-brand"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  : "border-transparent text-slate-600 hover:text-slate-800"
               }`}
             >
               {label}
@@ -193,7 +193,7 @@ function ReportsTableInner({
         </div>
         </div>
         <div data-tour="report-summary" className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-opacity ${pending ? "opacity-50" : ""}`}>
-          <span className="font-num text-sm text-slate-500">{total} kwitansi</span>
+          <span className="font-num text-sm text-slate-600">{total} kwitansi</span>
           <div className="flex items-center gap-3">
             <span className="font-num text-base font-bold text-slate-900">
               {formatCurrency(totalAmount)}
@@ -213,7 +213,7 @@ function ReportsTableInner({
         ) : (
         <div className="space-y-3">
           {rows.length === 0 && (
-            <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+            <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600">
               Tidak ada data.
             </p>
           )}
@@ -229,7 +229,7 @@ function ReportsTableInner({
                     : "border-slate-200 lg:hover:border-slate-300"
                 }`}
               >
-                <p className="font-num text-xs text-slate-500">
+                <p className="font-num text-xs text-slate-600">
                   {r.receiptDate ? formatDateNumeric(r.receiptDate) : "-"}
                 </p>
                 <div className="mt-3 flex items-start justify-between gap-3">
@@ -241,8 +241,8 @@ function ReportsTableInner({
                       <p className="truncate text-sm font-semibold text-slate-900">
                         {r.vendor || "-"}
                       </p>
-                      <p className="truncate text-xs text-slate-500">{r.purpose}</p>
-                      <p className="truncate text-[11px] text-slate-500">
+                      <p className="truncate text-xs text-slate-600">{r.purpose}</p>
+                      <p className="truncate text-xs text-slate-600">
                         {r.kind}
                         {r.category ? ` · ${r.category}` : ""}
                       </p>
@@ -253,7 +253,7 @@ function ReportsTableInner({
                   </p>
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="truncate text-xs text-slate-500">
+                  <span className="truncate text-xs text-slate-600">
                     {r.requesterName}
                   </span>
                   {r.driveUrl && (
@@ -296,7 +296,7 @@ function ReportsTableInner({
             <>
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">
                     Pratinjau kwitansi
                   </p>
                   <p className="truncate text-sm font-bold text-slate-900">
@@ -307,13 +307,13 @@ function ReportsTableInner({
                   type="button"
                   onClick={() => setSelectedId(null)}
                   aria-label="Tutup pratinjau"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
                 >
                   <X size={14} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between gap-3 px-5 py-3 text-xs text-slate-500">
+              <div className="flex items-center justify-between gap-3 px-5 py-3 text-xs text-slate-600">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <FileText size={14} className="shrink-0" />
                   <span className="truncate">
@@ -321,7 +321,7 @@ function ReportsTableInner({
                     {selected.receiptDate ? ` · ${formatDateNumeric(selected.receiptDate)}` : ""}
                   </span>
                 </span>
-                <span className="shrink-0 text-slate-500">Tersimpan di Google Drive</span>
+                <span className="shrink-0 text-slate-600">Tersimpan di Google Drive</span>
               </div>
 
               <div className="bg-slate-50 px-5 pb-5">
@@ -333,7 +333,7 @@ function ReportsTableInner({
                     className="h-[28rem] w-full rounded-xl border border-slate-200 bg-white"
                   />
                 ) : (
-                  <p className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-16 text-center text-sm text-slate-500">
+                  <p className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-16 text-center text-sm text-slate-600">
                     {selected.driveUrl
                       ? "Pratinjau tidak tersedia untuk tautan ini. Buka di Drive."
                       : "Kwitansi ini belum punya foto."}
@@ -364,7 +364,7 @@ function ReportsTableInner({
               )}
             </>
           ) : (
-            <p className="px-6 py-24 text-center text-sm text-slate-500">
+            <p className="px-6 py-24 text-center text-sm text-slate-600">
               Pilih kwitansi di daftar untuk melihat pratinjau.
             </p>
           )}

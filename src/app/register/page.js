@@ -101,7 +101,7 @@ export default function RegisterPage() {
       subtitle="Daftar dengan email perusahaan Anda."
     >
       <div className="hidden lg:block mb-8">
-        <p className="text-xs leading-4 font-bold uppercase tracking-[0.6px] text-[#1a68ff]">
+        <p className="text-xs leading-4 font-bold uppercase tracking-[0.6px] text-[#1d4ed8]">
           Langkah 1 dari 2
         </p>
         <h2 className="mt-2 text-4xl font-extrabold leading-10 tracking-[-0.9px] text-[#111827]">
@@ -115,12 +115,12 @@ export default function RegisterPage() {
       {done ? (
         <div className="rounded-3xl border border-slate-200 p-6 text-center space-y-3">
           <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-2">
-            <Check size={24} strokeWidth={2.5} className="text-emerald-600" />
+            <Check size={24} strokeWidth={2.5} className="text-emerald-700" />
           </div>
           <p className="text-base font-semibold text-slate-900">
             Cek email Anda
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             Pendaftaran berhasil. Silakan cek email Anda untuk konfirmasi akun
             sebelum masuk.
           </p>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-                  className="text-slate-500 hover:text-slate-700"
+                  className="text-slate-600 hover:text-slate-700"
                 >
                   {showPassword ? (
                     <EyeOff size={20} strokeWidth={1.75} />
