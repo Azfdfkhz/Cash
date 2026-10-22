@@ -73,7 +73,9 @@ export default function DisbursementSection({
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [pickedFile, setFile] = useState(null);
-  const file = pickedFile ?? externalFile ?? null;
+  // Setelah bukti ditolak karena duplikat, file kiriman luar tidak dipakai lagi.
+  const [dropExternal, setDropExternal] = useState(false);
+  const file = pickedFile ?? (dropExternal ? null : externalFile) ?? null;
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -84,7 +86,7 @@ export default function DisbursementSection({
 
   if (disbursedAt) {
     return (
-      <div className="border-t border-slate-200 pt-4">
+      <div className="border-t border-slate-200 pt-5">
         <div className="flex items-start gap-3">
           <Banknote size={20} className="text-emerald-700 shrink-0 mt-0.5" />
           <div className="min-w-0">
@@ -128,7 +130,7 @@ export default function DisbursementSection({
 
   if (!canDisburse) {
     return (
-      <div className="border-t border-slate-200 pt-4 text-sm text-amber-800">
+      <div className="border-t border-slate-200 pt-5 text-sm leading-relaxed text-amber-800">
         {isReimbursement
           ? "Disetujui, menunggu transfer reimbursement dari Tim Operasional ke"
           : "Disetujui, menunggu pencairan dana dari Tim Operasional ke"}{" "}
@@ -172,9 +174,17 @@ export default function DisbursementSection({
           file_id: uploadData.fileId,
           view_url: uploadData.viewUrl,
           note: note.trim() || null,
+          proof_sha256: uploadData.proofSha256 ?? null,
+          proof_phash: uploadData.proofPhash ?? null,
         }
       );
-      if (rpcError) throw new Error(rpcError.message);
+      if (rpcError) {
+        throw new Error(
+          rpcError.code === "23505"
+            ? "Bukti transfer ini sudah pernah dipakai pada pengajuan lain. Gunakan bukti transfer yang berbeda."
+            : rpcError.message
+        );
+      }
 
       fetch(`/api/cash-advances/${cashAdvanceId}/notify-disbursed`, {
         method: "POST",
@@ -193,6 +203,10 @@ export default function DisbursementSection({
       router.refresh();
     } catch (err) {
       setError(err.message || "Gagal menyimpan pencairan. Coba lagi.");
+      if (/sudah pernah dipakai/i.test(err.message || "")) {
+        setFile(null);
+        setDropExternal(true);
+      }
       setConfirming(false);
       busyRef.current = false; // izinkan coba lagi setelah gagal
     } finally {
@@ -203,7 +217,7 @@ export default function DisbursementSection({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 border-t border-slate-200 pt-4"
+      className="space-y-4 border-t border-slate-200 pt-5"
     >
       <div>
         <p className="text-sm font-semibold text-slate-700">

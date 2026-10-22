@@ -165,52 +165,54 @@ export default function RabEditor({
               <Trash2 size={17} />
             </button>
           </div>
-          <div className="grid grid-cols-6 gap-x-3 gap-y-3 lg:grid-cols-[84px_minmax(0,1fr)_84px_minmax(0,1.3fr)_auto] lg:pl-7">
-            <label className="col-span-2 block lg:col-span-1">
-              <span className="text-xs text-slate-600">Jumlah</span>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={item.quantity}
-                onChange={(e) => updateItem(item._key, { quantity: e.target.value })}
-                className={`${inputClass} mt-1 text-center`}
-              />
-            </label>
-            <label className="col-span-2 block lg:col-span-1">
-              <span className="text-xs text-slate-600">Satuan</span>
-              <div className="mt-1">
-                <UnitSelect
-                  value={item.unit ?? ""}
-                  onChange={(unit) => updateItem(item._key, { unit })}
-                  className={inputClass}
+          <div className="@container">
+            <div className="grid grid-cols-6 items-end gap-x-3 gap-y-3 @2xl:grid-cols-[84px_minmax(0,1fr)_84px_minmax(0,1.3fr)_7.5rem] @2xl:pl-7">
+              <label className="col-span-2 block @2xl:col-span-1">
+                <span className="block whitespace-nowrap text-xs text-slate-600">Jumlah</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(item._key, { quantity: e.target.value })}
+                  className={`${inputClass} mt-1 text-center`}
                 />
+              </label>
+              <label className="col-span-2 block @2xl:col-span-1">
+                <span className="block whitespace-nowrap text-xs text-slate-600">Satuan</span>
+                <div className="mt-1">
+                  <UnitSelect
+                    value={item.unit ?? ""}
+                    onChange={(unit) => updateItem(item._key, { unit })}
+                    className={inputClass}
+                  />
+                </div>
+              </label>
+              <label className="col-span-2 block @2xl:col-span-1">
+                <span className="block whitespace-nowrap text-xs text-slate-600">Frekuensi</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={item.frequency}
+                  onChange={(e) => updateItem(item._key, { frequency: e.target.value })}
+                  className={`${inputClass} mt-1 text-center`}
+                />
+              </label>
+              <label className="col-span-4 block @2xl:col-span-1">
+                <span className="block whitespace-nowrap text-xs text-slate-600">Harga Satuan (Rp)</span>
+                <CurrencyInput
+                  value={item.unit_price === "" ? "" : String(Math.round(Number(item.unit_price)))}
+                  onValueChange={(v) => updateItem(item._key, { unit_price: v })}
+                  className={`${inputClass} mt-1 text-right`}
+                />
+              </label>
+              <div className="col-span-2 min-w-0 text-right @2xl:col-span-1">
+                <span className="block whitespace-nowrap text-xs text-slate-600">Total</span>
+                <span className="mt-1 flex min-h-[2.75rem] items-center justify-end break-words text-sm font-bold text-slate-900">
+                  {formatCurrency(rabItemTotal(item))}
+                </span>
               </div>
-            </label>
-            <label className="col-span-2 block lg:col-span-1">
-              <span className="text-xs text-slate-600">Frekuensi</span>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={item.frequency}
-                onChange={(e) => updateItem(item._key, { frequency: e.target.value })}
-                className={`${inputClass} mt-1 text-center`}
-              />
-            </label>
-            <label className="col-span-4 block lg:col-span-1">
-              <span className="text-xs text-slate-600">Harga Satuan (Rp)</span>
-              <CurrencyInput
-                value={item.unit_price === "" ? "" : String(Math.round(Number(item.unit_price)))}
-                onValueChange={(v) => updateItem(item._key, { unit_price: v })}
-                className={`${inputClass} mt-1 text-right`}
-              />
-            </label>
-            <div className="col-span-2 self-end pb-3 text-right lg:col-span-1">
-              <span className="block text-xs text-slate-600">Total</span>
-              <span className="text-sm font-bold text-slate-900">
-                {formatCurrency(rabItemTotal(item))}
-              </span>
             </div>
           </div>
         </div>

@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import BankInput from "@/components/BankInput";
 import { useAccountReveal } from "@/components/useAccountReveal";
 import { maskAccountNumber, maskChatId, maskEmail } from "@/lib/utils";
+import { openTelegramBot, USERINFO_BOT } from "@/lib/telegramLinks";
 
 // Satu baris isian: kotak ikon + label kecil + nilai (sesuai desain Figma).
 function Row({ icon: Icon, label, children, trailing }) {
@@ -168,16 +169,27 @@ export default function ProfileForm({
     // tetap kolom `username` di tabel profiles (bukan full_name).
     const username = draft.username.trim();
     const supabase = createClient();
-    const { error } = await supabase
+    const payload = {
+      username: username || null,
+      telegram_chat_id: draft.chatId || null,
+      bank_name: draft.bankName.trim() || null,
+      bank_account_number: accountNumber.trim() || null,
+      bank_account_holder: draft.accountHolder.trim() || null,
+    };
+    let { error } = await supabase
       .from("profiles")
-      .update({
-        username: username || null,
-        telegram_chat_id: draft.chatId || null,
-        bank_name: draft.bankName.trim() || null,
-        bank_account_number: accountNumber.trim() || null,
-        bank_account_holder: draft.accountHolder.trim() || null,
-      })
+      .update(payload)
       .eq("id", profileId);
+    // Database lama (migrasi 0034 belum dijalankan) hanya menerima huruf
+    // kecil: coba lagi dengan huruf kecil agar tetap tersimpan.
+    let savedUsername = username;
+    if (error?.code === "23514" && username && username !== username.toLowerCase()) {
+      savedUsername = username.toLowerCase();
+      ({ error } = await supabase
+        .from("profiles")
+        .update({ ...payload, username: savedUsername })
+        .eq("id", profileId));
+    }
     setSaving(false);
     setConfirming(false);
 
@@ -195,7 +207,7 @@ export default function ProfileForm({
     }
 
     setSaved({
-      username,
+      username: savedUsername,
       chatId: draft.chatId,
       bankName: draft.bankName.trim(),
       accountNumber: accountNumber.trim(),
@@ -383,14 +395,13 @@ export default function ProfileForm({
                 icon={Send}
                 label="Telegram Chat ID"
                 trailing={
-                  <a
-                    href="https://t.me/userinfobot?start=start"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => openTelegramBot(USERINFO_BOT)}
                     className="shrink-0 rounded-full border border-brand px-4 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-primary-muted"
                   >
-                    Open Telegram
-                  </a>
+                    Buka @userinfobot
+                  </button>
                 }
               >
                 <input
@@ -420,14 +431,13 @@ export default function ProfileForm({
                       <>
                         {" "}
                         (
-                        <a
-                          href={`https://t.me/${botUsername}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => openTelegramBot(botUsername)}
                           className="font-semibold text-brand underline"
                         >
                           @{botUsername}
-                        </a>
+                        </button>
                         )
                       </>
                     )}{" "}

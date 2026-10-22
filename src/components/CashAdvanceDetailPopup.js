@@ -48,14 +48,14 @@ function Info({ label, children, className = "" }) {
   return (
     <div className={`min-w-0 ${className}`}>
       <dt className="text-xs font-medium text-slate-600">{label}</dt>
-      <dd className="mt-0.5 break-words text-[13px] font-semibold text-slate-900">{children}</dd>
+      <dd className="mt-1 break-words text-sm font-semibold leading-snug text-slate-900">{children}</dd>
     </div>
   );
 }
 
 function Title({ children, className = "" }) {
   return (
-    <h3 className={`mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 ${className}`}>
+    <h3 className={`mb-3 text-xs font-semibold uppercase tracking-wide text-slate-600 ${className}`}>
       {children}
     </h3>
   );
@@ -225,9 +225,9 @@ export default function CashAdvanceDetailPopup({
         }
       >
         {/* ── Header ── */}
-        <div className="flex items-start justify-between gap-3 px-6 pb-3 pt-5">
+        <div className="flex items-start justify-between gap-4 px-5 pb-4 pt-5 sm:px-6">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
               <span className="rounded bg-[#eff6ff] px-1.5 py-0.5 text-xs font-bold text-[#2563eb]">
                 {formatCaCode(c)}
               </span>
@@ -239,8 +239,8 @@ export default function CashAdvanceDetailPopup({
                 <ReturnPendingBadge operational={isOperational} />
               )}
             </div>
-            <h2 className="mt-2 break-words text-lg font-bold leading-snug text-slate-900">{c.purpose}</h2>
-            <p className="mt-0.5 text-xs text-slate-600">
+            <h2 className="mt-3 break-words text-lg font-bold leading-snug text-slate-900">{c.purpose}</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
               Diajukan oleh {requesterName(c.profiles)} · {formatDate(c.created_at)}
             </p>
           </div>
@@ -259,7 +259,7 @@ export default function CashAdvanceDetailPopup({
         </div>
 
         {/* ── Tab ── */}
-        <div role="tablist" className="flex gap-5 overflow-x-auto border-b border-slate-200 px-6">
+        <div role="tablist" className="flex gap-6 overflow-x-auto border-b border-slate-200 px-5 sm:px-6">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -267,7 +267,7 @@ export default function CashAdvanceDetailPopup({
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => selectTab(t.id)}
-              className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 py-2.5 text-[13px] font-semibold transition-colors ${
+              className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 py-3 text-sm font-semibold transition-colors ${
                 tab === t.id
                   ? "border-brand text-brand"
                   : "border-transparent text-slate-600 hover:text-slate-800"
@@ -288,7 +288,7 @@ export default function CashAdvanceDetailPopup({
         </div>
 
         {/* ── Konten ── */}
-        <div ref={scrollRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        <div ref={scrollRef} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:px-6">
           {!loaded && (
             <p className="sr-only" role="status">
               Memuat rincian...
@@ -300,25 +300,25 @@ export default function CashAdvanceDetailPopup({
             <>
               {/* Catatan penolakan paling atas supaya requester langsung tahu apa yang direvisi */}
               {c.status === "rejected" && c.review_note && (
-                <div className="rounded-md bg-rose-50 px-4 py-3">
+                <div className="rounded-xl bg-rose-50 px-4 py-3.5">
                   <p className="text-xs font-bold text-rose-800">Catatan tim operasional</p>
-                  <p className="mt-0.5 text-[13px] text-rose-900">{c.review_note}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-rose-900">{c.review_note}</p>
                 </div>
               )}
 
               {/* Ringkasan angka: satu blok */}
-              <div className="border-b border-slate-200 pb-5">
-                <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="border-b border-slate-200 pb-6">
+                <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
                   <div>
                     <p className="text-xs font-medium text-slate-600">
                       {isReimbursement ? "Nominal Diajukan" : "Plafon Diajukan"}
                     </p>
-                    <p className="mt-0.5 text-2xl font-extrabold tracking-tight text-slate-900">
+                    <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
                       {formatCurrency(c.amount_requested)}
                     </p>
                   </div>
                   {!isReimbursement && (
-                    <div className="flex items-center gap-2 border-l border-slate-300 pl-3">
+                    <div className="flex items-center gap-2.5 border-l border-slate-300 pl-4">
                       <Calendar size={14} className="text-brand" />
                       <div>
                         <p className="text-xs font-medium text-slate-600">Tenggat LPJ / SPJ</p>
@@ -331,13 +331,13 @@ export default function CashAdvanceDetailPopup({
                 {showMoneyFlow && !isReimbursement && !loaded && <MoneyFlowSkeleton />}
                 {showMoneyFlow && !isReimbursement && loaded && (
                   <>
-                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                    <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-200">
                       <div
                         className={`h-full rounded-full ${spentPct >= 100 ? "bg-amber-500" : "bg-brand"}`}
                         style={{ width: `${spentPct}%` }}
                       />
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-3">
+                    <div className="mt-4 grid grid-cols-3 gap-4">
                       <div>
                         <p className="text-xs text-slate-600">Terpakai ({spentPct}%)</p>
                         <p className="text-sm font-bold text-slate-900">{formatCurrency(totalSpent)}</p>
@@ -366,7 +366,7 @@ export default function CashAdvanceDetailPopup({
               </div>
 
               {/* Informasi pengajuan */}
-              <dl className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
                 {c.funding_source && (
                   <Info label="Sumber Dana">
                     {FUNDING_SOURCE_LABEL[c.funding_source] ?? c.funding_source}
@@ -381,8 +381,14 @@ export default function CashAdvanceDetailPopup({
                 )}
                 {(c.bank_name || c.bank_account_number) && (
                   <Info label="Rekening Tujuan" className="col-span-2 sm:col-span-3">
-                    {[c.bank_name, c.bank_account_number].filter(Boolean).join(" ")}
-                    <span className="ml-1.5 font-normal text-slate-600">a.n {holder}</span>
+                    <span className="block">
+                      {[c.bank_name, c.bank_account_number].filter(Boolean).join(" · ")}
+                    </span>
+                    {holder && (
+                      <span className="mt-0.5 block text-[13px] font-normal text-slate-600">
+                        a.n {holder}
+                      </span>
+                    )}
                   </Info>
                 )}
               </dl>
@@ -390,9 +396,9 @@ export default function CashAdvanceDetailPopup({
               {isReimbursement && categoryTotals.length > 0 && (
                 <section>
                   <Title>Rekap per Kategori</Title>
-                  <div className="divide-y divide-slate-200 border-y border-slate-200 text-[13px]">
+                  <div className="divide-y divide-slate-200 border-y border-slate-200 text-sm">
                     {categoryTotals.map(([category, amount]) => (
-                      <div key={category} className="flex justify-between py-2">
+                      <div key={category} className="flex justify-between gap-4 py-2.5">
                         <span className="text-slate-600">{category}</span>
                         <span className="font-medium text-slate-900">{formatCurrency(amount)}</span>
                       </div>
@@ -416,7 +422,7 @@ export default function CashAdvanceDetailPopup({
                   )}
 
                   {isOwner && isOperational && c.status === "pending" && (
-                    <p className="text-xs text-slate-700">
+                    <p className="text-sm leading-relaxed text-slate-700">
                       Menunggu persetujuan admin lain. Anda tidak bisa menyetujui pengajuan sendiri.
                     </p>
                   )}
@@ -485,15 +491,15 @@ export default function CashAdvanceDetailPopup({
           {tab === "kwitansi" && loaded && (
             <section>
               {!isReimbursement && c.status === "approved" && hasPendingReturn && (isOwner || isOperational) && (
-                <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
                   Kwitansi tidak bisa diedit atau dihapus selama ada pengembalian yang menunggu
                   konfirmasi. Batalkan pengembalian itu dulu kalau perlu mengoreksi kwitansi.
                 </p>
               )}
               {receipts.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-[13px] font-medium text-slate-600">Belum ada kwitansi</p>
-                  <p className="mt-0.5 text-xs text-slate-600">
+                <div className="px-4 py-10 text-center">
+                  <p className="text-sm font-medium text-slate-700">Belum ada kwitansi</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
                     Kwitansi dan bukti transfer yang dicatat akan muncul di sini.
                   </p>
                 </div>
@@ -515,11 +521,11 @@ export default function CashAdvanceDetailPopup({
 
           {tab === "riwayat" && events.length > 0 && (
             <section>
-              <ol className="space-y-4 border-l border-slate-200 pl-5">
+              <ol className="space-y-5 border-l border-slate-200 pl-6">
                 {events.map((ev) => (
-                  <li key={ev.id} className="relative text-[13px]">
+                  <li key={ev.id} className="relative text-sm">
                     <span
-                      className={`absolute -left-[1.6rem] top-1.5 h-2 w-2 rounded-full ring-4 ring-white ${
+                      className={`absolute -left-[1.85rem] top-1.5 h-2 w-2 rounded-full ring-4 ring-white ${
                         EVENT_DOT[ev.action] ?? "bg-slate-300"
                       }`}
                     />
@@ -528,7 +534,7 @@ export default function CashAdvanceDetailPopup({
                       oleh {ev.profiles?.full_name ?? "-"} · {formatDateTimeShort(ev.created_at)}
                     </p>
                     {ev.note && (
-                      <p className="mt-1 rounded-lg bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
+                      <p className="mt-1.5 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
                         &ldquo;{ev.note}&rdquo;
                       </p>
                     )}
@@ -541,7 +547,7 @@ export default function CashAdvanceDetailPopup({
 
         {/* ── Footer: hanya muncul kalau ada aksi (tombol X di header sudah menutup) ── */}
         {hasFooter && (
-          <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-6 py-3">
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3.5 sm:px-6">
             {c.rab_url && !isReimbursement ? (
               <a
                 href={c.rab_url}

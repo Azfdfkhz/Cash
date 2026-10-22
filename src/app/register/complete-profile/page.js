@@ -8,7 +8,8 @@ import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell"
 import AuthField, { AuthLabel } from "@/components/auth/AuthField";
 import PrimaryButton from "@/components/auth/PrimaryButton";
 import BankSelectModal from "@/components/BankSelectModal";
-import { User, Building2, CreditCard, Send, ChevronRight, Info } from "lucide-react";
+import { User, Building2, CreditCard, Send, ChevronRight, Info, ExternalLink } from "lucide-react";
+import { openTelegramBot, USERINFO_BOT, NOTIFY_BOT } from "@/lib/telegramLinks";
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -59,20 +60,35 @@ export default function CompleteProfilePage() {
 
     const supabase = createClient();
     const displayName = bankHolderName || cleanUsername;
-    const { error: updateError } = await supabase
+    const payload = {
+      full_name: displayName || cleanUsername,
+      username: cleanUsername || null,
+      // Menandai langkah 2 selesai; tanpa ini dashboard terus mengarahkan
+      // kembali ke halaman ini.
+      profile_completed_at: new Date().toISOString(),
+      bank_name: bankName || null,
+      bank_account_number: bankAccountNumber.trim() || null,
+      bank_account_holder: bankHolderName.trim() || null,
+      telegram_chat_id: telegramChatId.trim() || null,
+    };
+    let { error: updateError } = await supabase
       .from("profiles")
-      .update({
-        full_name: displayName || cleanUsername,
-        username: cleanUsername || null,
-        // Menandai langkah 2 selesai; tanpa ini dashboard terus mengarahkan
-        // kembali ke halaman ini.
-        profile_completed_at: new Date().toISOString(),
-        bank_name: bankName || null,
-        bank_account_number: bankAccountNumber.trim() || null,
-        bank_account_holder: bankHolderName.trim() || null,
-        telegram_chat_id: telegramChatId.trim() || null,
-      })
+      .update(payload)
       .eq("id", profileId);
+
+    // Database lama (migrasi 0034 belum dijalankan) hanya menerima huruf
+    // kecil. Coba lagi dengan huruf kecil supaya tetap tersimpan; huruf
+    // besar/kecil dianggap sama untuk username.
+    if (
+      updateError?.code === "23514" &&
+      cleanUsername &&
+      cleanUsername !== cleanUsername.toLowerCase()
+    ) {
+      ({ error: updateError } = await supabase
+        .from("profiles")
+        .update({ ...payload, username: cleanUsername.toLowerCase() })
+        .eq("id", profileId));
+    }
 
     setSaving(false);
 
@@ -97,10 +113,6 @@ export default function CompleteProfilePage() {
   function handleBankSave(name, holderName) {
     setBankName(name);
     setBankHolderName(holderName);
-  }
-
-  function openTelegram() {
-    window.open("https://t.me/userinfobot", "_blank");
   }
 
   return (
@@ -220,28 +232,44 @@ export default function CompleteProfilePage() {
             </div>
             <button
               type="button"
-              onClick={openTelegram}
-              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[114px] lg:px-0 text-[13px] lg:text-xs font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
+              onClick={() => openTelegramBot(USERINFO_BOT)}
+              className="h-13 lg:h-[51px] shrink-0 rounded-full lg:rounded-[14px] border border-slate-300 lg:border-[#cbd5e1] bg-white px-4 lg:w-[132px] lg:px-0 text-[13px] lg:text-xs font-semibold text-brand lg:text-[#2e64d8] hover:bg-slate-50 transition-colors"
             >
-              Open Telegram
+              Buka @{USERINFO_BOT}
             </button>
           </div>
 
-          {/* Info box */}
+          {/* Info box: dua bot, urut dari mencari Chat ID sampai mengaktifkan notifikasi */}
           <div className="mt-3 flex gap-3 rounded-2xl bg-[#f0f4f9] p-4">
             <Info
               size={18}
               strokeWidth={1.75}
               className="mt-0.5 shrink-0 text-brand"
             />
-            <p className="text-[13px] lg:text-xs leading-relaxed lg:leading-[19.5px] text-slate-600 lg:text-[#4b5563]">
-              Cari{" "}
-              <span className="font-semibold text-slate-900">@userinfobot</span>{" "}
-              di Telegram untuk tahu Chat ID Anda. Lalu buka bot notifikasi
-              perusahaan dan tekan{" "}
-              <span className="font-semibold text-slate-900">/start</span>{" "}
-              (wajib, jika tidak notifikasi tidak terkirim).
-            </p>
+            <div className="min-w-0 space-y-3 text-[13px] lg:text-xs leading-relaxed lg:leading-[19.5px] text-slate-600 lg:text-[#4b5563]">
+              <p>
+                <span className="font-semibold text-slate-900">1.</span> Cari{" "}
+                <span className="font-semibold text-slate-900">@{USERINFO_BOT}</span>{" "}
+                di Telegram untuk tahu Chat ID Anda, lalu isi di kolom di atas.
+              </p>
+              <div>
+                <p>
+                  <span className="font-semibold text-slate-900">2.</span> Cari bot
+                  notifikasi perusahaan (
+                  <span className="font-semibold text-slate-900">@{NOTIFY_BOT}</span>) dan
+                  tekan <span className="font-semibold text-slate-900">/start</span>{" "}
+                  (wajib, kalau tidak notifikasi tidak akan terkirim).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openTelegramBot(NOTIFY_BOT)}
+                  className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-full border border-brand bg-white px-4 text-xs font-semibold text-brand hover:bg-primary-muted transition-colors"
+                >
+                  Buka @{NOTIFY_BOT}
+                  <ExternalLink size={13} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

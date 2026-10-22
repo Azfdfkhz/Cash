@@ -58,10 +58,15 @@ function LoginForm() {
 
     const supabase = createClient();
     const next = safeNextPath(searchParams.get("next"));
+    // redirectTo sengaja TANPA query string: URL dengan ?next= tidak cocok
+    // dengan entri "/auth/callback" di Redirect URLs Supabase, sehingga
+    // Supabase membuang alurnya dan pengguna harus klik login dua kali.
+    // Tujuan akhir disimpan sebentar di cookie dan dibaca oleh callback.
+    document.cookie = `post_login_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 

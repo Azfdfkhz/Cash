@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
 import { uploadReceiptToDrive } from "@/lib/google/drive";
@@ -18,6 +19,25 @@ export const maxDuration = 30;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 // Cegah "decompression bomb": gambar kecil di disk tapi miliaran piksel.
 const MAX_INPUT_PIXELS = 40_000_000;
+
+// Sidik jari visual 64-bit (dHash): gambar dikecilkan ke 9x8 abu-abu, tiap bit
+// = apakah piksel kiri lebih terang dari kanannya. Tahan terhadap simpan ulang,
+// kompresi, dan pengecilan, jadi foto yang sama tetap terdeteksi.
+async function perceptualHash(buffer) {
+  const { data } = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })
+    .rotate()
+    .grayscale()
+    .resize(9, 8, { fit: "fill" })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let bits = 0n;
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      bits = (bits << 1n) | (data[y * 9 + x] > data[y * 9 + x + 1] ? 1n : 0n);
+    }
+  }
+  return bits.toString(16).padStart(16, "0");
+}
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -138,6 +158,46 @@ export async function POST(request) {
       console.warn("Upload: HEIC disimpan apa adanya", err.message);
     }
   }
+
+  // Bukti transfer pencairan: satu bukti hanya boleh dipakai satu kali. Dicek
+  // SEBELUM diunggah ke Drive supaya file duplikat tidak ikut tersimpan.
+  // Pemeriksaan yang mengikat tetap ada di database (mark_cash_advance_disbursed).
+  let proofSha256 = null;
+  let proofPhash = null;
+  if (kind === "bukti-pencairan") {
+    proofSha256 = createHash("sha256").update(buffer).digest("hex");
+    if (mimeType.startsWith("image/")) {
+      try {
+        proofPhash = await perceptualHash(buffer);
+      } catch (err) {
+        console.warn("Upload: phash gagal, hanya sha256 yang dipakai", err.message);
+      }
+    }
+    const { data: duplicateId, error: dupError } = await supabase.rpc(
+      "find_duplicate_disbursement_proof",
+      { p_sha256: proofSha256, p_phash: proofPhash, p_exclude: cashAdvanceId }
+    );
+    if (!dupError && duplicateId) {
+      return NextResponse.json(
+        {
+          error:
+            "Bukti transfer ini sudah pernah dipakai pada pengajuan lain. Gunakan bukti transfer yang berbeda.",
+          code: "duplicate_proof",
+        },
+        { status: 409 }
+      );
+    }
+    // Fungsi belum ada (migrasi 0035 belum dijalankan): jangan diam-diam
+    // lolos tanpa pengaman, beri tahu supaya migrasi dijalankan.
+    if (dupError) {
+      console.error("find_duplicate_disbursement_proof gagal", dupError.message);
+      return NextResponse.json(
+        { error: "Pemeriksaan bukti pencairan gagal. Hubungi administrator (migrasi 0035)." },
+        { status: 500 }
+      );
+    }
+  }
+
   const filename = caDriveFilename(cashAdvanceId, cashAdvance, { kind, label, ext });
   const { folderName, legacyFolderNames } = caDriveFolder(cashAdvanceId, cashAdvance);
 
@@ -149,7 +209,7 @@ export async function POST(request) {
       folderName,
       legacyFolderNames,
     });
-    return NextResponse.json({ ok: true, fileId, viewUrl });
+    return NextResponse.json({ ok: true, fileId, viewUrl, proofSha256, proofPhash });
   } catch (err) {
     console.error("Drive upload failed", err);
     return NextResponse.json(

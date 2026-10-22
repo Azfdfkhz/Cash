@@ -43,26 +43,36 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
   );
 }
 
-// Toggle "Semua | Belum Disetujui (n)" berbasis query ?filter=
+// Tab "Semua | Belum Disetujui (n)" berbasis query ?filter=. Gaya garis bawah
+// (sama dengan tab jenis pengajuan), tanpa wadah/kartu sendiri, supaya tidak
+// menjadi kartu di dalam kartu.
 export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
   const jenis = kind ? `jenis=${kind}` : "";
   const base =
     size === "sm"
-      ? "whitespace-nowrap px-3 py-1.5 text-xs"
-      : "px-5 py-2 text-[13px]";
+      ? "whitespace-nowrap px-1 pb-2 pt-1 text-xs"
+      : "whitespace-nowrap px-1 pb-2.5 pt-1 text-[13px]";
   const tab = (active) =>
-    `${base} rounded-full font-semibold transition-colors ${
+    `${base} -mb-px border-b-2 font-semibold transition-colors ${
       active
-        ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80"
-        : "text-slate-600 hover:text-slate-700"
+        ? "border-brand text-brand"
+        : "border-transparent text-slate-600 hover:text-slate-800"
     }`;
   return (
-    <div data-tour="status-filter" className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1">
-      <PendingLink scroll={false} href={jenis ? `/dashboard?${jenis}` : "/dashboard"} className={tab(filter !== "pending")}>
+    <div data-tour="status-filter" role="tablist" className="inline-flex items-end gap-5 border-b border-slate-200">
+      <PendingLink
+        scroll={false}
+        role="tab"
+        aria-selected={filter !== "pending"}
+        href={jenis ? `/dashboard?${jenis}` : "/dashboard"}
+        className={tab(filter !== "pending")}
+      >
         Semua
       </PendingLink>
       <PendingLink
         scroll={false}
+        role="tab"
+        aria-selected={filter === "pending"}
         href={`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`}
         className={tab(filter === "pending")}
       >

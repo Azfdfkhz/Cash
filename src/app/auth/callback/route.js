@@ -1,12 +1,28 @@
-import { NextResponse } from "next/server";
+import { NextResponse as BaseNextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/security";
 import { callbackErrorCode, hasUnverifiedOAuthEmail } from "@/lib/authErrors";
 
+// Semua redirect callback ikut menghapus cookie tujuan sementara.
+const NextResponse = {
+  redirect(url) {
+    const res = BaseNextResponse.redirect(url);
+    res.cookies.set("post_login_next", "", { path: "/", maxAge: 0 });
+    return res;
+  },
+};
+
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = safeNextPath(searchParams.get("next"));
+  const cookieNext = request.cookies.get("post_login_next")?.value;
+  let decodedCookieNext = null;
+  try {
+    decodedCookieNext = cookieNext ? decodeURIComponent(cookieNext) : null;
+  } catch {
+    decodedCookieNext = null;
+  }
+  const next = safeNextPath(searchParams.get("next") ?? decodedCookieNext);
 
   // Penyedia (Google) / Supabase mengembalikan error alih-alih code, mis.
   // pendaftaran ditolak oleh kebijakan domain di database. Tampilkan pesan
