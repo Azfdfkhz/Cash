@@ -94,6 +94,7 @@ export default function CashAdvanceDetailPopup({
   const scrollRef = useRef(null);
   const disburseRef = useRef(null);
   const returnsRef = useRef(null);
+  const focusedRef = useRef(false);
 
   // Muat ulang tiap `ca` berganti objek (mis. setelah router.refresh() dari
   // edit RAB, ajukan ulang, cairkan, dst.) tanpa mengosongkan tampilan.
@@ -152,10 +153,15 @@ export default function CashAdvanceDetailPopup({
 
   // Dibuka dari "Cairkan Sekarang": gulir ke form pencairan setelah data siap.
   useEffect(() => {
-    if (!data) return;
+    // Hanya sekali: muat ulang data (realtime/refresh) tidak boleh menggulung
+    // ulang tampilan ke bagian ini.
+    if (!data || focusedRef.current) return;
     const target =
       initialFocus === "pencairan" ? disburseRef : initialFocus === "pengembalian" ? returnsRef : null;
-    target?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (target?.current) {
+      focusedRef.current = true;
+      target.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, [data, initialFocus]);
 
   // Data segar hanya dipakai kalau memang hasil muat untuk objek `ca` ini.
@@ -522,7 +528,7 @@ export default function CashAdvanceDetailPopup({
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="space-y-3">
                   {receipts.map((receipt) => (
                     <ReceiptCard
                       key={receipt.id}

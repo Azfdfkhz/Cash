@@ -110,6 +110,7 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
 export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }) {
   const [data, setData] = useState(null);
   const [sent, setSent] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,8 +149,11 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
     };
   }, [ca]);
 
-  const loaded = data !== null && data.forCa === ca;
-  const c = loaded && data.full ? data.full : ca;
+  // Data lama tetap dipakai selagi dimuat ulang (router.refresh / realtime
+  // mengganti objek `ca`). Kalau tidak, formulir ikut terbongkar & isiannya
+  // hilang di tengah pengiriman bukti.
+  const loaded = data !== null;
+  const c = data && data.forCa === ca && data.full ? data.full : ca;
   const balanceRow = data?.balanceRow;
   const balance = balanceRow?.balance ?? c.amount_requested;
   const totalSpent = balanceRow?.total_spent ?? 0;
@@ -170,6 +174,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
       onClose={onClose}
       maxWidth={sent ? "max-w-3xl" : "max-w-xl"}
       closeOnBackdrop={false}
+      busy={submitting ? "Mengirim bukti pengembalian..." : null}
     >
       {sent ? (
         <ReturnStatus ca={c} sent={sent} onClose={onClose} onBackToDetail={onOpenDetail ?? onClose} />
@@ -199,6 +204,7 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
             totalReimbursed={totalReimbursed}
             reimbursements={data.reimbursements}
             onReturnSubmitted={setSent}
+            onSubmittingChange={setSubmitting}
           />
         )}
       </div>

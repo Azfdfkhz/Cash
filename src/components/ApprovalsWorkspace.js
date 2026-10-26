@@ -564,7 +564,12 @@ function ApprovalsWorkspaceInner({
             modals.close();
           }}
           // Dialog persetujuan ditutup, hanya modal Detail yang tampil.
-          onViewDetail={() => modals.open(MODAL.DETAIL, { ca: decision.ca })}
+          onViewDetail={() =>
+            modals.open(MODAL.DETAIL, {
+              ca: decision.ca,
+              focus: decision.step === "disburse" ? "pencairan" : null,
+            })
+          }
         />
       )}
 
@@ -575,6 +580,7 @@ function ApprovalsWorkspaceInner({
           onClose={() => modals.close(MODAL.DETAIL)}
           currentUserId={currentUserId}
           isOperational
+          initialFocus={detailModal.focus ?? null}
         />
       )}
 

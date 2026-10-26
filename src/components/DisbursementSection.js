@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, CalendarCheck, Check, CheckCircle2, Copy, Eye, FileText, Upload, UserRound } from "lucide-react";
+import { AlertCircle, Banknote, CalendarCheck, Check, CheckCircle2, Copy, Eye, FileText, Upload, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toJpegFile } from "@/lib/imageConvert";
 import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
@@ -80,6 +80,9 @@ export default function DisbursementSection({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
+  // Bukti belum dilampirkan: pesan tampil tepat di bawah kotak unggah.
+  const [missingProof, setMissingProof] = useState(false);
+  const proofBoxRef = useRef(null);
   // Ref sinkron: cegah klik ganda super cepat pada tombol konfirmasi
   // mencairkan dana dua kali sebelum `saving` membuatnya disabled.
   const busyRef = useRef(false);
@@ -160,7 +163,8 @@ export default function DisbursementSection({
     e.preventDefault();
     setError("");
     if (!file) {
-      setError("Unggah bukti transfer pencairan terlebih dahulu.");
+      setMissingProof(true);
+      proofBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setConfirming(true);
@@ -260,9 +264,15 @@ export default function DisbursementSection({
       )}
 
       <button
+        ref={proofBoxRef}
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-lg py-4 text-sm text-slate-600"
+        aria-invalid={missingProof ? "true" : undefined}
+        className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-lg py-4 text-sm ${
+          missingProof
+            ? "border-rose-400 bg-rose-50/40 text-rose-700 ring-2 ring-rose-200"
+            : "border-slate-300 text-slate-600"
+        }`}
       >
         {file ? (
           <>
@@ -275,6 +285,13 @@ export default function DisbursementSection({
           </>
         )}
       </button>
+      {missingProof && !file && (
+        <p role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
+          <AlertCircle size={14} className="mt-px shrink-0" />
+          Bukti transfer belum dilampirkan. Pilih foto atau PDF bukti transfer dulu sebelum
+          konfirmasi.
+        </p>
+      )}
       <LocalFilePreview file={file} />
       <input
         ref={fileInputRef}
@@ -283,6 +300,7 @@ export default function DisbursementSection({
         onChange={async (e) => {
           const raw = e.target.files?.[0];
           e.target.value = "";
+          setMissingProof(false);
           setFile(raw ? await toJpegFile(raw) : null);
         }}
         className="hidden"
@@ -298,9 +316,8 @@ export default function DisbursementSection({
 
       <button
         type="submit"
-        disabled={saving || !file}
-        title={!file ? "Unggah bukti transfer dulu" : undefined}
-        className="w-full flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg py-2.5 lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
+        disabled={saving}
+        className="w-full flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-dark disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg py-2.5 lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
       >
         <Banknote size={16} />
         {saving

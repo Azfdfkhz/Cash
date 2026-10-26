@@ -124,86 +124,98 @@ export default function ReceiptCard({
 
   const previewTitle = `Kwitansi ${receipt.vendor || ""}`.trim();
 
+  const detailLine = (line) =>
+    [lineLabel(line), !isReimbursement && !line.outside_rab ? lineDetail(line) : null, line.notes]
+      .filter(Boolean)
+      .join(" · ");
+
   return (
-    <div className="space-y-3 py-4 first:pt-0 last:pb-0">
-      <div className="flex items-start gap-3">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="flex items-start gap-3.5 p-4">
         {receipt.drive_view_url && (
-          <DriveInlinePreview url={receipt.drive_view_url} title={previewTitle} variant="thumb" />
+          <DriveInlinePreview
+            url={receipt.drive_view_url}
+            title={previewTitle}
+            variant="thumb"
+            className="!h-20 !w-20 !rounded-xl"
+          />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-semibold text-slate-900">
+              <p className="break-words text-sm font-bold leading-snug text-slate-900">
                 {receipt.vendor || "Kwitansi"}
               </p>
-              <p className="text-xs text-slate-600">
+              <p className="mt-0.5 text-xs text-slate-600">
                 {formatDate(receipt.receipt_date || receipt.created_at)}
                 {split && ` · dibagi ${savedLines.length} rincian`}
               </p>
             </div>
-            <p className="shrink-0 text-[15px] font-bold text-slate-900">
+            <p className="shrink-0 text-base font-extrabold tabular-nums tracking-tight text-slate-900">
               {formatCurrency(receipt.amount)}
             </p>
           </div>
-
-          {split ? (
-            <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2">
-              {savedLines.map((line) => (
-                <li key={line.id} className="flex justify-between gap-2 text-xs">
-                  <span className={`truncate ${line.outside_rab ? "text-amber-700" : "text-brand"}`}>
-                    {lineLabel(line)}
-                    {lineDetail(line) && ` · ${lineDetail(line)}`}
-                    {line.notes ? ` · ${line.notes}` : ""}
-                  </span>
-                  <span className="shrink-0 text-slate-600">{formatCurrency(line.amount)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            lineLabel(savedLines[0]) && (
-              <p
-                className={`mt-1.5 truncate text-xs ${
-                  savedLines[0].outside_rab ? "text-amber-700" : "text-brand"
-                }`}
-              >
-                {lineLabel(savedLines[0])}
-                {lineDetail(savedLines[0]) && ` · ${lineDetail(savedLines[0])}`}
-              </p>
-            )
-          )}
-          {!split && savedLines[0].notes && (
-            <p className="mt-0.5 truncate text-xs text-slate-600">{savedLines[0].notes}</p>
-          )}
-          {receipt.notes && receipt.notes !== savedLines[0].notes && (
-            <p className="mt-0.5 truncate text-xs text-slate-600">{receipt.notes}</p>
-          )}
 
           {receipt.drive_view_url && (
             <FilePreviewLink
               url={receipt.drive_view_url}
               title={previewTitle}
-              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+              className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
-              Lihat bukti <Eye size={12} />
+              <Eye size={13} /> Lihat bukti
             </FilePreviewLink>
           )}
         </div>
       </div>
 
+      {(split || lineLabel(savedLines[0]) || savedLines[0].notes || receipt.notes) && (
+        <div className="space-y-1.5 border-t border-slate-100 bg-slate-50/70 px-4 py-3">
+          {split
+            ? savedLines.map((line) => (
+                <div key={line.id} className="flex items-start justify-between gap-3 text-xs">
+                  <span
+                    className={`min-w-0 break-words leading-relaxed ${
+                      line.outside_rab ? "text-amber-700" : "text-slate-700"
+                    }`}
+                  >
+                    {detailLine(line)}
+                  </span>
+                  <span className="shrink-0 font-semibold tabular-nums text-slate-900">
+                    {formatCurrency(line.amount)}
+                  </span>
+                </div>
+              ))
+            : detailLine(savedLines[0]) && (
+                <p
+                  className={`break-words text-xs leading-relaxed ${
+                    savedLines[0].outside_rab ? "text-amber-700" : "text-slate-700"
+                  }`}
+                >
+                  {detailLine(savedLines[0])}
+                </p>
+              )}
+          {receipt.notes && receipt.notes !== savedLines[0].notes && (
+            <p className="break-words text-xs italic leading-relaxed text-slate-600">
+              {receipt.notes}
+            </p>
+          )}
+        </div>
+      )}
+
       {error && (
-        <div role="alert" className="font-medium text-xs text-rose-800 bg-rose-50 rounded-md px-3 py-2">
+        <div role="alert" className="mx-4 mb-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800">
           {error}
         </div>
       )}
 
       {canModify && mode === "view" && (
-        <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
+        <div className="flex justify-end gap-2 border-t border-slate-100 px-4 py-2.5">
           <button
             type="button"
             onClick={startEdit}
-            className="inline-flex items-center gap-1 text-xs font-medium text-brand"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
           >
-            <Pencil size={13} /> Edit
+            <Pencil size={12} /> Edit
           </button>
           <button
             type="button"
@@ -211,22 +223,22 @@ export default function ReceiptCard({
               setError("");
               setMode("confirm-delete");
             }}
-            className="inline-flex items-center gap-1 text-xs font-medium text-rose-600"
+            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 px-3.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50"
           >
-            <Trash2 size={13} /> Hapus
+            <Trash2 size={12} /> Hapus
           </button>
         </div>
       )}
 
       {mode === "confirm-delete" && (
-        <div className="flex items-center justify-between gap-2 rounded-md bg-rose-50 px-3 py-2">
-          <p className="text-xs text-rose-800">Hapus kwitansi ini?</p>
-          <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-rose-100 bg-rose-50 px-4 py-3">
+          <p className="text-xs font-semibold text-rose-800">Hapus kwitansi ini?</p>
+          <div className="flex shrink-0 gap-2">
             <button
               type="button"
               onClick={() => setMode("view")}
               disabled={saving}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700"
+              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700"
             >
               Batal
             </button>
@@ -234,7 +246,7 @@ export default function ReceiptCard({
               type="button"
               onClick={handleDelete}
               disabled={saving}
-              className="rounded-lg bg-rose-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+              className="rounded-full bg-rose-600 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-60"
             >
               {saving ? "Menghapus..." : "Ya, Hapus"}
             </button>
@@ -243,7 +255,7 @@ export default function ReceiptCard({
       )}
 
       {mode === "edit" && (
-        <form onSubmit={handleSave} className="border-t border-slate-100 pt-3 space-y-2">
+        <form onSubmit={handleSave} className="space-y-2 border-t border-slate-100 bg-slate-50/50 p-4">
           <div className="grid grid-cols-2 gap-2">
             <label className="block col-span-2">
               <span className="text-xs text-slate-600">Nominal Kwitansi (Rp)</span>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Download, Eye, FileText, Upload } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, Copy, Download, Eye, FileText, Hourglass, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
 import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
@@ -175,6 +175,8 @@ export default function ReturnsSection({
   // Dipanggil setelah pengembalian tersimpan (dipakai ReturnPopup untuk
   // menampilkan status pengembalian).
   onReturnSubmitted,
+  // Dipanggil true/false selama bukti pengembalian dikirim (pop up menampilkan loading).
+  onSubmittingChange,
 }) {
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -189,6 +191,18 @@ export default function ReturnsSection({
   const [closing, setClosing] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [error, setError] = useState("");
+  // Bukti belum dilampirkan: pesan tampil tepat di bawah kotak unggah.
+  const [proofError, setProofError] = useState("");
+  const [reimburseProofError, setReimburseProofError] = useState("");
+  const proofBoxRef = useRef(null);
+  const reimburseBoxRef = useRef(null);
+  // Konfirmasi dua langkah untuk aksi pada baris pengembalian: { id, type }.
+  const [rowAction, setRowAction] = useState(null);
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    onSubmittingChange?.(submitting);
+  }, [submitting, onSubmittingChange]);
 
   const reimburseFileInputRef = useRef(null);
   const [reimburseFile, setReimburseFile] = useState(null);
@@ -221,6 +235,7 @@ export default function ReturnsSection({
     e.preventDefault();
     if (submitBusyRef.current) return;
     setError("");
+    setProofError("");
 
     const numericAmount = Number(amount);
     if (!numericAmount || numericAmount <= 0) {
@@ -232,7 +247,8 @@ export default function ReturnsSection({
       return;
     }
     if (!file) {
-      setError("Silakan lampirkan foto/bukti transfer.");
+      setProofError("Bukti transfer belum dilampirkan. Unggah foto atau PDF bukti transfer dulu, lalu kirim lagi.");
+      proofBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -292,6 +308,7 @@ export default function ReturnsSection({
     e.preventDefault();
     if (reimburseBusyRef.current) return;
     setError("");
+    setReimburseProofError("");
 
     const numericAmount = Number(reimburseAmount);
     if (!numericAmount || numericAmount <= 0) {
@@ -299,7 +316,8 @@ export default function ReturnsSection({
       return;
     }
     if (!reimburseFile) {
-      setError("Silakan lampirkan foto/bukti transfer.");
+      setReimburseProofError("Bukti transfer belum dilampirkan. Unggah foto bukti transfer dulu, lalu simpan lagi.");
+      reimburseBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -381,10 +399,12 @@ export default function ReturnsSection({
       .is("confirmed_at", null)
       .select("id");
     setConfirmingId(null);
+    setRowAction(null);
     if (deleteError || !data?.length) {
       setError("Gagal membatalkan pengembalian.");
       return;
     }
+    setSuccess("Pengembalian dibatalkan.");
     router.refresh();
   }
 
@@ -399,6 +419,7 @@ export default function ReturnsSection({
     }
     confirmBusyRef.current = true;
     setError("");
+    setSuccess("");
     setConfirmingId(returnId);
 
     const supabase = createClient();
@@ -429,6 +450,14 @@ export default function ReturnsSection({
     }
 
     setConfirmingId(null);
+    confirmBusyRef.current = false;
+    setRowAction(null);
+    const done = returns?.find((r) => r.id === returnId);
+    setSuccess(
+      done
+        ? `Pengembalian ${formatCurrency(done.amount)} berhasil dikonfirmasi.`
+        : "Pengembalian berhasil dikonfirmasi."
+    );
     router.refresh();
   }
 
@@ -548,76 +577,172 @@ export default function ReturnsSection({
             </div>
           )}
 
+          {success && (
+            <div
+              role="status"
+              className="mb-3 flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-sm font-semibold text-emerald-800"
+            >
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+              {success}
+            </div>
+          )}
+
           {hasReturns && (
-            <div className="mb-2">
-              {returns.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-center gap-3 border-t border-slate-200 py-3 first:border-t-0"
-                >
-                  {r.proof_drive_view_url && (
-                    <DriveInlinePreview
-                      url={r.proof_drive_view_url}
-                      title={`Bukti transfer ${formatCurrency(r.amount)}`}
-                      variant="thumb"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900">
-                      {formatCurrency(r.amount)}
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      {formatDate(r.return_date ?? r.created_at)}
-                      {r.note ? ` · ${r.note}` : ""}
-                    </p>
-                    {r.proof_drive_view_url && (
-                      <FilePreviewLink
-                        url={r.proof_drive_view_url}
-                        title={`Bukti transfer ${formatCurrency(r.amount)}`}
-                        className="text-xs text-brand inline-flex items-center gap-1 mt-1"
-                      >
-                        Lihat bukti <Eye size={12} />
-                      </FilePreviewLink>
+            <div className="mb-2 space-y-3">
+              {returns.map((r) => {
+                const canAct = !r.confirmed_at && isOperational && !isOwner;
+                const canCancel = !r.confirmed_at && (isOwner || isOperational);
+                const acting = rowAction?.id === r.id ? rowAction.type : null;
+                const busy = confirmingId === r.id;
+                const proofTitle = `Bukti transfer ${formatCurrency(r.amount)}`;
+                return (
+                  <div
+                    key={r.id}
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                  >
+                    <div className="flex items-start gap-3 p-3.5">
+                      {r.proof_drive_view_url && (
+                        <DriveInlinePreview
+                          url={r.proof_drive_view_url}
+                          title={proofTitle}
+                          variant="thumb"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+                          <p className="text-lg font-extrabold tabular-nums leading-tight tracking-tight text-slate-900">
+                            {formatCurrency(r.amount)}
+                          </p>
+                          {r.confirmed_at ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                              <CheckCircle2 size={12} /> Terkonfirmasi
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700">
+                              <Hourglass size={12} /> Menunggu konfirmasi
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Dikembalikan {formatDate(r.return_date ?? r.created_at)}
+                        </p>
+                        {r.note && (
+                          <p className="mt-1 break-words rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs leading-relaxed text-slate-700">
+                            {r.note}
+                          </p>
+                        )}
+                        {r.proof_drive_view_url && (
+                          <FilePreviewLink
+                            url={r.proof_drive_view_url}
+                            title={proofTitle}
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand hover:underline"
+                          >
+                            Lihat bukti <Eye size={12} />
+                          </FilePreviewLink>
+                        )}
+                      </div>
+                    </div>
+
+                    {!r.confirmed_at && isOperational && isOwner && (
+                      <p className="border-t border-slate-100 bg-slate-50 px-3.5 py-2.5 text-xs leading-relaxed text-slate-600">
+                        Anda tidak bisa mengonfirmasi pengembalian atas pengajuan Anda sendiri.
+                        Minta Tim Operasional lain.
+                      </p>
+                    )}
+
+                    {acting === "confirm" && (
+                      <div className="space-y-3 border-t border-emerald-100 bg-emerald-50/70 px-3.5 py-3">
+                        <p className="text-xs leading-relaxed text-emerald-900">
+                          Pastikan dana{" "}
+                          <span className="font-bold">{formatCurrency(r.amount)}</span> sudah masuk
+                          ke rekening perusahaan dan sesuai bukti transfer. Konfirmasi tidak bisa
+                          dibatalkan.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setRowAction(null)}
+                            disabled={busy}
+                            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            Periksa lagi
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleConfirm(r.id)}
+                            disabled={busy}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            <Check size={13} strokeWidth={3} />
+                            {busy ? "Mengonfirmasi..." : "Ya, dana sudah diterima"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {acting === "cancel" && (
+                      <div className="space-y-3 border-t border-rose-100 bg-rose-50/70 px-3.5 py-3">
+                        <p className="text-xs leading-relaxed text-rose-900">
+                          Batalkan pengembalian {formatCurrency(r.amount)}? Catatan ini akan
+                          dihapus dan bisa dicatat ulang.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setRowAction(null)}
+                            disabled={busy}
+                            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            Tidak
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCancelReturn(r.id)}
+                            disabled={busy}
+                            className="rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-60"
+                          >
+                            {busy ? "Membatalkan..." : "Ya, batalkan"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!acting && (canAct || canCancel) && (
+                      <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-3.5 py-2.5">
+                        {canCancel ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setError("");
+                              setSuccess("");
+                              setRowAction({ id: r.id, type: "cancel" });
+                            }}
+                            className="text-xs font-bold text-rose-600 hover:underline"
+                          >
+                            Batalkan
+                          </button>
+                        ) : (
+                          <span />
+                        )}
+                        {canAct && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setError("");
+                              setSuccess("");
+                              setRowAction({ id: r.id, type: "confirm" });
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800"
+                          >
+                            <Check size={13} strokeWidth={3} />
+                            Konfirmasi Pengembalian
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <div className="shrink-0 flex flex-col items-end gap-1.5">
-                    {r.confirmed_at ? (
-                      <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
-                        Terkonfirmasi
-                      </span>
-                    ) : isOperational && !isOwner ? (
-                      <button
-                        onClick={() => handleConfirm(r.id)}
-                        disabled={confirmingId === r.id}
-                        className="flex items-center gap-1 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-lg px-2.5 py-1.5"
-                      >
-                        <Check size={12} />
-                        {confirmingId === r.id ? "..." : "Konfirmasi"}
-                      </button>
-                    ) : (
-                      <span
-                        className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1"
-                        title={
-                          isOperational && isOwner
-                            ? "Tidak bisa mengonfirmasi pengembalian atas pengajuan Anda sendiri. Minta Tim Operasional lain."
-                            : undefined
-                        }
-                      >
-                        Menunggu konfirmasi
-                      </span>
-                    )}
-                    {!r.confirmed_at && (isOwner || isOperational) && (
-                      <button
-                        onClick={() => handleCancelReturn(r.id)}
-                        disabled={confirmingId === r.id}
-                        className="text-xs font-medium text-rose-600 disabled:opacity-60"
-                      >
-                        Batalkan
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -694,7 +819,7 @@ export default function ReturnsSection({
         </div>
       )}
 
-      {error && (
+      {error && !showReturnForm && (
         <div role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
@@ -801,9 +926,13 @@ export default function ReturnsSection({
           <div className="space-y-2.5">
             <label className="block text-sm font-bold text-slate-900">Bukti Transfer Bank</label>
             <button
+              ref={proofBoxRef}
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-left hover:border-slate-400 hover:bg-slate-50"
+              aria-invalid={proofError ? "true" : undefined}
+              className={`flex w-full items-center gap-4 rounded-2xl border border-dashed bg-white px-4 py-4 text-left hover:bg-slate-50 ${
+                proofError ? "border-rose-400 bg-rose-50/40 ring-2 ring-rose-200" : "border-slate-300 hover:border-slate-400"
+              }`}
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                 {file ? <FileText size={20} /> : <Upload size={20} />}
@@ -834,10 +963,17 @@ export default function ReturnsSection({
                   return;
                 }
                 setError("");
+                setProofError("");
                 setFile(converted);
               }}
               className="hidden"
             />
+            {proofError && (
+              <p role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
+                <AlertCircle size={14} className="mt-px shrink-0" />
+                {proofError}
+              </p>
+            )}
             <LocalFilePreview file={file} className="mt-1" />
           </div>
 
@@ -857,7 +993,13 @@ export default function ReturnsSection({
           </div>
 
           {/* Tombol kirim menempel di bawah area gulir */}
-          <div className="sticky bottom-0 z-10 -mx-6 -mb-5 border-t border-slate-100 bg-white px-6 py-4">
+          <div className="sticky bottom-0 z-10 -mx-6 -mb-5 space-y-2 border-t border-slate-100 bg-white px-6 py-4">
+            {(error || proofError) && (
+              <p role="alert" className="flex items-start gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                <AlertCircle size={14} className="mt-px shrink-0" />
+                {error || "Bukti transfer belum dilampirkan."}
+              </p>
+            )}
             <button
               type="submit"
               disabled={submitting}
@@ -904,9 +1046,12 @@ export default function ReturnsSection({
               Bukti Transfer
             </label>
             <button
+              ref={reimburseBoxRef}
               type="button"
               onClick={() => reimburseFileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-4 text-slate-600 text-sm"
+              className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-4 text-sm ${
+                reimburseProofError ? "border-rose-400 bg-rose-50/40 text-rose-700" : "border-slate-300 text-slate-600"
+              }`}
             >
               <Upload size={16} />
               {reimburseFile ? reimburseFile.name : "Unggah foto bukti transfer"}
@@ -918,10 +1063,17 @@ export default function ReturnsSection({
               onChange={async (e) => {
                 const raw = e.target.files?.[0];
                 e.target.value = "";
+                setReimburseProofError("");
                 setReimburseFile(raw ? await toJpegFile(raw) : null);
               }}
               className="hidden"
             />
+            {reimburseProofError && (
+              <p role="alert" className="mt-2 flex items-start gap-1.5 text-xs font-semibold text-rose-700">
+                <AlertCircle size={14} className="mt-px shrink-0" />
+                {reimburseProofError}
+              </p>
+            )}
             <LocalFilePreview file={reimburseFile} className="mt-2" />
           </div>
           <button

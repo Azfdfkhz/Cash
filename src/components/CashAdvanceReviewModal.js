@@ -579,7 +579,7 @@ function CashAdvanceReviewModalContent({
               </button>
               <button
                 type="button"
-                onClick={() => modals.open(MODAL.DETAIL, { focus: null })}
+                onClick={() => modals.open(MODAL.DETAIL, { focus: "pencairan" })}
                 className="flex items-center justify-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
               >
                 <Eye size={14} strokeWidth={2.25} />
@@ -685,7 +685,12 @@ function CashAdvanceReviewModalContent({
             onGoNext?.();
           }}
           // Modal persetujuan ditutup, hanya modal Detail yang tampil.
-          onViewDetail={() => modals.open(MODAL.DETAIL, { focus: null })}
+          // Setelah disetujui, "Lihat" langsung ke bagian Cairkan Dana.
+          onViewDetail={() =>
+            modals.open(MODAL.DETAIL, {
+              focus: decisionStep === "disburse" ? "pencairan" : null,
+            })
+          }
         />
       )}
       {reopenOpen && (

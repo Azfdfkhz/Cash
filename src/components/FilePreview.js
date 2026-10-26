@@ -19,44 +19,91 @@ export function fileDownloadHref(url, name) {
   return `/api/files/${id}?${q}`;
 }
 
+// Cache unduhan per file (promise): thumbnail + pop up layar penuh memakai file
+// yang sama, jadi server/Drive tidak dipanggil berkali-kali. Yang gagal
+// langsung dibuang dari cache supaya "Coba lagi" benar-benar mengambil ulang.
+const blobCache = new Map();
+
+function fetchFileBlob(fileId, { fresh = false } = {}) {
+  if (!fresh && blobCache.has(fileId)) return blobCache.get(fileId);
+  const task = (async () => {
+    let lastErr;
+    // Satu kali ulang otomatis untuk gangguan sesaat (Drive lambat/timeout).
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(`/api/files/${fileId}`, { credentials: "same-origin" });
+        if (!res.ok) {
+          const err = new Error(`HTTP ${res.status}`);
+          err.status = res.status;
+          // 401/403/404/429 tidak akan berubah dengan mengulang langsung.
+          if ([401, 403, 404, 429].includes(res.status)) throw Object.assign(err, { final: true });
+          throw err;
+        }
+        const blob = await res.blob();
+        if (!blob.size) throw new Error("File kosong");
+        return blob;
+      } catch (err) {
+        lastErr = err;
+        if (err.final) break;
+        await new Promise((r) => setTimeout(r, 600));
+      }
+    }
+    throw lastErr;
+  })();
+  blobCache.set(fileId, task);
+  task.catch(() => {
+    if (blobCache.get(fileId) === task) blobCache.delete(fileId);
+  });
+  return task;
+}
+
 // Muat file bukti Drive lewat /api/files (server, dicek aksesnya) dan siapkan
 // untuk ditampilkan di aplikasi: PDF dirender per halaman dengan pdf.js,
-// foto ditampilkan apa adanya. Hasil: { status, pages, pageCount }.
+// foto ditampilkan apa adanya. Hasil: { status, pages, pageCount, retry }.
 function useAppFile(url, { enabled = true, maxPages = 30, width = 1400 } = {}) {
   const fileId = driveFileId(url);
   const key = `${fileId}:${maxPages}:${width}`;
   const [result, setResult] = useState({ key: null });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!enabled || !fileId) return;
     let cancelled = false;
-    const objectUrls = [];
+    let objectUrl = null;
     (async () => {
       try {
-        const res = await fetch(`/api/files/${fileId}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        if (blob.type === "application/pdf") {
+        const blob = await fetchFileBlob(fileId, { fresh: attempt > 0 });
+        const isPdf = blob.type === "application/pdf";
+        if (isPdf) {
           const { pages, pageCount } = await renderPdfPreview(blob, { maxPages, width });
           if (!cancelled) setResult({ key, status: "ready", pages, pageCount });
         } else {
-          const src = URL.createObjectURL(blob);
-          objectUrls.push(src);
-          if (!cancelled) setResult({ key, status: "ready", pages: [src], pageCount: 1 });
+          // Dibuat per pemakai & hanya dicabut saat komponen dilepas, bukan
+          // di tengah jalan (gambar yang sudah tampil tidak boleh rusak).
+          objectUrl = URL.createObjectURL(blob);
+          if (!cancelled) setResult({ key, status: "ready", pages: [objectUrl], pageCount: 1 });
         }
       } catch (err) {
         console.error("App file preview failed", fileId, err);
-        if (!cancelled) setResult({ key, status: "error" });
+        if (!cancelled) setResult({ key, status: "error", httpStatus: err?.status ?? null });
       }
     })();
     return () => {
       cancelled = true;
-      objectUrls.forEach((u) => URL.revokeObjectURL(u));
+      // Tunda pencabutan supaya gambar yang sedang dirender tidak putus.
+      if (objectUrl) {
+        const u = objectUrl;
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+      }
     };
-  }, [enabled, fileId, key, maxPages, width]);
+  }, [enabled, fileId, key, maxPages, width, attempt]);
 
   if (!fileId) return { status: "error" };
-  return result.key === key ? result : { status: "loading" };
+  if (result.key !== key) return { status: "loading" };
+  return { ...result, retry: () => {
+    setResult({ key: null });
+    setAttempt((n) => n + 1);
+  } };
 }
 
 function AppFileViewer({ url, title, downloadHref }) {
@@ -76,8 +123,23 @@ function AppFileViewer({ url, title, downloadHref }) {
         className="h-full flex flex-col items-center justify-center gap-3 px-4 text-center text-sm text-white/80"
       >
         <FileText size={28} aria-hidden="true" />
-        <p>File gagal dimuat. Coba lagi nanti, atau unduh / buka file aslinya.</p>
+        <p>
+          {file.httpStatus === 429
+            ? "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi."
+            : file.httpStatus === 404
+              ? "File tidak ditemukan atau Anda tidak punya akses."
+              : "File gagal dimuat. Coba lagi, atau unduh / buka file aslinya."}
+        </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
+          {file.retry && (
+            <button
+              type="button"
+              onClick={file.retry}
+              className="inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-white/90"
+            >
+              Coba lagi
+            </button>
+          )}
           {downloadHref && (
             <a
               href={downloadHref}
