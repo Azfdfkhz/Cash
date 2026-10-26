@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Camera, Eye, FileText, Loader2, ScanLine } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,7 +30,13 @@ export default function ScanForm({
   onDone,
   // Memberi tahu pop up pembungkus bahwa ada file/isian yang belum disimpan.
   onDirtyChange,
+  // Pop up: tombol Simpan dirender di footer pop up (tetap terlihat saat form
+  // di-scroll) lewat portal ke elemen `submitSlot`; `onScannedChange` memberi
+  // tahu pop up kapan form sudah tampil.
+  submitSlot = null,
+  onScannedChange,
 }) {
+  const formId = useId();
   const isReimbursement = kind === "reimbursement";
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -72,6 +79,9 @@ export default function ScanForm({
   const [error, setError] = useState("");
   const [scanned, setScanned] = useState(false);
   const [scanOk, setScanOk] = useState(false);
+  useEffect(() => {
+    onScannedChange?.(scanned);
+  }, [scanned, onScannedChange]);
 
   const [amount, setAmount] = useState("");
   const [vendor, setVendor] = useState("");
@@ -136,6 +146,20 @@ export default function ScanForm({
       setScanning(false);
     }
   }
+
+  // Alasan tombol Simpan belum aktif (kosong = semua kolom wajib sudah terisi).
+  const missing = (() => {
+    if (!file) return "Pilih foto atau PDF kwitansi dulu.";
+    const n = Number(amount);
+    if (!n || n <= 0) return "Isi nominal kwitansi.";
+    try {
+      toLinesPayload(lines, { kind, total: n, requirePos: rabItems.length > 0 });
+    } catch (err) {
+      return err.message;
+    }
+    return "";
+  })();
+  const ready = !missing && !scanning;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -242,7 +266,7 @@ export default function ScanForm({
         }
       >
         {/* Pratinjau (kanan di desktop) */}
-        <div className={embedded ? "@2xl:col-start-2 @2xl:row-start-1" : "lg:col-start-2 lg:row-start-1"}>
+        <div className={embedded ? "@2xl:sticky @2xl:top-0 @2xl:col-start-1 @2xl:row-start-1" : "lg:col-start-2 lg:row-start-1"}>
           {preparing ? (
             <div className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-2xl py-14 text-slate-600">
               <Loader2 size={28} className="animate-spin" />
@@ -359,7 +383,7 @@ export default function ScanForm({
 
 
         {/* Form (kiri di desktop) */}
-        <div className={`space-y-4 ${embedded ? "@2xl:col-start-1 @2xl:row-start-1" : "lg:col-start-1 lg:row-start-1"}`}>
+        <div className={`space-y-4 ${embedded ? "@2xl:col-start-2 @2xl:row-start-1" : "lg:col-start-1 lg:row-start-1"}`}>
           {error && (
             <div role="alert" className="text-sm font-medium text-rose-800 bg-rose-50 border border-rose-300 rounded-lg px-3 py-2">
               {error}
@@ -368,13 +392,15 @@ export default function ScanForm({
 
           {!scanned && (
             <div className={`hidden rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600 ${embedded ? "@2xl:block" : "lg:block"}`}>
-              Pilih foto atau PDF kwitansi di panel kanan. Nominal, vendor, dan
+              Pilih foto atau PDF kwitansi di panel {embedded ? "kiri" : "kanan"}. Nominal, vendor, dan
               tanggal akan terisi otomatis.
             </div>
           )}
 
           {scanned && (
             <form
+              id={formId}
+              noValidate
               onSubmit={handleSubmit}
               className={
                 embedded
@@ -404,8 +430,8 @@ export default function ScanForm({
                   onValueChange={setAmount}
                   className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand ${embedded ? "@2xl:font-semibold" : "lg:font-semibold"}`}
                 />
-                {balance !== null && !isReimbursement && (
-                  <p className={`mt-1.5 hidden text-xs text-slate-600 ${embedded ? "@2xl:block" : "lg:block"}`}>
+                {balance !== null && !isReimbursement && !embedded && (
+                  <p className="mt-1.5 hidden text-xs text-slate-600 lg:block">
                     Sisa pagu saldo saat ini: {formatCurrency(balance)}
                   </p>
                 )}
@@ -454,30 +480,57 @@ export default function ScanForm({
                 />
               </div>
 
-              <div className={`flex gap-3 ${embedded ? "@2xl:pt-4" : "lg:pt-4"}`}>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`hidden flex-1 rounded-full border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 ${embedded ? "@2xl:block" : "lg:block"}`}
-                >
-                  Ganti File
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || scanning}
-                  className={`flex-1 bg-brand hover:bg-brand-dark disabled:opacity-60 text-white font-medium rounded-lg py-2.5 transition-colors ${
-                    embedded
-                      ? "@2xl:rounded-full @2xl:bg-dark-navy @2xl:font-semibold @2xl:hover:bg-slate-800"
-                      : "lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"
-                  }`}
-                >
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
+              {!embedded || (!submitSlot && !onScannedChange) ? (
+                <div className={embedded ? "pt-1" : "flex gap-3 lg:pt-4"}>
+                  {!embedded && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="hidden flex-1 rounded-full border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 lg:block"
+                    >
+                      Ganti File
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={saving || scanning}
+                    className={`flex-1 rounded-full py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                      ready
+                        ? "bg-dark-navy text-white hover:bg-slate-800"
+                        : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {saving ? "Menyimpan..." : "Simpan Kwitansi"}
+                  </button>
+                </div>
+              ) : null}
             </form>
           )}
         </div>
       </div>
+      {embedded &&
+        submitSlot &&
+        scanned &&
+        createPortal(
+          <div>
+            {!ready && !saving && missing && (
+              <p className="mb-2 text-center text-xs font-medium text-amber-700">{missing}</p>
+            )}
+            <button
+              type="submit"
+              form={formId}
+              disabled={saving || scanning}
+              className={`w-full rounded-full py-3 text-sm font-bold transition-colors disabled:cursor-not-allowed ${
+                ready || saving
+                  ? "bg-dark-navy text-white hover:bg-slate-800 disabled:opacity-60"
+                  : "bg-slate-200 text-slate-500"
+              }`}
+            >
+              {saving ? "Menyimpan..." : "Simpan Kwitansi"}
+            </button>
+          </div>,
+          submitSlot
+        )}
     </div>
   );
 }

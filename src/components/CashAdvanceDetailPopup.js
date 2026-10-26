@@ -10,6 +10,7 @@ import RabSection from "@/components/RabSection";
 import ResubmitPanel from "@/components/ResubmitPanel";
 import DisbursementSection from "@/components/DisbursementSection";
 import ReturnsSection from "@/components/ReturnsSection";
+import ReopenNotice from "@/components/ReopenNotice";
 import ReceiptCard from "@/components/ReceiptCard";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import ActionToast from "@/components/ActionToast";
@@ -35,6 +36,7 @@ const EVENT_LABEL = {
   rejected: "Ditolak",
   resubmitted: "Diajukan ulang",
   disbursed: "Dana dicairkan",
+  reopened: "Selesai dibatalkan (tinjau ulang)",
 };
 
 const EVENT_DOT = {
@@ -42,6 +44,7 @@ const EVENT_DOT = {
   rejected: "bg-rose-500",
   resubmitted: "bg-amber-500",
   disbursed: "bg-blue-500",
+  reopened: "bg-orange-500",
 };
 
 // Label di atas, nilai di bawah, tanpa kotak: satu kartu pembungkus cukup.
@@ -311,6 +314,8 @@ export default function CashAdvanceDetailPopup({
 
           {tab === "ringkasan" && (
             <>
+              <ReopenNotice ca={c} isOwner={isOwner} />
+
               {/* Catatan penolakan paling atas supaya requester langsung tahu apa yang direvisi */}
               {c.status === "rejected" && c.review_note && (
                 <div className="rounded-xl bg-rose-50 px-4 py-3.5">

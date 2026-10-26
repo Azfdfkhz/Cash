@@ -112,3 +112,17 @@ export async function downloadDriveThumbnail(fileId, size = 2000) {
   if (!res.ok) throw new Error(`Gagal mengambil pratinjau Drive (${res.status}).`);
   return Buffer.from(await res.arrayBuffer());
 }
+
+// Hapus file dari Drive. File yang sudah tidak ada (404) dianggap berhasil
+// supaya pembatalan "Selesai" bisa diulang tanpa macet.
+export async function deleteDriveFile(fileId) {
+  const auth = getDriveAuth();
+  const drive = google.drive({ version: "v3", auth });
+  try {
+    await drive.files.delete({ fileId, supportsAllDrives: true });
+  } catch (err) {
+    const code = err?.code ?? err?.response?.status;
+    if (code === 404) return;
+    throw err;
+  }
+}

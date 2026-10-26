@@ -22,6 +22,8 @@ import StatusBadge from "@/components/StatusBadge";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import ReturnPopup from "@/components/ReturnPopup";
+import ReopenDialog from "@/components/ReopenDialog";
+import ReopenNotice from "@/components/ReopenNotice";
 import DisbursementSection from "@/components/DisbursementSection";
 import ActionToast from "@/components/ActionToast";
 import { useModalState } from "@/lib/useModalState";
@@ -87,6 +89,7 @@ function CashAdvanceReviewModalContent({
   // decision.step: "disburse" (tanya cairkan sekarang/nanti) -> "continue" (tanya lanjut).
   const modals = useModalState(startWithDetail ? { name: MODAL.DETAIL, focus: null } : null);
   const [decidedHere, setDecidedHere] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
   // Hasil aksi (berhasil/gagal) yang tampil setelah sebuah modal tertutup.
   const [notice, setNotice] = useState(null);
   const overlayRef = useRef(null);
@@ -112,8 +115,8 @@ function CashAdvanceReviewModalContent({
   const disburseInline = canReview && awaitingTransfer && !isOwner;
   // Requester sudah mencatat pengembalian sisa saldo, belum dikonfirmasi operasional.
   const pendingReturn = ca.status === "approved" && hasPendingReturn(ca);
-  // Requester boleh mengembalikan sisa saldo dari pop up Catat kwitansi.
-  const canReturnRemainder = isOwner && ca.status === "approved" && !isReimbursement;
+  // Ops (bukan pemilik) boleh membatalkan "Selesai" untuk tinjau ulang.
+  const canReopen = canReview && !isOwner && ca.status === "closed" && !isDemoCa(ca);
   const holderName = ca.bank_account_holder || ca.profiles?.bank_account_holder || ca.profiles?.full_name || "-";
 
   const categoryLabel =
@@ -221,7 +224,7 @@ function CashAdvanceReviewModalContent({
     return () => document.removeEventListener("keydown", onKey);
     // Handler dibuat ulang tiap render; dependensi cukup state yang menentukan cabang.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeName, decisionStep, loading, onClose, nextPendingCount]);
+  }, [activeName, decisionStep, loading, onClose, nextPendingCount, reopenOpen]);
 
   function handleOverlayClick(e) {
     if (e.target === overlayRef.current && !activeName) {
@@ -312,6 +315,7 @@ function CashAdvanceReviewModalContent({
                 : "Pengajuan ditolak."}
             </div>
           )}
+          <ReopenNotice ca={ca} isOwner={isOwner} />
           {pendingReturn && (
             <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold leading-snug text-amber-800">
               <Hourglass size={14} className="mt-px shrink-0" />
@@ -406,13 +410,6 @@ function CashAdvanceReviewModalContent({
             ) : (
               <p className="text-xs text-slate-600">Tidak ada link spreadsheet.</p>
             )}
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Rincian pos RAB lengkap ada di{" "}
-              <button type="button" onClick={() => modals.open(MODAL.DETAIL, { focus: null })} className="font-semibold text-brand hover:underline">
-                Lihat Detail
-              </button>
-              .
-            </p>
           </div>
           ) : (
             <div className="text-xs text-slate-600">
@@ -546,6 +543,31 @@ function CashAdvanceReviewModalContent({
                 Catat kwitansi
               </button>
             </div>
+          ) : canReopen ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReopenOpen(true)}
+                className="mr-auto flex items-center justify-center rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100"
+              >
+                Batalkan Selesai
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => modals.open(MODAL.DETAIL, { focus: null })}
+                className="flex items-center justify-center gap-1.5 rounded-full bg-[#0f172a] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
+              >
+                <Eye size={14} strokeWidth={2.25} />
+                Lihat Detail
+              </button>
+            </div>
           ) : disburseInline ? (
             <div className="flex items-center justify-end gap-2">
               <button
@@ -620,8 +642,6 @@ function CashAdvanceReviewModalContent({
             modals.close(MODAL.SCAN);
             setNotice({ type: "success", text: "Kwitansi berhasil disimpan." });
           }}
-          onOpenDetail={() => modals.open(MODAL.DETAIL, { focus: null })}
-          onOpenReturn={canReturnRemainder ? () => modals.open(MODAL.RETURN) : undefined}
         />
       )}
       {activeName === MODAL.RETURN && (
@@ -666,6 +686,17 @@ function CashAdvanceReviewModalContent({
           }}
           // Modal persetujuan ditutup, hanya modal Detail yang tampil.
           onViewDetail={() => modals.open(MODAL.DETAIL, { focus: null })}
+        />
+      )}
+      {reopenOpen && (
+        <ReopenDialog
+          ca={ca}
+          onCancel={() => setReopenOpen(false)}
+          onDone={() => {
+            setReopenOpen(false);
+            router.refresh();
+            onClose();
+          }}
         />
       )}
       <ActionToast notice={notice} onDismiss={dismissNotice} />

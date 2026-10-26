@@ -12,20 +12,16 @@ import { formatCaCode, formatCurrency, KIND_LABEL } from "@/lib/utils";
 // supaya requester tidak pindah halaman). Data pos RAB & saldo dimuat di sini,
 // sama seperti yang dulu dimuat di halaman scan.
 //
-// Perpindahan ke modal lain TIDAK dilakukan di sini: pop up ini hanya memanggil
-// `onOpenReturn` / `onOpenDetail`, dan pemilik state modal (useModalState) yang
-// menutup pop up ini lalu membuka modal tujuan. Jadi tidak pernah ada dua modal
-// aktif sekaligus.
 //   onSaved        -- kwitansi tersimpan (pemilik state menutup pop up + menampilkan hasil)
-//   onOpenReturn   -- opsional, tombol "Kembalikan Sisa"
-//   onOpenDetail   -- opsional, tombol "Lihat Detail"
-export default function ScanReceiptPopup({ ca, onClose, onSaved, onOpenReturn, onOpenDetail }) {
+// Pop up ini sengaja hanya punya satu aksi (Simpan) supaya tidak salah kaprah
+// dengan "Kembalikan sisa" / "Lihat Detail" yang ada di panel tinjau.
+export default function ScanReceiptPopup({ ca, onClose, onSaved }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loadFailed, setLoadFailed] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  // Pindah modal saat ada isian belum tersimpan: minta konfirmasi dulu.
-  const [pendingLeave, setPendingLeave] = useState(null);
+  // Footer pop up hanya berisi tombol Simpan; muncul setelah file dipilih & dibaca.
+  const [slot, setSlot] = useState(null);
+  const [formShown, setFormShown] = useState(false);
   const isReimbursement = ca.kind === "reimbursement";
 
   useEffect(() => {
@@ -75,59 +71,6 @@ export default function ScanReceiptPopup({ ca, onClose, onSaved, onOpenReturn, o
     };
   }, [ca.id, ca.amount_requested]);
 
-  function leaveTo(action) {
-    if (dirty) setPendingLeave(() => action);
-    else action();
-  }
-
-  const footer =
-    onOpenReturn || onOpenDetail ? (
-      pendingLeave ? (
-        <div role="alertdialog" aria-label="Buang isian kwitansi?" className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-slate-900">
-            Kwitansi belum disimpan. Buang isian dan pindah?
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPendingLeave(null)}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Lanjut mengisi
-            </button>
-            <button
-              type="button"
-              onClick={() => pendingLeave()}
-              className="rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700"
-            >
-              Buang &amp; pindah
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {onOpenDetail && (
-            <button
-              type="button"
-              onClick={() => leaveTo(onOpenDetail)}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Lihat Detail
-            </button>
-          )}
-          {onOpenReturn && (
-            <button
-              type="button"
-              onClick={() => leaveTo(onOpenReturn)}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Kembalikan Sisa
-            </button>
-          )}
-        </div>
-      )
-    ) : null;
-
   return (
     <PopupShell
       label="Catat kwitansi"
@@ -145,14 +88,14 @@ export default function ScanReceiptPopup({ ca, onClose, onSaved, onOpenReturn, o
       subtitle={ca.purpose}
       headerRight={
         data?.balance != null && !isReimbursement ? (
-          <div className="hidden rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs sm:block">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
             <span className="text-slate-600">Sisa Saldo </span>
             <span className="font-bold text-slate-900">{formatCurrency(data.balance)}</span>
           </div>
         ) : null
       }
       onClose={onClose}
-      footer={footer}
+      footer={formShown ? <div ref={setSlot} /> : null}
       // Berisi isian & file yang belum disimpan: tutup lewat tombol X saja.
       closeOnBackdrop={false}
     >
@@ -178,7 +121,8 @@ export default function ScanReceiptPopup({ ca, onClose, onSaved, onOpenReturn, o
             balance={data.balance}
             embedded
             onDone={onSaved ?? onClose}
-            onDirtyChange={setDirty}
+            submitSlot={slot}
+            onScannedChange={setFormShown}
           />
         </>
       )}

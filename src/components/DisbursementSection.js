@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, Check, Copy, Eye, FileText, Upload } from "lucide-react";
+import { Banknote, CalendarCheck, Check, CheckCircle2, Copy, Eye, FileText, Upload, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toJpegFile } from "@/lib/imageConvert";
 import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
@@ -85,45 +85,61 @@ export default function DisbursementSection({
   const busyRef = useRef(false);
 
   if (disbursedAt) {
+    // Rekening tujuan tidak diulang di sini: sudah ada di "Rekening Tujuan".
     return (
-      <div className="border-t border-slate-200 pt-5">
-        <div className="flex items-start gap-3">
-          <Banknote size={20} className="text-emerald-700 shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-emerald-800">
-              {isReimbursement ? "Reimbursement sudah ditransfer" : "Dana sudah dicairkan"}
+      <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-100 px-4 py-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">
+            <CheckCircle2 size={13} strokeWidth={2.5} />
+            {isReimbursement ? "Sudah ditransfer" : "Dana sudah dicairkan"}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-900">
+            <CalendarCheck size={13} />
+            {formatDate(disbursedAt)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4 px-4 py-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-slate-600">
+              {isReimbursement ? "Nominal penggantian" : "Nominal ditransfer"}
             </p>
-            <p className="text-xs text-emerald-700 mt-0.5">
-              {formatCurrency(amount)} ke{" "}
-              {formatBankAccount({ bankName, bankAccountNumber, bankAccountHolder })}
+            <p className="mt-0.5 text-2xl font-extrabold tabular-nums tracking-tight text-slate-900">
+              {formatCurrency(amount)}
             </p>
-            <p className="text-xs text-emerald-700/80 mt-0.5">
-              {formatDate(disbursedAt)}
-              {disbursedByName ? ` oleh ${disbursedByName}` : ""}
-            </p>
-            {savedNote && (
-              <p className="text-xs text-emerald-700/80 mt-0.5">
-                Catatan: {savedNote}
+            {disbursedByName && (
+              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-600">
+                <UserRound size={13} />
+                Dicairkan oleh <span className="font-semibold text-slate-800">{disbursedByName}</span>
               </p>
             )}
-            {proofUrl && (
-              <DriveInlinePreview
-                url={proofUrl}
-                title="Bukti transfer pencairan"
-                className="mt-2"
-              />
-            )}
-            {proofUrl && (
-              <FilePreviewLink
-                url={proofUrl}
-                title="Bukti transfer pencairan"
-                className="text-xs font-medium text-emerald-800 inline-flex items-center gap-1 mt-1.5 underline"
-              >
-                Lihat bukti transfer <Eye size={12} />
-              </FilePreviewLink>
-            )}
           </div>
+          {proofUrl && (
+            <DriveInlinePreview
+              url={proofUrl}
+              title="Bukti transfer pencairan"
+              variant="thumb"
+              className="!h-24 !w-24 shadow-sm"
+            />
+          )}
         </div>
+
+        {savedNote && (
+          <p className="mx-4 mb-4 rounded-lg bg-white px-3 py-2 text-xs leading-relaxed text-slate-700 ring-1 ring-emerald-100">
+            <span className="font-semibold text-slate-900">Catatan: </span>
+            {savedNote}
+          </p>
+        )}
+
+        {proofUrl && (
+          <FilePreviewLink
+            url={proofUrl}
+            title="Bukti transfer pencairan"
+            className="flex items-center justify-center gap-1.5 border-t border-emerald-100 bg-emerald-50/60 px-4 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50"
+          >
+            <Eye size={13} /> Lihat bukti transfer
+          </FilePreviewLink>
+        )}
       </div>
     );
   }

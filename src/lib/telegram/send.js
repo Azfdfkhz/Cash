@@ -98,6 +98,24 @@ export function buildRejectionMessage({ purpose, amount, note, reviseUrl, kind, 
   return lines.join("\n");
 }
 
+export function buildReopenMessage({ purpose, amount, note, detailUrl, kind, formatCurrency }) {
+  const lines = [
+    `🔄 <b>${kindLabel(kind)} Dibuka Kembali untuk Tinjau Ulang</b>`,
+    "",
+    `Keperluan: ${escapeHtml(purpose)}`,
+    `Nominal: ${escapeHtml(formatCurrency(amount))}`,
+    "",
+    "Tim Operasional membatalkan status Selesai karena ada data yang perlu dicek ulang.",
+  ];
+  if (note) lines.push("", `Catatan Tim Operasional: ${escapeHtml(note)}`);
+  lines.push(
+    "",
+    "Silakan perbaiki kwitansi atau bukti pengembalian di aplikasi. Laporan lama sudah dihapus dan dibuat ulang saat pengajuan ditutup lagi."
+  );
+  if (detailUrl) lines.push(`<a href="${escapeHtml(detailUrl)}">Buka pengajuan</a>`);
+  return lines.join("\n");
+}
+
 export function buildDisbursementMessage({
   purpose,
   amount,

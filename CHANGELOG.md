@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.2.5 v2
+### Catat kwitansi
+- Pop up **Catat Kwitansi** hanya menampilkan tombol **Simpan Kwitansi**. Tombol *Kembalikan Sisa* dan
+  *Lihat Detail* dihapus dari pop up ini supaya tidak salah kaprah dengan menyimpan kwitansi.
+- Pratinjau file sekarang di **kiri** (tetap terlihat saat form di-scroll), form di kanan; di layar sempit
+  pratinjau di atas form.
+- Tombol **Simpan Kwitansi** ada di footer pop up (tidak ikut ter-scroll, tidak menutupi kolom) dan
+  **abu-abu** selama kolom wajib belum lengkap (file, nominal, pos RAB/kategori, volume, catatan bila
+  diwajibkan). Alasan yang kurang tampil di atas tombol; menjadi gelap setelah lengkap.
+- Tidak lagi mengulang: Sisa Saldo hanya di header pop up (tampil juga di mobile), tombol *Ganti File*
+  hanya di pratinjau.
+
+### Batalkan Selesai (tinjau ulang)
+- Tombol **Batalkan Selesai** ada di footer panel tinjau, di sebelah **Tutup** dan **Lihat Detail**
+  (hanya Tim Operasional, bukan pemilik pengajuan). Konfirmasi lewat dialog dengan alasan opsional.
+- Laporan PDF di Drive dihapus; `report_drive_*` dan `closed_at` dikosongkan; status kembali `approved`;
+  pengembalian terkonfirmasi menunggu konfirmasi lagi; `total_returned` dihitung ulang.
+- Kwitansi, bukti transfer, dan RAB tidak dihapus. Dicatat di riwayat sebagai `reopened`.
+- Migrasi `0036_reopen_closed_cash_advance.sql`, route `POST /api/cash-advances/[id]/reopen`,
+  `deleteDriveFile()`, komponen `ReopenDialog`.
+
+### Batalkan Selesai: info ke pemohon & Laporan
+- **Catatan wajib** saat membatalkan Selesai (dialog + server + database), supaya pemohon tahu apa yang diperbaiki.
+- Pemohon diberi tahu: notifikasi **Telegram** (bila terhubung) + **banner "Dibuka kembali untuk tinjau ulang"**
+  berisi catatan Ops di panel tinjau dan detail pengajuan; kartu menampilkan langkah berikutnya.
+- Kwitansi pengajuan yang sedang tinjau ulang **tidak muncul di halaman Laporan** (dan ekspor) sampai ditutup lagi;
+  tanda tinjau ulang dihapus otomatis saat status kembali Selesai.
+- Migrasi `0037_reopen_notify_and_reports.sql` (kolom `reopened_at/by`, `reopen_note`; memperbarui `reopen_cash_advance`
+  dan `report_receipts`).
+
+### Tampilan
+- Kartu **Dana sudah dicairkan** didesain ulang: lencana status, tanggal, nominal besar, petugas pencairan,
+  thumbnail bukti transfer, dan tombol lihat bukti. Rekening tidak diulang (sudah ada di Rekening Tujuan).
+- Panel tinjau: tautan "Lihat Detail" di tengah teks dihapus (sudah ada tombolnya di footer).
+- Bagian Laporan di detail tidak lagi punya tombol Batalkan Selesai (pindah ke footer panel tinjau).
+
 ## 1.2.2
 ### Ajukan
 - Tanggal kebutuhan dana berformat Indonesia **dd/mm/yyyy** di semua browser (`DateInput`: ketik angka

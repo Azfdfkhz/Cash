@@ -359,6 +359,11 @@ export function nextAction(ca, operational = false) {
   if (ca.status === "rejected") {
     return operational ? null : { tone: "act", text: "Ditolak — baca catatan, lalu ajukan ulang" };
   }
+  if (ca.status === "approved" && ca.reopened_at) {
+    return operational
+      ? { tone: "wait", text: "Tinjau ulang — menunggu pemohon memperbaiki" }
+      : { tone: "act", text: "Dibuka kembali — baca catatan, lalu perbaiki data" };
+  }
   if (ca.status === "approved") {
     if (!ca.disbursed_at) {
       const age = ageText(ca.reviewed_at ?? ca.created_at);
