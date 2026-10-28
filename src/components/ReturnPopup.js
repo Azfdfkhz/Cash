@@ -203,7 +203,12 @@ export default function ReturnPopup({ ca, onClose, currentUserId, onOpenDetail }
             totalSpent={totalSpent}
             totalReimbursed={totalReimbursed}
             reimbursements={data.reimbursements}
-            onReturnSubmitted={setSent}
+            onReturnSubmitted={(info) => {
+              // ReturnsSection ikut terlepas saat `sent` terisi, jadi ia tidak
+              // sempat melaporkan submitting=false; matikan overlay di sini.
+              setSent(info);
+              setSubmitting(false);
+            }}
             onSubmittingChange={setSubmitting}
           />
         )}

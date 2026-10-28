@@ -204,6 +204,12 @@ export default function ReturnsSection({
     onSubmittingChange?.(submitting);
   }, [submitting, onSubmittingChange]);
 
+  // Bila komponen terlepas di tengah pengiriman, jangan tinggalkan overlay
+  // "Mengirim..." menyala di induknya.
+  const onSubmittingChangeRef = useRef(onSubmittingChange);
+  onSubmittingChangeRef.current = onSubmittingChange;
+  useEffect(() => () => onSubmittingChangeRef.current?.(false), []);
+
   const reimburseFileInputRef = useRef(null);
   const [reimburseFile, setReimburseFile] = useState(null);
   const deficit = Math.abs(Math.min(balance, 0)) - totalReimbursed;
