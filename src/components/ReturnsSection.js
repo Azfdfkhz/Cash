@@ -377,7 +377,7 @@ export default function ReturnsSection({
       }).catch(() => {});
 
       if (updatedCa?.status === "closed") {
-        await handleClosed(supabase);
+        await handleClosed();
       }
 
       setReimburseFile(null);
@@ -452,7 +452,7 @@ export default function ReturnsSection({
       .single();
 
     if (updatedCa?.status === "closed") {
-      await handleClosed(supabase);
+      await handleClosed();
     }
 
     setConfirmingId(null);
@@ -486,7 +486,7 @@ export default function ReturnsSection({
       return;
     }
 
-    await handleClosed(supabase);
+    await handleClosed();
     setClosing(false);
     router.refresh();
   }
@@ -513,9 +513,10 @@ export default function ReturnsSection({
     }
   }
 
-  async function handleClosed(supabase) {
+  // Saat pengajuan selesai hanya laporan PDF yang disimpan ke Drive; CSV tidak
+  // lagi diunduh otomatis (tetap bisa lewat tombol "Unduh data (CSV)").
+  async function handleClosed() {
     await archiveReport();
-    await downloadClosureReport(supabase, cashAdvanceId);
   }
 
   async function copyAccount(number) {
