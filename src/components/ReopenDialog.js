@@ -1,21 +1,49 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 // Konfirmasi "Batalkan Selesai" (tinjau ulang). Dipanggil dari footer panel
 // tinjau, di sebelah tombol Tutup dan Lihat Detail. Server yang menghapus
 // laporan PDF di Drive + mengosongkan data laporan, lalu membuka status.
+// Seperti cash-advance-app: Ops mencentang pengembalian yang dananya belum
+// masuk (kembali "menunggu konfirmasi"); yang tidak dicentang tetap terkonfirmasi.
 export default function ReopenDialog({ ca, onCancel, onDone }) {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const busyRef = useRef(false);
+  const [confirmedReturns, setConfirmedReturns] = useState([]);
+  const [unconfirmIds, setUnconfirmIds] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    createClient()
+      .from("cash_advance_returns")
+      .select("id, amount, created_at, note")
+      .eq("cash_advance_id", ca.id)
+      .not("confirmed_at", "is", null)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (!cancelled) setConfirmedReturns(data ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ca.id]);
+
+  const balance = Number(ca.amount_requested || 0) - Number(ca.total_spent || 0);
 
   async function handleConfirm() {
     if (busyRef.current) return;
     if (reason.trim().length < 3) {
       setError("Tulis alasan tinjau ulang supaya pemohon tahu apa yang harus diperbaiki.");
+      return;
+    }
+    if (confirmedReturns.length && balance > 0 && !unconfirmIds.length) {
+      setError("Pilih pengembalian yang dananya belum masuk.");
       return;
     }
     busyRef.current = true;
@@ -25,7 +53,7 @@ export default function ReopenDialog({ ca, onCancel, onDone }) {
       const res = await fetch(`/api/cash-advances/${ca.id}/reopen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason.trim() }),
+        body: JSON.stringify({ reason: reason.trim(), unconfirmReturnIds: unconfirmIds }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -53,11 +81,39 @@ export default function ReopenDialog({ ca, onCancel, onDone }) {
         <h3 className="mt-3 text-sm font-bold text-slate-900">Batalkan status Selesai?</h3>
         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-slate-600">
           <li>Laporan PDF di Drive dan datanya dihapus.</li>
-          <li>Status kembali ke Disetujui; pengembalian terkonfirmasi menunggu konfirmasi lagi.</li>
+          <li>Status kembali ke Disetujui; pengembalian yang Anda centang menunggu konfirmasi lagi, sisanya tetap terkonfirmasi.</li>
           <li>Kwitansi dan bukti transfer tetap ada untuk diperbaiki.</li>
           <li>Kwitansi pengajuan ini disembunyikan dari halaman Laporan sampai ditutup lagi.</li>
           <li>Pemohon diberi tahu lewat notifikasi Telegram dan banner di pengajuan.</li>
         </ul>
+        {confirmedReturns.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            <p className="text-xs font-semibold text-slate-700">
+              Batalkan konfirmasi pengembalian yang dananya belum masuk:
+            </p>
+            {confirmedReturns.map((r) => (
+              <label
+                key={r.id}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs"
+              >
+                <input
+                  type="checkbox"
+                  checked={unconfirmIds.includes(r.id)}
+                  onChange={(e) =>
+                    setUnconfirmIds((ids) =>
+                      e.target.checked ? [...ids, r.id] : ids.filter((x) => x !== r.id)
+                    )
+                  }
+                />
+                <span className="font-semibold text-slate-900">{formatCurrency(r.amount)}</span>
+                <span className="text-slate-500">
+                  {formatDate(r.created_at)}
+                  {r.note ? ` · ${r.note}` : ""}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
         <label htmlFor="reopen-reason" className="mt-3 block text-xs font-semibold text-slate-700">
           Catatan untuk pemohon (wajib)
         </label>

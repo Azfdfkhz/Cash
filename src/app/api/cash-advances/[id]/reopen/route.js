@@ -8,8 +8,10 @@ import { checkRateLimit, isUuid, tooManyRequests } from "@/lib/security";
 export const runtime = "nodejs";
 
 // POST: Tim Operasional membatalkan "Selesai" untuk tinjau ulang.
-// Urutan: hapus PDF laporan di Drive dulu (kalau gagal, tidak ada yang
-// berubah), baru jalankan RPC yang membuka status & mengosongkan data laporan.
+// Mengikuti cash-advance-app: Ops memilih pengembalian mana yang konfirmasinya
+// dibatalkan (unconfirmReturnIds). Urutan: jalankan RPC dulu (validasi pilihan
+// pengembalian bisa menolak), baru hapus PDF laporan di Drive. Kalau hapus
+// Drive gagal, status sudah benar dan file lama hanya jadi yatim (tidak dipakai).
 export async function POST(request, { params }) {
   const { id } = await params;
   if (!isUuid(id)) return NextResponse.json({ error: "Pengajuan tidak valid." }, { status: 404 });
@@ -33,6 +35,13 @@ export async function POST(request, { params }) {
     );
   }
 
+  const unconfirmReturnIds = Array.isArray(body?.unconfirmReturnIds)
+    ? [...new Set(body.unconfirmReturnIds)].slice(0, 100)
+    : [];
+  if (!unconfirmReturnIds.every(isUuid)) {
+    return NextResponse.json({ error: "Pilihan pengembalian tidak valid." }, { status: 400 });
+  }
+
   const [{ data: ca }, { data: profile }] = await Promise.all([
     supabase
       .from("cash_advances")
@@ -53,21 +62,26 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Pengajuan ini belum selesai." }, { status: 400 });
   }
 
-  try {
-    if (ca.report_drive_file_id) {
-      await deleteDriveFile(ca.report_drive_file_id);
-    }
-  } catch (err) {
-    console.error("Delete report from Drive failed", err);
-    return NextResponse.json(
-      { error: "Gagal menghapus laporan di Drive. Status belum diubah, coba lagi." },
-      { status: 502 }
-    );
+  if (ca.kind === "reimbursement") {
+    return NextResponse.json({ error: "Reimbursement tidak bisa dibuka kembali." }, { status: 400 });
   }
 
-  const { error } = await supabase.rpc("reopen_cash_advance", { target_id: id, reason });
+  const { error } = await supabase.rpc("reopen_cash_advance", {
+    target_id: id,
+    note: reason,
+    unconfirm_return_ids: unconfirmReturnIds,
+  });
   if (error) {
     return NextResponse.json({ error: error.message || "Gagal membuka kembali pengajuan." }, { status: 400 });
+  }
+
+  // RPC sudah mengosongkan report_drive_*; hapus file PDF lamanya (best effort).
+  if (ca.report_drive_file_id) {
+    try {
+      await deleteDriveFile(ca.report_drive_file_id);
+    } catch (err) {
+      console.error("Delete report from Drive failed", err);
+    }
   }
 
   // Beri tahu pemohon lewat Telegram (kalau terhubung). Banner di aplikasi

@@ -116,7 +116,8 @@ function CashAdvanceReviewModalContent({
   // Requester sudah mencatat pengembalian sisa saldo, belum dikonfirmasi operasional.
   const pendingReturn = ca.status === "approved" && hasPendingReturn(ca);
   // Ops (bukan pemilik) boleh membatalkan "Selesai" untuk tinjau ulang.
-  const canReopen = canReview && !isOwner && ca.status === "closed" && !isDemoCa(ca);
+  const canReopen =
+    canReview && !isOwner && ca.status === "closed" && !isReimbursement && !isDemoCa(ca);
   const holderName = ca.bank_account_holder || ca.profiles?.bank_account_holder || ca.profiles?.full_name || "-";
 
   const categoryLabel =
