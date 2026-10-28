@@ -551,7 +551,7 @@ function CashAdvanceReviewModalContent({
                 onClick={() => setReopenOpen(true)}
                 className="mr-auto flex items-center justify-center rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100"
               >
-                Batalkan Selesai
+                Buka Kembali Pengajuan
               </button>
               <button
                 type="button"

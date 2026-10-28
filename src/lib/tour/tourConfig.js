@@ -125,8 +125,8 @@ const STEPS = [
     target: "status-filter",
     placement: "bottom",
     roles: ["operational"],
-    title: "Semua / Belum Disetujui",
-    body: "Pilih Semua untuk melihat seluruh pengajuan, atau Belum Disetujui untuk hanya yang menunggu keputusan. Angka di dalam kurung adalah jumlahnya.",
+    title: "Semua / Belum Disetujui / Perlu Konfirmasi",
+    body: "Pilih Semua untuk melihat seluruh pengajuan (yang pengembaliannya menunggu konfirmasi selalu di paling atas), Belum Disetujui untuk yang menunggu keputusan, atau Perlu Konfirmasi untuk pengembalian sisa saldo yang menunggu Anda. Angka di dalam kurung adalah jumlahnya.",
   },
   {
     id: "kind-filter",

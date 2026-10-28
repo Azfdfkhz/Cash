@@ -92,6 +92,7 @@ export default function OperationalDashboard({
   page,
   filter,
   kind,
+  confirmCount = 0,
   currentUserId,
   focusCa = null,
 }) {
@@ -107,7 +108,7 @@ export default function OperationalDashboard({
     () => (list.length === 0 && tourOn ? demoRequests("operational", kind) : list),
     [list, tourOn, kind]
   );
-  const basePath = filter === "pending" ? "/dashboard?filter=pending" : "/dashboard";
+  const basePath = filter === "pending" || filter === "confirm" ? `/dashboard?filter=${filter}` : "/dashboard";
   const filterParams = { jenis: kind };
 
   // State untuk pop up review pengajuan
@@ -223,7 +224,7 @@ export default function OperationalDashboard({
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="whitespace-nowrap text-[15px] font-bold tracking-tight text-slate-900">Pengajuan Terbaru</h2>
-            <FilterTabs filter={filter} pendingCount={stats.pendingCount} kind={kind} size="sm" />
+            <FilterTabs filter={filter} pendingCount={stats.pendingCount} confirmCount={confirmCount} kind={kind} size="sm" />
           </div>
           <KindFilter />
 
@@ -330,7 +331,7 @@ export default function OperationalDashboard({
                 Klik baris atau tombol aksi untuk melihat detail pengajuan.
               </p>
             </div>
-            <FilterTabs filter={filter} pendingCount={stats.pendingCount} kind={kind} />
+            <FilterTabs filter={filter} pendingCount={stats.pendingCount} confirmCount={confirmCount} kind={kind} />
           </div>
           <div className="px-5 pb-4">
             <KindFilter />

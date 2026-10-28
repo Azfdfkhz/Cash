@@ -5,7 +5,7 @@ import { RotateCcw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-// Konfirmasi "Batalkan Selesai" (tinjau ulang). Dipanggil dari footer panel
+// Konfirmasi "Buka Kembali Pengajuan" (tinjau ulang). Dipanggil dari footer panel
 // tinjau, di sebelah tombol Tutup dan Lihat Detail. Server yang menghapus
 // laporan PDF di Drive + mengosongkan data laporan, lalu membuka status.
 // Seperti cash-advance-app: Ops mencentang pengembalian yang dananya belum
@@ -57,11 +57,11 @@ export default function ReopenDialog({ ca, onCancel, onDone }) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Gagal membatalkan status selesai.");
+        throw new Error(data.error || "Gagal membuka kembali pengajuan.");
       }
       onDone();
     } catch (err) {
-      setError(err.message || "Gagal membatalkan status selesai.");
+      setError(err.message || "Gagal membuka kembali pengajuan.");
       busyRef.current = false;
       setBusy(false);
     }
@@ -72,13 +72,13 @@ export default function ReopenDialog({ ca, onCancel, onDone }) {
       className="animate-fade-in absolute inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
       role="alertdialog"
       aria-modal="true"
-      aria-label="Batalkan status selesai"
+      aria-label="Buka kembali pengajuan"
     >
       <div className="animate-scale-up w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-700">
           <RotateCcw size={20} />
         </span>
-        <h3 className="mt-3 text-sm font-bold text-slate-900">Batalkan status Selesai?</h3>
+        <h3 className="mt-3 text-sm font-bold text-slate-900">Buka kembali pengajuan?</h3>
         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-slate-600">
           <li>Laporan PDF di Drive dan datanya dihapus.</li>
           <li>Status kembali ke Disetujui; pengembalian yang Anda centang menunggu konfirmasi lagi, sisanya tetap terkonfirmasi.</li>
@@ -150,7 +150,7 @@ export default function ReopenDialog({ ca, onCancel, onDone }) {
                 : "bg-slate-200 text-slate-500"
             }`}
           >
-            {busy ? "Membatalkan..." : "Ya, Batalkan Selesai"}
+            {busy ? "Membuka..." : "Ya, Buka Kembali"}
           </button>
         </div>
       </div>

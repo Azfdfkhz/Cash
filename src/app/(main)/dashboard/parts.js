@@ -43,10 +43,10 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
   );
 }
 
-// Tab "Semua | Belum Disetujui (n)" berbasis query ?filter=. Gaya garis bawah
+// Tab "Semua | Belum Disetujui (n) | Perlu Konfirmasi (n)" berbasis query ?filter=. Gaya garis bawah
 // (sama dengan tab jenis pengajuan), tanpa wadah/kartu sendiri, supaya tidak
 // menjadi kartu di dalam kartu.
-export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
+export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size = "md" }) {
   const jenis = kind ? `jenis=${kind}` : "";
   const base =
     size === "sm"
@@ -63,9 +63,9 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
       <PendingLink
         scroll={false}
         role="tab"
-        aria-selected={filter !== "pending"}
+        aria-selected={filter !== "pending" && filter !== "confirm"}
         href={jenis ? `/dashboard?${jenis}` : "/dashboard"}
-        className={tab(filter !== "pending")}
+        className={tab(filter !== "pending" && filter !== "confirm")}
       >
         Semua
       </PendingLink>
@@ -77,6 +77,15 @@ export function FilterTabs({ filter, pendingCount, kind, size = "md" }) {
         className={tab(filter === "pending")}
       >
         Belum Disetujui ({pendingCount})
+      </PendingLink>
+      <PendingLink
+        scroll={false}
+        role="tab"
+        aria-selected={filter === "confirm"}
+        href={`/dashboard?filter=confirm${jenis ? `&${jenis}` : ""}`}
+        className={tab(filter === "confirm")}
+      >
+        Perlu Konfirmasi ({confirmCount})
       </PendingLink>
     </div>
   );
