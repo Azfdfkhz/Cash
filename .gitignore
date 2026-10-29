@@ -51,5 +51,6 @@ google-service-account*.json
 credentials.json
 google-service-account*.json
 
-# CLI Supabase (berisi project-ref)
-supabase/.temp/
+# CLI Supabase (berisi project-ref) -- di folder mana pun
+**/supabase/.temp/
+**/.temp/
