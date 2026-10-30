@@ -305,15 +305,18 @@ function CashAdvanceReviewModalContent({
           {!isPending && ca.reviewed_at && justDecided && (
             <div
               className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold ${
-                ca.status === "approved"
-                  ? "bg-emerald-50 text-emerald-800"
-                  : "bg-rose-50 text-rose-800"
+                ca.status === "rejected"
+                  ? "bg-rose-50 text-rose-800"
+                  : "bg-emerald-50 text-emerald-800"
               }`}
             >
-              {ca.status === "approved" ? <Check size={14} /> : <X size={14} />}
-              {ca.status === "approved"
-                ? "Pengajuan disetujui."
-                : "Pengajuan ditolak."}
+              {/* Hanya "rejected" yang berarti ditolak. Setelah disetujui, status bisa
+                  berlanjut jadi "closed" (mis. reimbursement langsung selesai saat
+                  dicairkan) -- itu tetap "disetujui", bukan ditolak. */}
+              {ca.status === "rejected" ? <X size={14} /> : <Check size={14} />}
+              {ca.status === "rejected"
+                ? "Pengajuan ditolak."
+                : "Pengajuan disetujui."}
             </div>
           )}
           <ReopenNotice ca={ca} isOwner={isOwner} />
