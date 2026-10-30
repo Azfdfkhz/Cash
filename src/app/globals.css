@@ -148,6 +148,11 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+/* Ruang setinggi BottomNav (fixed): 1px border + 8px + 52px item + 12px + padding bawah. */
+.bottom-nav-spacer {
+  height: calc(73px + max(0.5rem, env(safe-area-inset-bottom, 0px)));
+}
+
 input,
 select,
 textarea {

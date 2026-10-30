@@ -1,4 +1,7 @@
-import { PendingLink } from "@/components/PendingNav";
+"use client";
+
+import { useEffect, useState } from "react";
+import { PendingLink, usePendingNav } from "@/components/PendingNav";
 
 export function RoleBadge({ children, dot = false, dark = false }) {
   return (
@@ -48,6 +51,15 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
 // menjadi kartu di dalam kartu.
 export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size = "md", fill = false }) {
   const jenis = kind ? `jenis=${kind}` : "";
+  // Tab aktif pindah seketika saat diklik, tanpa menunggu data baru dari server.
+  // `optimistic` hanya dipakai selama navigasi berjalan, lalu kembali ke `filter`.
+  const { pending } = usePendingNav();
+  const [optimistic, setOptimistic] = useState(null);
+  useEffect(() => {
+    if (!pending) setOptimistic(null);
+  }, [pending]);
+  const serverKey = filter === "pending" || filter === "confirm" ? filter : "all";
+  const current = pending && optimistic ? optimistic : serverKey;
   const base =
     size === "sm"
       ? "whitespace-nowrap px-1 pb-2 pt-1 text-xs"
@@ -71,27 +83,30 @@ export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size 
       <PendingLink
         scroll={false}
         role="tab"
-        aria-selected={filter !== "pending" && filter !== "confirm"}
+        aria-selected={current === "all"}
         href={jenis ? `/dashboard?${jenis}` : "/dashboard"}
-        className={tab(filter !== "pending" && filter !== "confirm")}
+        onClick={() => setOptimistic("all")}
+        className={tab(current === "all")}
       >
         Semua
       </PendingLink>
       <PendingLink
         scroll={false}
         role="tab"
-        aria-selected={filter === "pending"}
+        aria-selected={current === "pending"}
         href={`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`}
-        className={tab(filter === "pending")}
+        onClick={() => setOptimistic("pending")}
+        className={tab(current === "pending")}
       >
         Belum Disetujui ({pendingCount})
       </PendingLink>
       <PendingLink
         scroll={false}
         role="tab"
-        aria-selected={filter === "confirm"}
+        aria-selected={current === "confirm"}
         href={`/dashboard?filter=confirm${jenis ? `&${jenis}` : ""}`}
-        className={tab(filter === "confirm")}
+        onClick={() => setOptimistic("confirm")}
+        className={tab(current === "confirm")}
       >
         Perlu Konfirmasi ({confirmCount})
       </PendingLink>

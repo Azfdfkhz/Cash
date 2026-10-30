@@ -11,7 +11,6 @@ import CompactIdr from "@/components/CompactIdr";
 import ApprovalActions from "@/components/ApprovalActions";
 import CashAdvanceReviewModal, { DecisionDialog } from "@/components/CashAdvanceReviewModal";
 import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
-import { useApprovalBadge } from "@/components/useApprovalBadge";
 import ActionToast from "@/components/ActionToast";
 import { useModalState } from "@/lib/useModalState";
 import { MODAL } from "@/lib/modalState";
@@ -96,7 +95,6 @@ function ApprovalsWorkspaceInner({
   );
   // Auto-refresh antrean persetujuan/pencairan tanpa reload manual.
   useRealtimeRefresh(REALTIME_TABLES);
-  const badge = useApprovalBadge(null, currentUserId, true);
   const { pending: navPending, navigate } = usePendingNav();
   const [searchText, setSearchText] = useState(query);
   const lastPushedQuery = useRef(query);
@@ -355,13 +353,7 @@ function ApprovalsWorkspaceInner({
 
         {/* Desktop: Cash Advance / Reimbursement ada di sub-menu Persetujuan (sidebar). */}
         <div className="lg:hidden">
-          <KindFilter
-            counts={kindCounts}
-            dots={{
-              cash_advance: badge.cash_advance > 0,
-              reimbursement: badge.reimbursement > 0,
-            }}
-          />
+          <KindFilter counts={kindCounts} />
         </div>
 
         <KindFilterContent skeletons={4}>

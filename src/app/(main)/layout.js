@@ -3,6 +3,8 @@ import SidebarData from "./SidebarData";
 import BottomNavData from "./BottomNavData";
 import OnboardingData from "./OnboardingData";
 import MobileTopBar from "@/components/MobileTopBar";
+import BrandMark from "@/components/BrandMark";
+import { BottomNavShell } from "@/components/BottomNav";
 
 // Layout ini sengaja TIDAK async / TIDAK await getUserProfile() langsung --
 // kalau iya, seluruh navigasi ke halaman mana pun di bawah (main) akan
@@ -17,7 +19,22 @@ export default function MainLayout({ children }) {
     <div className="flex min-h-dvh flex-1 flex-col bg-[#f7f8fa] lg:pl-64">
       <Suspense
         fallback={
-          <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 border-r border-slate-200 bg-white" />
+          <aside
+            aria-hidden="true"
+            className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-slate-200 bg-white"
+          >
+            <div className="border-b border-slate-100 px-6 pb-5 pt-7">
+              <BrandMark size="sm" />
+            </div>
+            <div className="flex-1 animate-pulse space-y-1.5 px-3 py-5">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="flex items-center gap-3.5 rounded-xl px-4 py-3">
+                  <div className="h-5 w-5 rounded bg-slate-200" />
+                  <div className="h-3.5 w-24 rounded bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          </aside>
         }
       >
         <SidebarData />
@@ -30,21 +47,7 @@ export default function MainLayout({ children }) {
       </main>
 
       <Suspense
-        fallback={
-          <nav
-            aria-hidden="true"
-            className="lg:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white safe-bottom"
-          >
-            <div className="flex animate-pulse justify-around px-4 pb-4 pt-3">
-              {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5">
-                  <div className="h-5 w-5 rounded bg-slate-200" />
-                  <div className="h-2.5 w-10 rounded bg-slate-100" />
-                </div>
-              ))}
-            </div>
-          </nav>
-        }
+        fallback={<BottomNavShell />}
       >
         <BottomNavData />
       </Suspense>

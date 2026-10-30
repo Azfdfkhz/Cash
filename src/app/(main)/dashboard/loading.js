@@ -22,6 +22,18 @@ function MobileCard() {
   );
 }
 
+function UnderlineTabs({ count, className = "" }) {
+  return (
+    <div className={`flex border-b border-slate-200 ${className}`}>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="flex min-h-11 flex-1 items-center justify-center px-3 py-2">
+          <Bar className={`h-3.5 w-20 ${i === 0 ? "" : "!bg-slate-100"}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TableRow() {
   return (
     <div className="grid grid-cols-[1.2fr_2fr_1fr_1fr_1fr_1fr] items-center gap-4 border-b border-slate-100 px-5 py-4">
@@ -61,10 +73,9 @@ export default function Loading() {
         </div>
         <div className="h-14 rounded-2xl bg-slate-200" />
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Bar className="h-5 w-40" />
-            <div className="h-7 w-32 rounded-full bg-slate-100" />
-          </div>
+          <Bar className="h-5 w-40" />
+          <UnderlineTabs count={3} />
+          <UnderlineTabs count={2} />
           <MobileCard />
           <MobileCard />
         </div>
@@ -104,10 +115,8 @@ export default function Loading() {
             </div>
             <div className="h-8 w-44 rounded-full bg-slate-100" />
           </div>
-          <div className="flex gap-2 px-5 pb-4">
-            <div className="h-8 w-20 rounded-full bg-slate-200" />
-            <div className="h-8 w-28 rounded-full bg-slate-100" />
-            <div className="h-8 w-28 rounded-full bg-slate-100" />
+          <div className="px-5">
+            <UnderlineTabs count={3} className="max-w-md" />
           </div>
           <div className="grid grid-cols-[1.2fr_2fr_1fr_1fr_1fr_1fr] gap-4 border-y border-slate-200 bg-slate-50/60 px-5 py-3">
             {Array.from({ length: 6 }).map((_, i) => (

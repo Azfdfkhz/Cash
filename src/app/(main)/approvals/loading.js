@@ -1,14 +1,17 @@
 import Bar from "@/components/skeletons/Bar";
 import CashAdvanceCardSkeleton from "@/components/skeletons/CashAdvanceCardSkeleton";
 
-// Mengikuti ApprovalsWorkspace: mobile = judul + filter + kartu;
+// Mengikuti ApprovalsWorkspace: mobile = judul + pencarian + tab + kartu;
 // desktop (≥lg) = daftar 22rem di kiri + panel detail (tab) & aksi di kanan.
-function Pills() {
+function UnderlineTabs({ count = 2, badges = true, className = "" }) {
   return (
-    <div className="flex gap-2">
-      <div className="h-8 w-20 rounded-full bg-slate-200" />
-      <div className="h-8 w-28 rounded-full bg-slate-100" />
-      <div className="h-8 w-28 rounded-full bg-slate-100" />
+    <div className={`flex border-b border-slate-200 ${className}`}>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="flex min-h-11 flex-1 items-center justify-center gap-2 px-3 py-2">
+          <Bar className={`h-3.5 w-20 ${i === 0 ? "" : "!bg-slate-100"}`} />
+          {badges && <div className="h-5 w-5 rounded-full bg-slate-100" />}
+        </div>
+      ))}
     </div>
   );
 }
@@ -32,13 +35,13 @@ export default function Loading() {
     <div className="animate-pulse space-y-4 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
       <section className="space-y-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Bar className="h-6 w-36" />
-            <div className="hidden h-6 w-6 rounded-full bg-orange-100 lg:block" />
-          </div>
+          <Bar className="h-6 w-28" />
           <Bar className="mt-2 h-3 w-56 !bg-slate-100" />
         </div>
-        <Pills />
+        <div className="h-11 rounded-xl border border-slate-300 bg-white lg:h-10" />
+        <UnderlineTabs count={2} />
+        <Bar className="h-3 w-48 !bg-slate-100" />
+        <UnderlineTabs count={2} className="lg:hidden" />
         <div className="space-y-3 lg:hidden">
           <CashAdvanceCardSkeleton />
           <CashAdvanceCardSkeleton />
