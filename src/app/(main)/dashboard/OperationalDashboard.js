@@ -222,10 +222,8 @@ export default function OperationalDashboard({
         </div>
 
         <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="whitespace-nowrap text-[15px] font-bold tracking-tight text-slate-900">Pengajuan Terbaru</h2>
-            <FilterTabs filter={filter} pendingCount={stats.pendingCount} confirmCount={confirmCount} kind={kind} size="sm" />
-          </div>
+          <h2 className="text-[15px] font-bold tracking-tight text-slate-900">Pengajuan Terbaru</h2>
+          <FilterTabs filter={filter} pendingCount={stats.pendingCount} confirmCount={confirmCount} kind={kind} size="sm" fill />
           <KindFilter />
 
           <KindFilterContent>

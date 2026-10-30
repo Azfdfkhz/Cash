@@ -46,20 +46,28 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
 // Tab "Semua | Belum Disetujui (n) | Perlu Konfirmasi (n)" berbasis query ?filter=. Gaya garis bawah
 // (sama dengan tab jenis pengajuan), tanpa wadah/kartu sendiri, supaya tidak
 // menjadi kartu di dalam kartu.
-export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size = "md" }) {
+export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size = "md", fill = false }) {
   const jenis = kind ? `jenis=${kind}` : "";
   const base =
     size === "sm"
       ? "whitespace-nowrap px-1 pb-2 pt-1 text-xs"
       : "whitespace-nowrap px-1 pb-2.5 pt-1 text-[13px]";
   const tab = (active) =>
-    `${base} -mb-px border-b-2 font-semibold transition-colors ${
+    `${base} ${fill ? "flex-1 text-center" : ""} -mb-px border-b-2 font-semibold transition-colors ${
       active
         ? "border-brand text-brand"
         : "border-transparent text-slate-600 hover:text-slate-800"
     }`;
   return (
-    <div data-tour="status-filter" role="tablist" className="inline-flex items-end gap-5 border-b border-slate-200">
+    <div
+      data-tour="status-filter"
+      role="tablist"
+      className={
+        fill
+          ? "flex w-full items-end justify-between gap-2 overflow-x-auto border-b border-slate-200"
+          : "inline-flex items-end gap-5 border-b border-slate-200"
+      }
+    >
       <PendingLink
         scroll={false}
         role="tab"

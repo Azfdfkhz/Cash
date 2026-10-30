@@ -23,7 +23,7 @@ import CashAdvanceDetailPopup from "@/components/CashAdvanceDetailPopup";
 import ScanReceiptPopup from "@/components/ScanReceiptPopup";
 import ReturnPopup from "@/components/ReturnPopup";
 import ReopenDialog from "@/components/ReopenDialog";
-import ReopenNotice from "@/components/ReopenNotice";
+import ReopenNotice, { isReopened } from "@/components/ReopenNotice";
 import DisbursementSection from "@/components/DisbursementSection";
 import ActionToast from "@/components/ActionToast";
 import { useModalState } from "@/lib/useModalState";
@@ -319,7 +319,12 @@ function CashAdvanceReviewModalContent({
                 : "Pengajuan disetujui."}
             </div>
           )}
-          <ReopenNotice ca={ca} isOwner={isOwner} />
+          <ReopenNotice
+            ca={ca}
+            isOwner={isOwner}
+            pendingReturn={hasPendingReturn(ca)}
+            onFix={() => modals.open(MODAL.DETAIL, { focus: "perbaiki" })}
+          />
           {pendingReturn && (
             <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold leading-snug text-amber-800">
               <Hourglass size={14} className="mt-px shrink-0" />
@@ -530,7 +535,17 @@ function CashAdvanceReviewModalContent({
               </button>
             </div>
           ) : isOwner && ca.status === "approved" && !isReimbursement ? (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {isReopened(ca) && (
+                <button
+                  type="button"
+                  onClick={() => modals.open(MODAL.DETAIL, { focus: "perbaiki" })}
+                  className="flex items-center justify-center gap-1.5 rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-amber-700"
+                >
+                  <Eye size={14} strokeWidth={2.25} />
+                  Perbaiki Data
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => modals.open(MODAL.RETURN)}

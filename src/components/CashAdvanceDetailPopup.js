@@ -151,11 +151,30 @@ export default function CashAdvanceDetailPopup({
     };
   }, [ca]);
 
+  function goFix(pendingReturn) {
+    if (pendingReturn) {
+      setTab("ringkasan");
+      // Tunggu tab Ringkasan tergambar sebelum menggulir.
+      setTimeout(() => returnsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+    } else {
+      setTab("kwitansi");
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    }
+  }
+
   // Dibuka dari "Cairkan Sekarang": gulir ke form pencairan setelah data siap.
   useEffect(() => {
     // Hanya sekali: muat ulang data (realtime/refresh) tidak boleh menggulung
     // ulang tampilan ke bagian ini.
     if (!data || focusedRef.current) return;
+    // Dibuka dari "Perbaiki Data" (pengajuan dibuka kembali): langsung ke
+    // tempat yang harus diperbaiki -- pengembalian dulu bila masih menunggu
+    // konfirmasi (kwitansi terkunci), selain itu tab Kwitansi.
+    if (initialFocus === "perbaiki") {
+      focusedRef.current = true;
+      goFix((data.returns ?? []).some((r) => !r.confirmed_at));
+      return;
+    }
     const target =
       initialFocus === "pencairan" ? disburseRef : initialFocus === "pengembalian" ? returnsRef : null;
     if (target?.current) {
@@ -320,7 +339,12 @@ export default function CashAdvanceDetailPopup({
 
           {tab === "ringkasan" && (
             <>
-              <ReopenNotice ca={c} isOwner={isOwner} />
+              <ReopenNotice
+                ca={c}
+                isOwner={isOwner}
+                pendingReturn={hasPendingReturn}
+                onFix={() => goFix(hasPendingReturn)}
+              />
 
               {/* Catatan penolakan paling atas supaya requester langsung tahu apa yang direvisi */}
               {c.status === "rejected" && c.review_note && (
