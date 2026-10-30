@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Check, CheckCircle2, Copy, Download, Eye, FileText, Hourglass, Upload } from "lucide-react";
+import { AlertCircle, ArrowDownToLine, Check, CheckCircle2, Copy, Download, Eye, FileText, Hourglass, Landmark, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
 import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
@@ -16,6 +16,27 @@ import {
 import { compareRab, describeReceiptLines, receiptLines } from "@/lib/rab";
 import { toJpegFile } from "@/lib/imageConvert";
 import DateInput from "@/components/request/DateInput";
+import { assertNotTimedOut, createRequestTimer, TIMEOUT_MESSAGE, toTimeoutError } from "@/lib/requestTimeout";
+
+// Nomor langkah kecil di judul tiap bagian formulir pengembalian.
+function StepLabel({ n, children, htmlFor, optional = false }) {
+  return (
+    <label htmlFor={htmlFor} className="flex items-center gap-2 text-sm font-bold text-slate-900">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
+        {n}
+      </span>
+      <span>
+        {children}
+        {optional && <span className="ml-1 font-normal text-slate-600">(Opsional)</span>}
+      </span>
+    </label>
+  );
+}
+
+// Rekening perusahaan tempat requester mentransfer, dicari dari nomor yang tersimpan.
+function findCompanyAccount(number) {
+  return COMPANY_RETURN_ACCOUNTS.find((a) => a.number === number) ?? null;
+}
 
 async function downloadClosureReport(supabase, cashAdvanceId) {
   const { data: ca } = await supabase
@@ -185,6 +206,14 @@ export default function ReturnsSection({
   const [amount, setAmount] = useState(initialRemaining > 0 ? String(initialRemaining) : "");
   const [returnDate, setReturnDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [copiedAcc, setCopiedAcc] = useState(null);
+  // Rekening perusahaan yang dipilih requester (otomatis terpilih saat menekan
+  // Salin). Disimpan bersama pengembalian agar Operasional tahu mana yang dicek.
+  const [selectedAcc, setSelectedAcc] = useState(null);
+  const [accError, setAccError] = useState("");
+  const accBoxRef = useRef(null);
+  // ID pengembalian dibuat di sisi klien dan dipakai ulang saat klik ulang,
+  // jadi pengiriman yang sempat time out tidak tercatat dobel.
+  const attemptIdRef = useRef(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
@@ -223,6 +252,7 @@ export default function ReturnsSection({
   // pengiriman atau konfirmasi dua kali untuk aksi finansial yang sama.
   const submitBusyRef = useRef(false);
   const reimburseBusyRef = useRef(false);
+  const reimburseAttemptIdRef = useRef(null);
   const closeBusyRef = useRef(false);
   const confirmBusyRef = useRef(false);
 
@@ -252,6 +282,12 @@ export default function ReturnsSection({
       setError("Nominal melebihi sisa saldo yang perlu dikembalikan.");
       return;
     }
+    const account = findCompanyAccount(selectedAcc);
+    if (!account) {
+      setAccError("Pilih rekening tujuan dulu: tekan Salin pada rekening yang Anda pakai untuk transfer.");
+      accBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     if (!file) {
       setProofError("Bukti transfer belum dilampirkan. Unggah foto atau PDF bukti transfer dulu, lalu kirim lagi.");
       proofBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -260,6 +296,8 @@ export default function ReturnsSection({
 
     submitBusyRef.current = true;
     setSubmitting(true);
+    // Lebih dari 15 detik belum terkirim -> hentikan dan minta klik ulang.
+    const timer = createRequestTimer();
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -269,6 +307,7 @@ export default function ReturnsSection({
       const uploadRes = await fetch("/api/drive/upload", {
         method: "POST",
         body: formData,
+        signal: timer.signal,
       });
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error);
@@ -278,19 +317,39 @@ export default function ReturnsSection({
         data: { user },
       } = await supabase.auth.getUser();
 
-      const { error: insertError } = await supabase
+      if (!attemptIdRef.current) attemptIdRef.current = crypto.randomUUID();
+      const row = {
+        id: attemptIdRef.current,
+        cash_advance_id: cashAdvanceId,
+        created_by: user.id,
+        amount: numericAmount,
+        note: note || null,
+        return_date: returnDate || null,
+        proof_drive_file_id: uploadData.fileId,
+        proof_drive_view_url: uploadData.viewUrl,
+        dest_bank: account.bank,
+        dest_account_number: account.number,
+      };
+      let { error: insertError } = await supabase
         .from("cash_advance_returns")
-        .insert({
-          cash_advance_id: cashAdvanceId,
-          created_by: user.id,
-          amount: numericAmount,
-          note: note || null,
-          return_date: returnDate || null,
-          proof_drive_file_id: uploadData.fileId,
-          proof_drive_view_url: uploadData.viewUrl,
-        });
+        .insert(row)
+        .abortSignal(timer.signal);
+      assertNotTimedOut(timer);
 
-      if (insertError) throw new Error(insertError.message);
+      // Database lama (migrasi 0040 belum dijalankan) belum punya kolom
+      // rekening tujuan: simpan infonya di catatan agar Operasional tetap tahu.
+      if (insertError?.code === "42703" || insertError?.code === "PGRST204") {
+        const { dest_bank, dest_account_number, ...base } = row;
+        const tag = `[Transfer ke ${dest_bank} ${dest_account_number}]`;
+        ({ error: insertError } = await supabase
+          .from("cash_advance_returns")
+          .insert({ ...base, note: note ? `${tag} ${note}` : tag })
+          .abortSignal(timer.signal));
+        assertNotTimedOut(timer);
+      }
+      // 23505 pada id = klik ulang setelah kiriman sebelumnya sebenarnya sudah masuk.
+      if (insertError && insertError.code !== "23505") throw new Error(insertError.message);
+      timer.clear();
 
       onReturnSubmitted?.({
         amount: numericAmount,
@@ -298,12 +357,18 @@ export default function ReturnsSection({
         file,
         viewUrl: uploadData.viewUrl,
         submittedAt: new Date().toISOString(),
+        destBank: account.bank,
+        destAccountNumber: account.number,
+        destAccountHolder: account.holder,
       });
+      attemptIdRef.current = null;
       setFile(null);
       setNote("");
       router.refresh();
     } catch (err) {
-      setError(err.message || "Gagal menyimpan pengembalian. Coba lagi.");
+      timer.clear();
+      const e2 = toTimeoutError(err, timer);
+      setError(e2.message || "Gagal menyimpan pengembalian. Coba lagi.");
       submitBusyRef.current = false;
     } finally {
       setSubmitting(false);
@@ -329,6 +394,7 @@ export default function ReturnsSection({
 
     reimburseBusyRef.current = true;
     setReimbursing(true);
+    const timer = createRequestTimer(); // >15 detik belum terkirim -> klik ulang
     try {
       const formData = new FormData();
       formData.append("file", reimburseFile);
@@ -338,6 +404,7 @@ export default function ReturnsSection({
       const uploadRes = await fetch("/api/drive/upload", {
         method: "POST",
         body: formData,
+        signal: timer.signal,
       });
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error);
@@ -347,9 +414,11 @@ export default function ReturnsSection({
         data: { user },
       } = await supabase.auth.getUser();
 
-      const { data: inserted, error: insertError } = await supabase
+      if (!reimburseAttemptIdRef.current) reimburseAttemptIdRef.current = crypto.randomUUID();
+      const { data: insertedRow, error: insertErr } = await supabase
         .from("cash_advance_reimbursements")
         .insert({
+          id: reimburseAttemptIdRef.current,
           cash_advance_id: cashAdvanceId,
           created_by: user.id,
           amount: numericAmount,
@@ -358,9 +427,14 @@ export default function ReturnsSection({
           proof_drive_view_url: uploadData.viewUrl,
         })
         .select("id")
-        .single();
-
-      if (insertError) throw new Error(insertError.message);
+        .single()
+        .abortSignal(timer.signal);
+      assertNotTimedOut(timer);
+      // 23505 pada id = klik ulang setelah kiriman sebelumnya sebenarnya sudah masuk.
+      if (insertErr && insertErr.code !== "23505") throw new Error(insertErr.message);
+      timer.clear();
+      const inserted = insertedRow ?? { id: reimburseAttemptIdRef.current };
+      reimburseAttemptIdRef.current = null;
 
       const { data: updatedCa } = await supabase
         .from("cash_advances")
@@ -384,7 +458,8 @@ export default function ReturnsSection({
       setReimburseNote("");
       router.refresh();
     } catch (err) {
-      setError(err.message || "Gagal menyimpan penggantian. Coba lagi.");
+      timer.clear();
+      setError(toTimeoutError(err, timer).message || "Gagal menyimpan penggantian. Coba lagi.");
       reimburseBusyRef.current = false;
     } finally {
       setReimbursing(false);
@@ -429,17 +504,31 @@ export default function ReturnsSection({
     setConfirmingId(returnId);
 
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const { error: updateError } = await supabase
-      .from("cash_advance_returns")
-      .update({ confirmed_by: user.id, confirmed_at: new Date().toISOString() })
-      .eq("id", returnId);
+    // Lebih dari 15 detik belum terkirim -> hentikan dan minta klik ulang
+    // (mengonfirmasi dua kali aman: barisnya sama, hanya ditulis ulang).
+    const timer = createRequestTimer();
+    let updateError = null;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      ({ error: updateError } = await supabase
+        .from("cash_advance_returns")
+        .update({ confirmed_by: user.id, confirmed_at: new Date().toISOString() })
+        .eq("id", returnId)
+        .abortSignal(timer.signal));
+    } catch (err) {
+      updateError = err;
+    }
+    timer.clear();
 
     if (updateError) {
-      setError("Gagal mengonfirmasi pengembalian.");
+      setError(
+        timer.timedOut
+          ? TIMEOUT_MESSAGE.replace("tombolnya", "Ya, dana sudah diterima")
+          : "Gagal mengonfirmasi pengembalian."
+      );
+      if (timer.timedOut) router.refresh();
       setConfirmingId(null);
       confirmBusyRef.current = false;
       return;
@@ -519,7 +608,13 @@ export default function ReturnsSection({
     await archiveReport();
   }
 
+  function selectAccount(number) {
+    setSelectedAcc(number);
+    setAccError("");
+  }
+
   async function copyAccount(number) {
+    selectAccount(number); // menyalin = memilih rekening ini untuk transfer
     try {
       await navigator.clipboard.writeText(number);
       setCopiedAcc(number);
@@ -602,6 +697,17 @@ export default function ReturnsSection({
                 const acting = rowAction?.id === r.id ? rowAction.type : null;
                 const busy = confirmingId === r.id;
                 const proofTitle = `Bukti transfer ${formatCurrency(r.amount)}`;
+                const returnDest = (r) => {
+                  const number = r.dest_account_number;
+                  if (!number) return null;
+                  const acc = findCompanyAccount(number);
+                  return {
+                    bank: r.dest_bank || acc?.bank || "",
+                    number,
+                    holder: acc?.holder || "",
+                  };
+                };
+                const dest = returnDest(r);
                 return (
                   <div
                     key={r.id}
@@ -650,6 +756,35 @@ export default function ReturnsSection({
                       </div>
                     </div>
 
+                    {dest && (
+                      <div
+                        className={`flex items-start gap-2.5 border-t px-3.5 py-3 text-xs leading-relaxed ${
+                          !r.confirmed_at && isOperational && !isOwner
+                            ? "border-blue-100 bg-blue-50 text-blue-950"
+                            : "border-slate-100 bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        <Landmark size={15} className="mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-bold">
+                            {isOwner
+                              ? "Anda mentransfer ke rekening ini"
+                              : "Requester mentransfer ke rekening ini"}
+                          </p>
+                          <p className="mt-0.5">
+                            {dest.bank} ·{" "}
+                            <span className="select-all font-bold tracking-wide">{dest.number}</span>
+                            {dest.holder ? ` a.n. ${dest.holder}` : ""}
+                          </p>
+                          {!r.confirmed_at && isOperational && !isOwner && (
+                            <p className="mt-1 font-semibold">
+                              Cek mutasi rekening ini, lalu konfirmasi bila dana sudah masuk.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {!r.confirmed_at && isOperational && isOwner && (
                       <p className="border-t border-slate-100 bg-slate-50 px-3.5 py-2.5 text-xs leading-relaxed text-slate-600">
                         Anda tidak bisa mengonfirmasi pengembalian atas pengajuan Anda sendiri.
@@ -662,9 +797,22 @@ export default function ReturnsSection({
                         <p className="text-xs leading-relaxed text-emerald-900">
                           Pastikan dana{" "}
                           <span className="font-bold">{formatCurrency(r.amount)}</span> sudah masuk
-                          ke rekening perusahaan dan sesuai bukti transfer. Konfirmasi tidak bisa
-                          dibatalkan.
+                          ke{" "}
+                          {dest ? (
+                            <span className="font-bold">
+                              {dest.bank} {dest.number}
+                            </span>
+                          ) : (
+                            "rekening perusahaan"
+                          )}{" "}
+                          dan sesuai bukti transfer. Konfirmasi tidak bisa dibatalkan.
                         </p>
+                        {error && (
+                          <p role="alert" className="flex items-start gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                            <AlertCircle size={14} className="mt-px shrink-0" />
+                            {error}
+                          </p>
+                        )}
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
@@ -854,7 +1002,7 @@ export default function ReturnsSection({
 
           {/* Jumlah */}
           <div className="space-y-2.5">
-            <label className="block text-sm font-bold text-slate-900">Jumlah yang Dikembalikan</label>
+            <StepLabel n={1}>Jumlah yang Dikembalikan</StepLabel>
             <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
               <span className="font-semibold text-slate-600">Rp</span>
               <CurrencyInput
@@ -874,51 +1022,98 @@ export default function ReturnsSection({
             <p className="text-xs text-slate-600">Maksimal pengembalian sebesar sisa saldo.</p>
           </div>
 
-          {/* Metode */}
-          <div className="space-y-2.5">
-            <label className="block text-sm font-bold text-slate-900">Metode Pengembalian</label>
-            <p className="text-xs text-slate-600">
-              Transfer ke salah satu rekening berikut, lalu unggah bukti transfernya.
+          {/* Rekening tujuan */}
+          <div ref={accBoxRef} className="space-y-2.5">
+            <StepLabel n={2}>Transfer ke Rekening Perusahaan</StepLabel>
+            <p className="text-xs leading-relaxed text-slate-600">
+              Pilih satu rekening dengan menekan <span className="font-bold">Salin</span>. Rekening
+              yang Anda pilih ikut dikirim ke Tim Operasional supaya mereka tahu mutasi mana yang
+              dicek.
             </p>
-            <div className="divide-y divide-slate-200 border-y border-slate-200">
-              {COMPANY_RETURN_ACCOUNTS.map((acc) => (
-                <div
-                  key={acc.number}
-                  className="flex items-center justify-between gap-3 py-3.5"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-xs text-slate-600">
-                      {acc.bank} · a.n. {acc.holder}
-                    </p>
-                    <p className="mt-1 select-all text-base font-bold tracking-wide text-slate-900">
+            <div role="radiogroup" aria-label="Rekening tujuan pengembalian" className="space-y-2.5">
+              {COMPANY_RETURN_ACCOUNTS.map((acc) => {
+                const picked = selectedAcc === acc.number;
+                return (
+                  <div
+                    key={acc.number}
+                    role="radio"
+                    aria-checked={picked}
+                    tabIndex={0}
+                    onClick={() => selectAccount(acc.number)}
+                    onKeyDown={(e) => {
+                      if (e.key === " " || e.key === "Enter") {
+                        e.preventDefault();
+                        selectAccount(acc.number);
+                      }
+                    }}
+                    className={`cursor-pointer rounded-2xl border p-4 transition-colors ${
+                      picked
+                        ? "border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-200"
+                        : accError
+                          ? "border-rose-300 bg-white hover:bg-slate-50"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-slate-900">{acc.bank}</p>
+                      {picked ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                          <Check size={11} strokeWidth={3} /> Dipilih
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-slate-600">Ketuk untuk memilih</span>
+                      )}
+                    </div>
+                    <p className="mt-2 select-all text-xl font-extrabold tabular-nums tracking-wide text-slate-900">
                       {acc.number}
                     </p>
+                    <p className="mt-0.5 text-xs text-slate-600">a.n. {acc.holder}</p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyAccount(acc.number);
+                      }}
+                      className={`mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold ${
+                        picked
+                          ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
+                          : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      {copiedAcc === acc.number ? (
+                        <>
+                          <Check size={14} /> Nomor tersalin
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={14} /> Salin nomor rekening
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => copyAccount(acc.number)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50"
-                  >
-                    {copiedAcc === acc.number ? (
-                      <>
-                        <Check size={14} className="text-emerald-700" /> Tersalin
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} /> Salin
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            {selectedAcc && findCompanyAccount(selectedAcc) && (
+              <p className="flex items-start gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold leading-relaxed text-emerald-900">
+                <ArrowDownToLine size={14} className="mt-px shrink-0" />
+                Transfer sisa dana ke {findCompanyAccount(selectedAcc).bank}, lalu unggah bukti
+                transfernya di langkah 4.
+              </p>
+            )}
+            {accError && (
+              <p role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
+                <AlertCircle size={14} className="mt-px shrink-0" />
+                {accError}
+              </p>
+            )}
           </div>
 
           {/* Tanggal */}
           <div className="space-y-2.5">
-            <label htmlFor="return-date" className="block text-sm font-bold text-slate-900">
+            <StepLabel n={3} htmlFor="return-date">
               Tanggal Pengembalian
-            </label>
+            </StepLabel>
             <DateInput
               id="return-date"
               required
@@ -931,7 +1126,7 @@ export default function ReturnsSection({
 
           {/* Bukti */}
           <div className="space-y-2.5">
-            <label className="block text-sm font-bold text-slate-900">Bukti Transfer Bank</label>
+            <StepLabel n={4}>Bukti Transfer Bank</StepLabel>
             <button
               ref={proofBoxRef}
               type="button"
@@ -986,9 +1181,9 @@ export default function ReturnsSection({
 
           {/* Catatan */}
           <div className="space-y-2.5">
-            <label htmlFor="return-note" className="block text-sm font-bold text-slate-900">
-              Catatan Tambahan <span className="font-normal text-slate-600">(Opsional)</span>
-            </label>
+            <StepLabel n={5} htmlFor="return-note" optional>
+              Catatan Tambahan
+            </StepLabel>
             <textarea
               id="return-note"
               rows={3}
@@ -1001,10 +1196,10 @@ export default function ReturnsSection({
 
           {/* Tombol kirim menempel di bawah area gulir */}
           <div className="sticky bottom-0 z-10 -mx-6 -mb-5 space-y-2 border-t border-slate-100 bg-white px-6 py-4">
-            {(error || proofError) && (
+            {(error || proofError || accError) && (
               <p role="alert" className="flex items-start gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
                 <AlertCircle size={14} className="mt-px shrink-0" />
-                {error || "Bukti transfer belum dilampirkan."}
+                {error || accError || "Bukti transfer belum dilampirkan."}
               </p>
             )}
             <button
@@ -1012,7 +1207,7 @@ export default function ReturnsSection({
               disabled={submitting}
               className="w-full rounded-full bg-[#0f172a] py-3.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {submitting ? "Menyimpan..." : "Kirim Pengembalian"}
+              {submitting ? "Mengirim..." : "Kirim Pengembalian"}
             </button>
           </div>
         </form>

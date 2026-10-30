@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.9
+### Profil
+- Halaman **Edit profil** kini menjelaskan data apa saja yang bisa diubah (username, bank, nomor rekening,
+  atas nama rekening, Telegram Chat ID) dan yang tidak bisa (email, peran, riwayat pengajuan).
+  Baris email diberi label **Tidak bisa diubah**.
+
+### Pencairan
+- Setelah bukti transfer dipilih, layar otomatis menggulung ke tombol **Konfirmasi Pencairan**
+  (juga saat bukti dikirim dari tombol **Cairkan Sekarang**), disertai pengingat singkat agar tidak terlewat.
+
+### Kembalikan Sisa
+- Menekan **Salin** (atau mengetuk kartu rekening) otomatis memilih rekening perusahaan tujuan transfer.
+  Pengiriman wajib memilih rekening; pilihan tersimpan bersama pengembalian (migrasi `0040`).
+- Detail **Pengembalian Sisa Saldo** untuk Tim Operasional kini memberi tahu bahwa requester mentransfer ke
+  rekening tertentu (bank, nomor, atas nama) dan teks konfirmasi menyebut rekening yang harus dicek mutasinya.
+- UI formulir dirapikan: langkah bernomor 1-5, rekening berupa kartu pilihan besar dengan tanda **Dipilih**.
+- Database lama tanpa migrasi 0040 tetap jalan: rekening tujuan dicatat di awal catatan.
+
+### Konfirmasi
+- Pencairan, pengembalian, penggantian, dan konfirmasi pengembalian dibatasi **15 detik**. Bila belum terkirim,
+  proses dihentikan dan muncul pesan untuk klik ulang. Klik ulang aman: tidak tercatat dobel.
+
 ## 1.2.6
 ### Pencairan
 - Setelah menyetujui lalu memilih **Nanti**, tombol **Lihat Detail** (di dialog maupun footer panel) langsung membuka

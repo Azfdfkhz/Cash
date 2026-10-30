@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Banknote, CalendarCheck, Check, CheckCircle2, Copy, Eye, FileText, Upload, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toJpegFile } from "@/lib/imageConvert";
 import { DriveInlinePreview, FilePreviewLink, LocalFilePreview } from "@/components/FilePreview";
 import { formatBankAccount, formatCurrency, formatDate } from "@/lib/utils";
+import { assertNotTimedOut, createRequestTimer, toTimeoutError } from "@/lib/requestTimeout";
 
 // Baris "label — nilai — [Salin]" supaya operasional tidak perlu mengetik ulang
 // di aplikasi bank.
@@ -83,9 +84,26 @@ export default function DisbursementSection({
   // Bukti belum dilampirkan: pesan tampil tepat di bawah kotak unggah.
   const [missingProof, setMissingProof] = useState(false);
   const proofBoxRef = useRef(null);
+  const confirmBtnRef = useRef(null);
+  const errorRef = useRef(null);
   // Ref sinkron: cegah klik ganda super cepat pada tombol konfirmasi
   // mencairkan dana dua kali sebelum `saving` membuatnya disabled.
   const busyRef = useRef(false);
+
+  // Begitu bukti transfer terlampir (dipilih sendiri atau kiriman luar), layar
+  // langsung menggulung ke tombol konfirmasi supaya tidak terlewat.
+  useEffect(() => {
+    if (!file || disbursedAt) return;
+    const t = setTimeout(() => {
+      confirmBtnRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 350); // tunggu pratinjau bukti selesai tampil agar posisi akhirnya tepat
+    return () => clearTimeout(t);
+  }, [file, disbursedAt]);
+
+  // Pesan gagal/timeout dibawa ke layar supaya jelas harus klik ulang.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [error]);
 
   if (disbursedAt) {
     // Rekening tujuan tidak diulang di sini: sudah ada di "Rekening Tujuan".
@@ -174,6 +192,11 @@ export default function DisbursementSection({
     if (busyRef.current) return;
     busyRef.current = true;
     setSaving(true);
+    setError("");
+    // Lebih dari 15 detik belum terkirim -> hentikan dan minta klik ulang.
+    // Aman diulang: pencairan yang sudah tersimpan ditolak server sebagai
+    // "sudah dicairkan", dan data di-refresh agar status terbaru tampil.
+    const timer = createRequestTimer();
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -182,22 +205,23 @@ export default function DisbursementSection({
       const uploadRes = await fetch("/api/drive/upload", {
         method: "POST",
         body: formData,
+        signal: timer.signal,
       });
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error);
 
       const supabase = createClient();
-      const { error: rpcError } = await supabase.rpc(
-        "mark_cash_advance_disbursed",
-        {
+      const { error: rpcError } = await supabase
+        .rpc("mark_cash_advance_disbursed", {
           target_id: cashAdvanceId,
           file_id: uploadData.fileId,
           view_url: uploadData.viewUrl,
           note: note.trim() || null,
           proof_sha256: uploadData.proofSha256 ?? null,
           proof_phash: uploadData.proofPhash ?? null,
-        }
-      );
+        })
+        .abortSignal(timer.signal);
+      assertNotTimedOut(timer);
       if (rpcError) {
         throw new Error(
           rpcError.code === "23505"
@@ -205,6 +229,7 @@ export default function DisbursementSection({
             : rpcError.message
         );
       }
+      timer.clear();
 
       fetch(`/api/cash-advances/${cashAdvanceId}/notify-disbursed`, {
         method: "POST",
@@ -222,8 +247,11 @@ export default function DisbursementSection({
       onDone?.();
       router.refresh();
     } catch (err) {
-      setError(err.message || "Gagal menyimpan pencairan. Coba lagi.");
-      if (/sudah pernah dipakai/i.test(err.message || "")) {
+      timer.clear();
+      const e = toTimeoutError(err, timer);
+      setError(e.message || "Gagal menyimpan pencairan. Coba lagi.");
+      if (timer.timedOut) router.refresh(); // kalau ternyata sudah tersimpan, status ikut berubah
+      if (/sudah pernah dipakai/i.test(e.message || "")) {
         setFile(null);
         setDropExternal(true);
       }
@@ -258,7 +286,7 @@ export default function DisbursementSection({
       </div>
 
       {error && (
-        <div role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
+        <div ref={errorRef} role="alert" className="font-medium text-sm text-rose-800 bg-rose-50 rounded-md px-3 py-2">
           {error}
         </div>
       )}
@@ -314,7 +342,15 @@ export default function DisbursementSection({
         className="w-full rounded-lg border border-slate-300 px-3 py-2 lg:rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
       />
 
+      {file && !saving && (
+        <p className="flex items-start gap-1.5 text-xs font-medium text-emerald-800">
+          <CheckCircle2 size={14} className="mt-px shrink-0" />
+          Bukti transfer sudah terlampir. Tekan tombol konfirmasi di bawah agar requester diberi tahu.
+        </p>
+      )}
+
       <button
+        ref={confirmBtnRef}
         type="submit"
         disabled={saving}
         className="w-full flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-dark disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg py-2.5 lg:rounded-full lg:bg-dark-navy lg:font-semibold lg:hover:bg-slate-800"

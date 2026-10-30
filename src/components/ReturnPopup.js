@@ -50,6 +50,16 @@ function ReturnStatus({ ca, sent, onBackToDetail, onClose }) {
             <div className="divide-y divide-slate-100">
               <Row label="Jumlah Dikembalikan">{formatCurrency(sent.amount)}</Row>
               <Row label="Metode">Transfer Bank</Row>
+              {sent.destAccountNumber && (
+                <Row label="Rekening Tujuan">
+                  {sent.destBank} · {sent.destAccountNumber}
+                  {sent.destAccountHolder ? (
+                    <span className="block text-xs font-normal text-slate-600">
+                      a.n. {sent.destAccountHolder}
+                    </span>
+                  ) : null}
+                </Row>
+              )}
               <Row label="Tanggal Kirim">{formatDate(sent.submittedAt)}</Row>
               <Row label="Pengajuan">{formatCaCode(ca)}</Row>
               {sent.note && <Row label="Catatan">{sent.note}</Row>}

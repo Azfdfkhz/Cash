@@ -7,7 +7,9 @@ import {
   CreditCard,
   Eye,
   EyeOff,
+  Check,
   Landmark,
+  Lock,
   Mail,
   Pencil,
   Send,
@@ -273,7 +275,15 @@ export default function ProfileForm({
               <p className={textCls}>{saved.username || "Belum diatur"}</p>
             )}
           </Row>
-          <Row icon={Mail} label="Email">
+          <Row
+            icon={Mail}
+            label="Email"
+            trailing={
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                <Lock size={11} /> Tidak bisa diubah
+              </span>
+            }
+          >
             <p className={textCls}>{maskEmail(email) || "-"}</p>
           </Row>
 
@@ -360,6 +370,31 @@ export default function ProfileForm({
           perlu diketik ulang dan tidak perlu ditampilkan penuh di sini. Tetap bisa diubah per
           pengajuan.
         </p>
+        <div
+          data-tour="profile-editable-info"
+          className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600 sm:grid-cols-2"
+        >
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 font-bold text-emerald-700">
+              <Check size={14} strokeWidth={3} /> Yang bisa Anda ubah
+            </p>
+            <ul className="space-y-1">
+              <li>Username</li>
+              <li>Bank, nomor rekening, dan atas nama rekening</li>
+              <li>Telegram Chat ID untuk notifikasi</li>
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 font-bold text-slate-900">
+              <Lock size={13} /> Yang tidak bisa diubah
+            </p>
+            <ul className="space-y-1">
+              <li>Email (dipakai untuk masuk akun)</li>
+              <li>Peran Requester/Operasional (diatur Tim Operasional)</li>
+              <li>Riwayat pengajuan (tetap aman walau username diganti)</li>
+            </ul>
+          </div>
+        </div>
       </section>
 
       <section data-tour="profile-telegram">
