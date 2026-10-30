@@ -9,7 +9,7 @@
 // `operational`. Fungsi administrasi (Kelola Pengguna) adalah bagian dari peran
 // operational, jadi tidak ada tur "admin" terpisah.
 
-export const TOUR_VERSION = "v2";
+export const TOUR_VERSION = "v3";
 export const START_TOUR_EVENT = "open-onboarding";
 
 export const TOUR_STATUS = {
@@ -56,7 +56,7 @@ const STEPS = [
     title: "Menu utama",
     body: {
       requester:
-        "Pindah halaman dari sini: Beranda (ringkasan pengajuan Anda), Ajukan (buat Cash Advance atau Reimbursement), dan Profil (rekening dan notifikasi Telegram). Pusat Bantuan ada di menu samping (desktop) atau ikon ? di pojok atas (ponsel).",
+        "Pindah halaman dari sini: Beranda (ringkasan pengajuan CA & RE Anda), Ajukan (buat Cash Advance atau Reimbursement), dan Profil (rekening dan notifikasi Telegram). Pusat Bantuan ada di menu samping (desktop) atau ikon ? di pojok atas (ponsel).",
       operational:
         "Pindah halaman dari sini: Beranda (ringkasan), Persetujuan (tinjau, setujui/tolak, dan cairkan; titik oranye berarti ada yang perlu tindakan), Ajukan (pengajuan milik Anda sendiri), Laporan (rekap kwitansi), dan Profil. Pusat Bantuan ada di menu samping atau ikon ? di pojok atas.",
     },
@@ -162,9 +162,9 @@ const STEPS = [
     title: { requester: "Lihat detail pengajuan", operational: "Tinjau Pengajuan dan Lihat" },
     body: {
       requester:
-        "Klik baris atau tombol Lihat untuk membuka pop up detail: Ringkasan, RAB, Kwitansi, dan Riwayat. Dari sana Anda mencatat kwitansi, mengembalikan sisa dana, atau mengajukan ulang bila ditolak.",
+        "Klik baris atau tombol Lihat untuk membuka pop up detail: Ringkasan, RAB, Kwitansi, dan Riwayat. Dari sana Anda mencatat kwitansi, mengembalikan sisa dana, atau mengajukan ulang bila ditolak. Bila Tim Operasional membuka kembali pengajuan yang sudah Selesai, petunjuk langkahnya tampil di bawah status dan tombol Perbaiki Data membawa Anda langsung ke bagian yang harus diperbaiki.",
       operational:
-        "Tinjau Pengajuan muncul pada pengajuan yang menunggu keputusan dan membuka pop up untuk memeriksa lalu menyetujui atau menolak. Lihat membuka detail pengajuan yang sudah diputuskan, termasuk bukti transfer dan SPJ. Di ponsel, tulisan tombol mengikuti status.",
+        "Tinjau Pengajuan muncul pada pengajuan yang menunggu keputusan dan membuka pop up untuk memeriksa lalu menyetujui atau menolak. Lihat membuka detail pengajuan yang sudah diputuskan, termasuk bukti transfer dan SPJ. Pengembalian sisa saldo yang menunggu Anda memakai tombol Konfirmasi Pengembalian. Di ponsel, tulisan tombol mengikuti status.",
     },
     fallback: "Tombol aksi muncul pada setiap pengajuan di daftar. Saat ini belum ada pengajuan.",
   },
@@ -195,6 +195,17 @@ const STEPS = [
     body: "Untuk Cash Advance yang sudah cair, tombol Catat kwitansi dan Kembalikan sisa muncul di panel ini, paling lambat 7 hari kalender setelah dana cair (Tenggat LPJ/SPJ tampil di panel). Bila ada sisa dana, transfer ke rekening organisasi lalu catat pengembaliannya beserta bukti transfer. Pengajuan Selesai setelah seluruh sisa dikonfirmasi Tim Operasional. Reimbursement tidak punya langkah ini.",
   },
   {
+    id: "reopen-req",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "review-actions",
+    placement: "top",
+    roles: ["requester"],
+    demo: { kind: "review", mode: "always" },
+    title: "Bila pengajuan dibuka kembali",
+    body: "Jika Tim Operasional membuka kembali pengajuan yang sudah Selesai, panel menampilkan banner oranye berisi catatan mereka dan langkah yang harus Anda lakukan: batalkan pengembalian yang menunggu konfirmasi (kwitansi terkunci selama itu), perbaiki atau hapus kwitansi yang salah, lalu kembalikan sisa saldo dengan bukti yang benar. Tombol Perbaiki Data di deretan tombol ini membuka bagian yang tepat. Contoh ini tidak sedang dibuka kembali, jadi tombolnya tidak tampil.",
+  },
+  {
     id: "review-actions-ops",
     chapter: "Beranda",
     path: "/dashboard",
@@ -203,7 +214,18 @@ const STEPS = [
     roles: ["operational"],
     demo: { kind: "review", mode: "always" },
     title: "Lihat Detail, Tolak, Setujui",
-    body: "Lihat Detail membuka rincian lengkap. Tolak dan Setujui Pengajuan adalah keputusan nyata pada pengajuan sungguhan; di contoh ini tombolnya tidak berfungsi dan tur tidak pernah menekannya.",
+    body: "Lihat Detail membuka rincian lengkap. Tolak dan Setujui Pengajuan adalah keputusan nyata pada pengajuan sungguhan; di contoh ini tombolnya tidak berfungsi dan tur tidak pernah menekannya. Setelah menyetujui, Anda ditanya dulu mencairkan dana sekarang atau nanti, lalu ditanya mau pindah ke pengajuan berikutnya atau tetap di sini. Panel tidak pindah sendiri.",
+  },
+  {
+    id: "reopen-ops",
+    chapter: "Beranda",
+    path: "/dashboard",
+    target: "review-actions",
+    placement: "top",
+    roles: ["operational"],
+    demo: { kind: "review", mode: "always" },
+    title: "Buka Kembali Pengajuan",
+    body: "Pada Cash Advance yang sudah Selesai, tombol Buka Kembali Pengajuan muncul di deretan tombol ini. Tulis alasan tinjau ulang (wajib) supaya requester tahu apa yang harus diperbaiki. Pengembalian yang tadinya terkonfirmasi kembali menunggu konfirmasi, dan pengajuan Anda tutup ulang setelah datanya benar. Pengajuan milik Anda sendiri tidak bisa Anda buka kembali. Contoh ini belum Selesai, jadi tombolnya tidak tampil.",
   },
   {
     id: "detail-popup-demo",
@@ -368,6 +390,18 @@ const STEPS = [
     body: "Persetujuan berisi pengajuan berstatus Belum Disetujui. Pencairan berisi pengajuan yang sudah disetujui tetapi dananya belum ditransfer. Angka di tiap tab adalah jumlahnya, dan pengajuan milik Anda sendiri tidak ikut.",
   },
   {
+    id: "ap-kind",
+    chapter: "Persetujuan",
+    path: "/approvals",
+    target: "kind-filter",
+    placement: "bottom",
+    roles: ["operational"],
+    title: "Cash Advance atau Reimbursement",
+    body: "Pindah antara antrean Cash Advance dan Reimbursement. Angka di tiap tab adalah jumlah pengajuan pada jenis itu, dan daftar di bawahnya mengikuti pilihan ini.",
+    fallback:
+      "Di desktop, jenis pengajuan dipilih lewat sub-menu Persetujuan di menu samping: Cash Advance atau Reimbursement. Daftar antrean mengikuti pilihan itu.",
+  },
+  {
     id: "ap-list",
     chapter: "Persetujuan",
     path: "/approvals",
@@ -375,7 +409,7 @@ const STEPS = [
     placement: "right",
     roles: ["operational"],
     title: "Antrean pengajuan",
-    body: "Diurutkan dari yang paling lama menunggu. Di desktop, pilih pengajuan untuk melihat detailnya di panel kanan. Di ponsel, ketuk pengajuan untuk membuka pop up. Bila antrean sedang kosong, tur menampilkan satu pengajuan contoh (tidak tersimpan).",
+    body: "Diurutkan dari yang paling lama menunggu. Di desktop, pilih pengajuan untuk melihat detailnya di panel kanan. Di ponsel, ketuk pengajuan untuk membuka pop up. Gunakan kolom cari untuk menemukan pengajuan lewat username, nomor pengajuan, atau keperluan. Bila antrean sedang kosong, tur menampilkan satu pengajuan contoh (tidak tersimpan).",
     fallback: "Antrean kosong: tidak ada pengajuan yang menunggu pada tab ini.",
   },
   {
@@ -386,7 +420,7 @@ const STEPS = [
     placement: "left",
     roles: ["operational"],
     title: "Periksa sebelum memutuskan",
-    body: "Tinjau Ringkasan (kegiatan, sumber dana, rekening tujuan), RAB untuk Cash Advance, serta Kwitansi dan Riwayat. Pastikan nominal, rincian, dan dokumen sesuai sebelum mengambil keputusan.",
+    body: "Tinjau Ringkasan (kegiatan, sumber dana, rekening tujuan), RAB untuk Cash Advance, serta Kwitansi dan Riwayat (terbaru di atas). Pengembalian sisa saldo dari requester dikonfirmasi di bagian Pengembalian pada tab Ringkasan. Pastikan nominal, rincian, dan dokumen sesuai sebelum mengambil keputusan.",
     fallback:
       "Panel detail tampil di desktop setelah Anda memilih sebuah pengajuan. Di ponsel, isinya muncul sebagai pop up saat pengajuan diketuk. Periksa ringkasan, RAB, kwitansi, dan riwayat sebelum memutuskan.",
   },
@@ -398,7 +432,7 @@ const STEPS = [
     placement: "top",
     roles: ["operational"],
     title: "Setujui atau Tolak",
-    body: "Setujui Pengajuan dan Tolak adalah keputusan nyata yang langsung tersimpan dan memicu notifikasi ke requester. Catatan wajib diisi saat menolak, dan opsional saat menyetujui. Tur tidak pernah menekan tombol ini.",
+    body: "Setujui Pengajuan dan Tolak adalah keputusan nyata yang langsung tersimpan dan memicu notifikasi ke requester. Catatan wajib diisi saat menolak, dan opsional saat menyetujui. Setelah Setujui Pengajuan, muncul pilihan Cairkan Sekarang atau Nanti, lalu pertanyaan mau lanjut ke pengajuan berikutnya atau tidak. Tur tidak pernah menekan tombol ini.",
     fallback:
       "Tombol Setujui Pengajuan dan Tolak muncul untuk pengajuan yang menunggu keputusan. Keputusan ini nyata dan langsung tersimpan. Catatan wajib diisi saat menolak, dan Anda tidak dapat memutuskan pengajuan milik sendiri.",
   },
@@ -410,7 +444,7 @@ const STEPS = [
     placement: "bottom",
     roles: ["operational"],
     title: "Pencairan dana",
-    body: "Pada tab Pencairan, salin data rekening requester dengan tombol Salin, transfer lewat bank, lalu unggah bukti transfer dan konfirmasi pencairan. Pencairan hanya dapat dicatat sekali.",
+    body: "Pada tab Pencairan, salin data rekening requester dengan tombol Salin, transfer lewat bank, lalu unggah bukti transfer dan konfirmasi pencairan. Bila memilih Cairkan Sekarang setelah menyetujui, pemilih berkas bukti transfer langsung terbuka. Pencairan hanya dapat dicatat sekali.",
   },
 
   {
@@ -532,7 +566,7 @@ export function welcomeCopy(role) {
         body: "Ikuti tur singkat langsung di aplikasi: kami akan menyorot angka di Beranda, antrean Persetujuan, Laporan, dan Profil, beserta fungsinya.",
       }
     : {
-        title: "Selamat datang di Cash Advance",
+        title: "Selamat datang di Cash Advance & Reimbursement",
         body: "Ikuti tur singkat langsung di aplikasi: kami akan menyorot Beranda, formulir Ajukan, dan Profil, beserta fungsinya. Tidak ada pengajuan yang dikirim selama tur.",
       };
 }

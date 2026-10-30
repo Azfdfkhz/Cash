@@ -20,7 +20,7 @@ function Logo({ className = "" }) {
 // Header mobile: logo + nama aplikasi.
 function Brand() {
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex flex-col items-center gap-2 text-center">
       <Logo className="w-36" />
       <span className="text-sm font-medium leading-tight tracking-tight text-slate-200">
         Cash Advance &amp; Reimbursement
