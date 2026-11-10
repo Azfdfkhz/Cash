@@ -236,7 +236,11 @@ export default function ReturnsSection({
   // Bila komponen terlepas di tengah pengiriman, jangan tinggalkan overlay
   // "Mengirim..." menyala di induknya.
   const onSubmittingChangeRef = useRef(onSubmittingChange);
-  onSubmittingChangeRef.current = onSubmittingChange;
+  // Update ref setelah render (bukan saat render) agar React Compiler tidak
+  // mendeteksi mutasi ref di dalam body render component.
+  useEffect(() => {
+    onSubmittingChangeRef.current = onSubmittingChange;
+  });
   useEffect(() => () => onSubmittingChangeRef.current?.(false), []);
 
   const reimburseFileInputRef = useRef(null);
@@ -1131,7 +1135,7 @@ export default function ReturnsSection({
               ref={proofBoxRef}
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              aria-invalid={proofError ? "true" : undefined}
+              aria-describedby={proofError ? "return-proof-error" : undefined}
               className={`flex w-full items-center gap-4 rounded-2xl border border-dashed bg-white px-4 py-4 text-left hover:bg-slate-50 ${
                 proofError ? "border-rose-400 bg-rose-50/40 ring-2 ring-rose-200" : "border-slate-300 hover:border-slate-400"
               }`}
@@ -1171,7 +1175,7 @@ export default function ReturnsSection({
               className="hidden"
             />
             {proofError && (
-              <p role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
+              <p id="return-proof-error" role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
                 <AlertCircle size={14} className="mt-px shrink-0" />
                 {proofError}
               </p>

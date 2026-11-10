@@ -8,12 +8,12 @@ import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell"
 import AuthField, { AuthLabel } from "@/components/auth/AuthField";
 import PrimaryButton from "@/components/auth/PrimaryButton";
 import BankSelectModal from "@/components/BankSelectModal";
-import { User, Building2, CreditCard, Send, ChevronRight, Info, ExternalLink } from "lucide-react";
+import { Building2, CreditCard, Send, ChevronRight, Info, ExternalLink } from "lucide-react";
 import { openTelegramBot, USERINFO_BOT, NOTIFY_BOT } from "@/lib/telegramLinks";
 
 export default function CompleteProfilePage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [bankName, setBankName] = useState("");
   const [bankHolderName, setBankHolderName] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
@@ -37,6 +37,7 @@ export default function CompleteProfilePage() {
       }
 
       setProfileId(user.id);
+      setUserEmail(user.email ?? "");
     }
     loadUser();
   }, [router]);
@@ -45,24 +46,23 @@ export default function CompleteProfilePage() {
     e.preventDefault();
     setError("");
 
-    // Samakan dengan constraint database chk_profiles_username_format
-    // (huruf besar/kecil, angka, titik, underscore; 3-30 karakter).
-    // Huruf besar/kecil dianggap sama saat cek duplikat (index lower()).
-    const cleanUsername = username.trim();
-    if (cleanUsername && !/^[A-Za-z0-9_.]{3,30}$/.test(cleanUsername)) {
-      setError(
-        "Username 3-30 karakter, hanya huruf, angka, titik, dan underscore (tanpa spasi atau tanda -)."
-      );
-      return;
+    // Auto-generate username dari bagian email sebelum @.
+    // Hanya ambil karakter yang diizinkan: huruf, angka, titik, underscore.
+    // Potong maksimal 30 karakter. Jika hasilnya < 3 karakter, tambahkan
+    // angka dari timestamp agar tetap valid dan unik.
+    const emailPrefix = userEmail.split("@")[0] ?? "";
+    let autoUsername = emailPrefix.replace(/[^A-Za-z0-9_.]/g, "").slice(0, 30);
+    if (autoUsername.length < 3) {
+      autoUsername = (autoUsername + Date.now().toString()).slice(0, 30);
     }
 
     setSaving(true);
 
     const supabase = createClient();
-    const displayName = bankHolderName || cleanUsername;
+    const displayName = bankHolderName || autoUsername;
     const payload = {
-      full_name: displayName || cleanUsername,
-      username: cleanUsername || null,
+      full_name: displayName,
+      username: autoUsername,
       // Menandai langkah 2 selesai; tanpa ini dashboard terus mengarahkan
       // kembali ke halaman ini.
       profile_completed_at: new Date().toISOString(),
@@ -76,17 +76,26 @@ export default function CompleteProfilePage() {
       .update(payload)
       .eq("id", profileId);
 
+    // Jika username duplikat (kode 23505), coba tambahkan angka acak pendek
+    // agar tetap bisa menyimpan tanpa mengganggu user.
+    if (updateError?.code === "23505") {
+      const suffix = Math.floor(Math.random() * 9000 + 1000).toString();
+      const uniqueUsername = autoUsername.slice(0, 26) + suffix;
+      ({ error: updateError } = await supabase
+        .from("profiles")
+        .update({ ...payload, username: uniqueUsername })
+        .eq("id", profileId));
+    }
+
     // Database lama (migrasi 0034 belum dijalankan) hanya menerima huruf
-    // kecil. Coba lagi dengan huruf kecil supaya tetap tersimpan; huruf
-    // besar/kecil dianggap sama untuk username.
+    // kecil. Coba lagi dengan huruf kecil supaya tetap tersimpan.
     if (
       updateError?.code === "23514" &&
-      cleanUsername &&
-      cleanUsername !== cleanUsername.toLowerCase()
+      autoUsername !== autoUsername.toLowerCase()
     ) {
       ({ error: updateError } = await supabase
         .from("profiles")
-        .update({ ...payload, username: cleanUsername.toLowerCase() })
+        .update({ ...payload, username: autoUsername.toLowerCase() })
         .eq("id", profileId));
     }
 
@@ -94,17 +103,16 @@ export default function CompleteProfilePage() {
 
     if (updateError) {
       setError(
-        updateError.code === "23505"
-          ? "Nama pengguna sudah dipakai. Coba yang lain."
-          : updateError.code === "23514"
-            ? "Format data tidak valid. Username hanya boleh huruf, angka, titik, dan underscore (3-30 karakter); periksa juga panjang nama pemilik rekening."
-            : "Gagal menyimpan data. Coba lagi."
+        updateError.code === "23514"
+          ? "Format data tidak valid. Periksa panjang nama pemilik rekening."
+          : "Gagal menyimpan data. Coba lagi."
       );
       return;
     }
 
     // Langkah 2 selesai -> hapus penanda agar tidak diarahkan ke sini lagi.
     await supabase.auth.updateUser({ data: { onboarding_pending: false } });
+    await supabase.auth.refreshSession();
 
     router.push("/dashboard");
     router.refresh();
@@ -158,19 +166,6 @@ export default function CompleteProfilePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <AuthField
-          id="username"
-          label="Username"
-          icon={User}
-          type="text"
-          autoComplete="username"
-          value={username}
-          onChange={(e) =>
-            setUsername(e.target.value.replace(/[^A-Za-z0-9_.]/g, ""))
-          }
-          placeholder="contoh: Rina_W"
-        />
-
         {/* Bank + account */}
         <div className="space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         <div>

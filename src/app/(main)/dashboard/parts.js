@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PendingLink, usePendingNav } from "@/components/PendingNav";
+import { useContext, useOptimistic } from "react";
+import { useRouter } from "next/navigation";
+import { PendingNavContext } from "@/components/PendingNav";
 
 export function RoleBadge({ children, dot = false, dark = false }) {
   return (
@@ -46,20 +47,29 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
   );
 }
 
-// Tab "Semua | Belum Disetujui (n) | Perlu Konfirmasi (n)" berbasis query ?filter=. Gaya garis bawah
-// (sama dengan tab jenis pengajuan), tanpa wadah/kartu sendiri, supaya tidak
-// menjadi kartu di dalam kartu.
+// Tab "Semua | Belum Disetujui (n) | Perlu Konfirmasi (n)" berbasis query ?filter=.
+// Gaya garis bawah, tanpa wadah/kartu sendiri, supaya tidak menjadi kartu di
+// dalam kartu.
+//
+// Saat diklik, tab berpindah optimistis seketika (useOptimistic) dan konten di
+// dalam <KindFilterContent> langsung menampilkan skeleton — karena navigasi
+// dijalankan lewat startTransition yang SAMA dengan KindFilterProvider.
+// Tanpa ini, layar "membeku" selama data server dimuat tanpa umpan balik visual.
 export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size = "md", fill = false }) {
   const jenis = kind ? `jenis=${kind}` : "";
-  // Tab aktif pindah seketika saat diklik, tanpa menunggu data baru dari server.
-  // `optimistic` hanya dipakai selama navigasi berjalan, lalu kembali ke `filter`.
-  const { pending } = usePendingNav();
-  const [optimistic, setOptimistic] = useState(null);
-  useEffect(() => {
-    if (!pending) setOptimistic(null);
-  }, [pending]);
+  const router = useRouter();
+
+  // Ambil startTransition dari KindFilterProvider (lewat PendingNavContext).
+  // Bila FilterTabs dirender di luar provider (skenario masa depan), fallback
+  // ke fungsi no-op agar tidak error.
+  const { startTransition } = useContext(PendingNavContext);
+
   const serverKey = filter === "pending" || filter === "confirm" ? filter : "all";
-  const current = pending && optimistic ? optimistic : serverKey;
+
+  // useOptimistic: tab aktif berpindah seketika tanpa menunggu data server.
+  // Nilai kembali ke serverKey begitu transisi selesai.
+  const [current, setOptimisticTab] = useOptimistic(serverKey);
+
   const base =
     size === "sm"
       ? "whitespace-nowrap px-1 pb-2 pt-1 text-xs"
@@ -70,6 +80,17 @@ export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size 
         ? "border-brand text-brand"
         : "border-transparent text-slate-600 hover:text-slate-800"
     }`;
+
+  // Navigasi dijalankan di dalam startTransition dari KindFilterProvider:
+  // ini membuat `pending` di FilterContext = true selama navigasi berlangsung,
+  // sehingga <KindFilterContent> menampilkan skeleton otomatis.
+  function go(href, key) {
+    startTransition(() => {
+      setOptimisticTab(key);
+      router.push(href, { scroll: false });
+    });
+  }
+
   return (
     <div
       data-tour="status-filter"
@@ -80,36 +101,30 @@ export function FilterTabs({ filter, pendingCount, confirmCount = 0, kind, size 
           : "inline-flex items-end gap-5 border-b border-slate-200"
       }
     >
-      <PendingLink
-        scroll={false}
+      <button
         role="tab"
         aria-selected={current === "all"}
-        href={jenis ? `/dashboard?${jenis}` : "/dashboard"}
-        onClick={() => setOptimistic("all")}
+        onClick={() => go(jenis ? `/dashboard?${jenis}` : "/dashboard", "all")}
         className={tab(current === "all")}
       >
         Semua
-      </PendingLink>
-      <PendingLink
-        scroll={false}
+      </button>
+      <button
         role="tab"
         aria-selected={current === "pending"}
-        href={`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`}
-        onClick={() => setOptimistic("pending")}
+        onClick={() => go(`/dashboard?filter=pending${jenis ? `&${jenis}` : ""}`, "pending")}
         className={tab(current === "pending")}
       >
         Belum Disetujui ({pendingCount})
-      </PendingLink>
-      <PendingLink
-        scroll={false}
+      </button>
+      <button
         role="tab"
         aria-selected={current === "confirm"}
-        href={`/dashboard?filter=confirm${jenis ? `&${jenis}` : ""}`}
-        onClick={() => setOptimistic("confirm")}
+        onClick={() => go(`/dashboard?filter=confirm${jenis ? `&${jenis}` : ""}`, "confirm")}
         className={tab(current === "confirm")}
       >
         Perlu Konfirmasi ({confirmCount})
-      </PendingLink>
+      </button>
     </div>
   );
 }

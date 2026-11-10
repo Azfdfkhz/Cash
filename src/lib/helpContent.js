@@ -240,7 +240,7 @@ export const GLOSSARY = [
   { term: "Draft", meaning: "Pengajuan tersimpan di perangkat Anda yang belum dikirim." },
   { term: "Laporan penutupan", meaning: "PDF ringkasan pengajuan yang sudah selesai.", audience: ["operational"] },
   { term: "jt", meaning: "Singkatan juta. Rp 1,85 jt berarti sekitar Rp 1.850.000." },
-  { term: "miliar", meaning: "Seribu juta. Rp 17 miliar berarti sekitar Rp 17.000.000.000." },
+  { term: "miliar", meaning: "Satuan bilangan 10⁹ (1.000.000.000). Rp 17 miliar = Rp 17.000.000.000." },
 ];
 
 // Isi Pusat Bantuan yang BOLEH dilihat satu peran. Dipanggil di SERVER

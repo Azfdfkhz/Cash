@@ -172,7 +172,9 @@ export default function CashAdvanceDetailPopup({
     // konfirmasi (kwitansi terkunci), selain itu tab Kwitansi.
     if (initialFocus === "perbaiki") {
       focusedRef.current = true;
-      goFix((data.returns ?? []).some((r) => !r.confirmed_at));
+      // Defer agar tidak memanggil setState (setTab) secara sinkron di dalam
+      // body effect, yang dapat menyebabkan cascading render.
+      setTimeout(() => goFix((data.returns ?? []).some((r) => !r.confirmed_at)), 0);
       return;
     }
     const target =

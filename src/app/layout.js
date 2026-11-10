@@ -29,6 +29,15 @@ export const metadata = {
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
+  icons: {
+    icon: [
+      { url: "/brand/sh-mark.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/brand/sh-mark.png", type: "image/png" },
+    ],
+    shortcut: ["/brand/sh-mark.png"],
+  },
   // Aplikasi internal di balik login: jangan diindeks mesin pencari.
   robots: { index: false, follow: false },
   appleWebApp: {

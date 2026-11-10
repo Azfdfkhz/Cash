@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -102,6 +102,22 @@ export default function ProfileForm({
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState("");
   const [justSaved, setJustSaved] = useState(false);
+  // Pop up "Ada perubahan yang belum disimpan" saat user klik Batal dengan isian berubah.
+  const [unsavedDialog, setUnsavedDialog] = useState(false);
+
+  // ── Beforeunload: peringatkan browser jika tab ditutup / di-refresh ──────
+  // Hanya aktif saat mode edit DAN ada perubahan, agar tidak mengganggu
+  // navigasi normal (read mode).
+  useEffect(() => {
+    if (!editing) return;
+    function handleBeforeUnload(e) {
+      if (!isDirty()) return;
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, draft, newAccountNumber, saved]);
 
   function startReveal() {
     if (!saved.accountNumber) return;
@@ -118,10 +134,52 @@ export default function ProfileForm({
     setEditing(true);
   }
 
+  // Cek apakah ada isian yang berubah dari nilai tersimpan.
+  function isDirty() {
+    if (draft.username !== saved.username) return true;
+    if (draft.chatId !== saved.chatId) return true;
+    if (draft.bankName !== saved.bankName) return true;
+    if (draft.accountHolder !== saved.accountHolder) return true;
+    if (newAccountNumber.trim()) return true;
+    return false;
+  }
+
+  // Kumpulkan daftar field yang berubah untuk ditampilkan di popup.
+  function getChangedFields() {
+    const changes = [];
+    if (draft.username !== saved.username)
+      changes.push({ label: "Username", from: saved.username || "—", to: draft.username || "—" });
+    if (draft.bankName !== saved.bankName)
+      changes.push({ label: "Bank", from: saved.bankName || "—", to: draft.bankName || "—" });
+    if (newAccountNumber.trim())
+      changes.push({ label: "No. Rekening", from: "••••", to: `••••${newAccountNumber.slice(-4)}` });
+    if (draft.accountHolder !== saved.accountHolder)
+      changes.push({ label: "Atas Nama", from: saved.accountHolder || "—", to: draft.accountHolder || "—" });
+    if (draft.chatId !== saved.chatId)
+      changes.push({ label: "Telegram Chat ID", from: saved.chatId || "—", to: draft.chatId || "—" });
+    return changes;
+  }
+
   function cancelEdit() {
+    if (isDirty()) {
+      setUnsavedDialog(true);
+      return;
+    }
+    doCancel();
+  }
+
+  function doCancel() {
     setEditing(false);
     setErrors({});
     setServerError("");
+    setUnsavedDialog(false);
+  }
+
+  // Simpan langsung dari popup unsaved — jalankan validasi dulu seperti biasa.
+  function saveFromDialog() {
+    setUnsavedDialog(false);
+    setServerError("");
+    if (validate()) setConfirming(true);
   }
 
   function validate() {
@@ -365,36 +423,41 @@ export default function ProfileForm({
             )}
           </Row>
         </div>
-        <p className="mt-2 px-1 text-xs leading-relaxed text-slate-600">
-          Rekening ini otomatis terisi saat mengajukan Cash Advance atau Reimbursement, jadi tidak
-          perlu diketik ulang dan tidak perlu ditampilkan penuh di sini. Tetap bisa diubah per
-          pengajuan.
-        </p>
-        <div
-          data-tour="profile-editable-info"
-          className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600 sm:grid-cols-2"
-        >
-          <div>
-            <p className="mb-1.5 flex items-center gap-1.5 font-bold text-emerald-700">
-              <Check size={14} strokeWidth={3} /> Yang bisa Anda ubah
+
+        {editing && (
+          <>
+            <p className="mt-2 px-1 text-xs leading-relaxed text-slate-600">
+              Rekening ini otomatis terisi saat mengajukan Cash Advance atau Reimbursement, jadi tidak
+              perlu diketik ulang dan tidak perlu ditampilkan penuh di sini. Tetap bisa diubah per
+              pengajuan.
             </p>
-            <ul className="space-y-1">
-              <li>Username</li>
-              <li>Bank, nomor rekening, dan atas nama rekening</li>
-              <li>Telegram Chat ID untuk notifikasi</li>
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1.5 flex items-center gap-1.5 font-bold text-slate-900">
-              <Lock size={13} /> Yang tidak bisa diubah
-            </p>
-            <ul className="space-y-1">
-              <li>Email (dipakai untuk masuk akun)</li>
-              <li>Peran Requester/Operasional (diatur Tim Operasional)</li>
-              <li>Riwayat pengajuan (tetap aman walau username diganti)</li>
-            </ul>
-          </div>
-        </div>
+            <div
+              data-tour="profile-editable-info"
+              className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600 sm:grid-cols-2"
+            >
+              <div>
+                <p className="mb-1.5 flex items-center gap-1.5 font-bold text-emerald-700">
+                  <Check size={14} strokeWidth={3} /> Yang bisa Anda ubah
+                </p>
+                <ul className="space-y-1">
+                  <li>Username</li>
+                  <li>Bank, nomor rekening, dan atas nama rekening</li>
+                  <li>Telegram Chat ID untuk notifikasi</li>
+                </ul>
+              </div>
+              <div>
+                <p className="mb-1.5 flex items-center gap-1.5 font-bold text-slate-900">
+                  <Lock size={13} /> Yang tidak bisa diubah
+                </p>
+                <ul className="space-y-1">
+                  <li>Email (dipakai untuk masuk akun)</li>
+                  <li>Peran Requester/Operasional (diatur Tim Operasional)</li>
+                  <li>Riwayat pengajuan (tetap aman walau username diganti)</li>
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       <section data-tour="profile-telegram">
@@ -529,6 +592,46 @@ export default function ProfileForm({
       )}
 
       {reveal.dialog}
+
+      {unsavedDialog && (() => {
+        const changes = getChangedFields();
+        return (
+          <Dialog
+            title="Ada perubahan yang belum disimpan"
+            actions={
+              <>
+                <button type="button" onClick={doCancel} className={ghostBtn}>
+                  Buang
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUnsavedDialog(false)}
+                  className={ghostBtn}
+                >
+                  Lanjut edit
+                </button>
+                <button type="button" onClick={saveFromDialog} className={primaryBtn}>
+                  Simpan
+                </button>
+              </>
+            }
+          >
+            <p className="text-sm text-slate-600">
+              Data berikut belum tersimpan:
+            </p>
+            <ul className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 text-xs">
+              {changes.map((c) => (
+                <li key={c.label} className="flex items-start gap-3 px-3 py-2.5">
+                  <span className="w-28 shrink-0 font-semibold text-slate-700">{c.label}</span>
+                  <span className="min-w-0 text-slate-500 line-through">{c.from}</span>
+                  <span className="shrink-0 text-slate-400">→</span>
+                  <span className="min-w-0 font-semibold text-slate-900">{c.to}</span>
+                </li>
+              ))}
+            </ul>
+          </Dialog>
+        );
+      })()}
     </form>
   );
 }

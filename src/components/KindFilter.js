@@ -47,7 +47,7 @@ export function KindFilterProvider({ basePath, active, children }) {
 
   return (
     <FilterContext.Provider value={{ kind, pending, select }}>
-      <PendingNavContext.Provider value={{ pending, navigate }}>
+      <PendingNavContext.Provider value={{ pending, navigate, startTransition }}>
         {children}
       </PendingNavContext.Provider>
     </FilterContext.Provider>

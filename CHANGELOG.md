@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.0
+### Pendaftaran Akun & Onboarding
+- **Hapus kolom username** dari formulir "Langkah 2 — Lengkapi Data Anda".
+  Username kini diambil otomatis dari bagian email sebelum `@`
+  (karakter yang tidak diizinkan dibuang; min 3, maks 30 karakter).
+  Jika username sudah dipakai oleh pengguna lain, 4 digit acak ditambahkan
+  secara otomatis — pengguna tidak perlu melakukan apa pun.
+- **Pemicu Tur Aplikasi untuk Akun Baru**: Tur pengenalan aplikasi kini langsung dimulai seketika pengguna selesai melengkapi profil dan masuk ke Beranda untuk pertama kali, tanpa perlu logout dan login ulang.
+- Migrasi database `0041_auto_username_from_email.sql`: backfill username
+  untuk pengguna lama yang belum mengisi username, menggunakan logika yang sama.
+
+### UI & UX
+- **Favicon & Logo Tab Browser**: Mengganti favicon browser dan shortcut web app dengan logo resmi Sharing Happiness Mark (`/brand/sh-mark.png`).
+- **Edit Profil**: Dialog peringatan perubahan belum disimpan (*leave guard*) dengan daftar data yang diubah dan tombol aksi Simpan langsung dari popup.
+- **Filter Beranda**: Indikator skeleton memuat data saat mengklik tab filter status (*Semua*, *Belum Disetujui*, *Perlu Konfirmasi*).
+- **Skeleton Laporan**: Memperbaiki tampilan load skeleton halaman Laporan agar selaras presisi dengan struktur tabel dan pratinjau desktop.
+- **Glosarium Istilah**: Definisi istilah *miliar* disesuaikan dengan standar KBBI formal.
+
 ## 1.2.9
 ### Profil
 - Halaman **Edit profil** kini menjelaskan data apa saja yang bisa diubah (username, bank, nomor rekening,

@@ -9,7 +9,9 @@ import ProductTour from "@/components/tour/ProductTour";
 export default async function OnboardingData() {
   const { user, profile } = await getUserProfile();
   if (!user || !profile) return null;
-  if (user.user_metadata?.onboarding_pending === true) return null;
+  // Tur interaktif hanya muncul setelah langkah "Lengkapi data" selesai.
+  // Sumber kebenaran adalah kolom profile_completed_at di database.
+  if (profile.profile_completed_at === null) return null;
   const { status, stepId } = readTourState(user.user_metadata);
   return <ProductTour role={profile.role} initialStatus={status} initialStepId={stepId} />;
 }

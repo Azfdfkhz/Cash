@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 // di segmen halaman yang sama, jadi loading.js TIDAK tampil dan layar terlihat
 // "membeku" sampai data baru tiba. Konteks ini membungkus navigasi tsb dalam
 // transition supaya `pending` bisa dipakai menampilkan skeleton.
-export const PendingNavContext = createContext({ pending: false, navigate: null });
+export const PendingNavContext = createContext({ pending: false, navigate: null, startTransition: (fn) => fn() });
 
 export function usePendingNav() {
   return useContext(PendingNavContext);
@@ -29,7 +29,7 @@ export function PendingNavProvider({ children }) {
     [router]
   );
 
-  const value = useMemo(() => ({ pending, navigate }), [pending, navigate]);
+  const value = useMemo(() => ({ pending, navigate, startTransition }), [pending, navigate, startTransition]);
   return <PendingNavContext.Provider value={value}>{children}</PendingNavContext.Provider>;
 }
 

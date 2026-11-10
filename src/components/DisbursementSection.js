@@ -295,7 +295,7 @@ export default function DisbursementSection({
         ref={proofBoxRef}
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        aria-invalid={missingProof ? "true" : undefined}
+        aria-describedby={missingProof ? "proof-error-hint" : undefined}
         className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-lg py-4 text-sm ${
           missingProof
             ? "border-rose-400 bg-rose-50/40 text-rose-700 ring-2 ring-rose-200"
@@ -314,7 +314,7 @@ export default function DisbursementSection({
         )}
       </button>
       {missingProof && !file && (
-        <p role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
+        <p id="proof-error-hint" role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-rose-700">
           <AlertCircle size={14} className="mt-px shrink-0" />
           Bukti transfer belum dilampirkan. Pilih foto atau PDF bukti transfer dulu sebelum
           konfirmasi.
