@@ -42,7 +42,7 @@ export default function Sidebar({ role, fullName, pendingCounts, userId }) {
                   href={href}
                   data-tour={tour}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex items-center gap-3.5 rounded-xl px-4 py-3 text-[13px] transition-colors ${
+                  className={`nav-link relative flex items-center gap-3.5 rounded-xl px-4 py-3 text-[13px] transition-colors ${
                     active
                       ? "bg-blue-50 font-semibold text-blue-800 ring-1 ring-inset ring-blue-100"
                       : "font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"

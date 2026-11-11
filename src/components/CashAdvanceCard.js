@@ -26,7 +26,7 @@ export default function CashAdvanceCard({
   compact = false,
   detailLabel = null,
 }) {
-  const baseCls = "block w-full text-left bg-white rounded-xl border border-slate-200 p-4";
+  const baseCls = "anim-rise card-lift block w-full text-left bg-white rounded-xl border border-slate-200 p-4";
   const cls = `${baseCls} hover:border-brand transition-colors`;
   const content = (
     <>

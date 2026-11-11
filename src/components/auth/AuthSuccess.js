@@ -23,7 +23,7 @@ const CONFETTI = Array.from({ length: 14 }, (_, i) => {
 
 // Layar penuh "berhasil": lingkaran centang tergambar, cincin berdenyut,
 // percikan warna, lalu bilah kemajuan sampai pindah halaman.
-export default function AuthSuccess({ show, title, subtitle }) {
+export default function AuthSuccess({ show, title, subtitle, plain = false }) {
   if (!show) return null;
   return (
     <div
@@ -31,7 +31,7 @@ export default function AuthSuccess({ show, title, subtitle }) {
       aria-live="polite"
       className="auth-success fixed inset-0 z-[100] isolate flex flex-col items-center justify-center overflow-hidden bg-[#0d1527] px-6 text-center text-white"
     >
-      <Backdrop />
+      <Backdrop plain={plain} />
 
       <div className="relative h-28 w-28">
         <span className="auth-success-ring" />

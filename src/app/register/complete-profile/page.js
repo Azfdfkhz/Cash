@@ -130,6 +130,7 @@ export default function CompleteProfilePage() {
   return (
     <AuthShell
       compact
+      plainBackdrop
       side={
         <>
           <SideHeadline>
@@ -318,6 +319,7 @@ export default function CompleteProfilePage() {
         show={success}
         title="Pendaftaran selesai"
         subtitle="Selamat datang! Membuka beranda Anda..."
+        plain
       />
     </AuthShell>
   );

@@ -10,6 +10,7 @@ import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
 import PrimaryButton, { AuthSpinner } from "@/components/auth/PrimaryButton";
 import AuthSuccess, { waitForAuthAnimation } from "@/components/auth/AuthSuccess";
+import EmailConfirmWaiting from "@/components/auth/EmailConfirmWaiting";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
@@ -39,6 +40,15 @@ export default function RegisterPage() {
       setGoogleLoading(false);
       setError("Gagal login dengan Google.");
     }
+  }
+
+  // Email sudah dikonfirmasi (terdeteksi otomatis atau lewat tombol): sesi sudah
+  // terbentuk, lanjut ke langkah 2.
+  async function handleEmailConfirmed() {
+    setSuccess(true);
+    await waitForAuthAnimation();
+    router.push("/register/complete-profile");
+    router.refresh();
   }
 
   async function handleSubmit(e) {
@@ -81,6 +91,7 @@ export default function RegisterPage() {
   return (
     <AuthShell
       compact
+      plainBackdrop
       side={
         <>
           <SideHeadline>
@@ -117,42 +128,16 @@ export default function RegisterPage() {
       </div>
 
       {done ? (
-        <div className="auth-pop rounded-3xl border border-slate-200 p-6 text-center space-y-3">
-          <div
-            className="auth-pop relative h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-2"
-            style={{ animationDelay: "150ms" }}
-          >
-            <span className="auth-success-ring !border-emerald-400/70" aria-hidden="true" />
-            <svg
-              viewBox="0 0 24 24"
-              width="28"
-              height="28"
-              fill="none"
-              stroke="#047857"
-              strokeWidth="2.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="auth-check"
-              style={{ "--len": 24 }}
-              aria-hidden="true"
-            >
-              <path d="M5 12.5l4.5 4.5L19 7" />
-            </svg>
-          </div>
-          <p className="text-base font-semibold text-slate-900">
-            Cek email Anda
-          </p>
-          <p className="text-sm text-slate-600">
-            Pendaftaran berhasil. Silakan cek email Anda untuk konfirmasi akun
-            sebelum masuk.
-          </p>
-          <Link
-            href="/login"
-            className="block text-brand font-semibold text-sm mt-4 hover:underline"
-          >
-            Kembali ke halaman masuk
-          </Link>
-        </div>
+        <EmailConfirmWaiting
+          email={email}
+          password={password}
+          onConfirmed={handleEmailConfirmed}
+          onChangeEmail={() => {
+            setDone(false);
+            setPassword("");
+            setError("");
+          }}
+        />
       ) : (
         <>
           {error && (
@@ -239,6 +224,7 @@ export default function RegisterPage() {
         show={success}
         title="Akun berhasil dibuat"
         subtitle="Selanjutnya, lengkapi data Anda."
+        plain
       />
     </AuthShell>
   );

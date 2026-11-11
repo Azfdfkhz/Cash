@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/security";
-import { loginErrorMessage } from "@/lib/authErrors";
+import { loginErrorMessage, isEmailNotConfirmed, mapResendError, AUTH_MESSAGES } from "@/lib/authErrors";
 import AuthShell, { SideHeadline, SideChecklist } from "@/components/auth/AuthShell";
 import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
@@ -31,6 +31,23 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [resendNote, setResendNote] = useState("");
+  const [resending, setResending] = useState(false);
+
+  async function handleResendConfirm() {
+    if (!email || resending) return;
+    setResending(true);
+    setResendNote("");
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setResending(false);
+    setResendNote(error ? mapResendError(error) : "Email konfirmasi dikirim ulang. Cek kotak masuk dan folder Spam.");
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -46,7 +63,14 @@ function LoginForm() {
     setLoading(false);
 
     if (error) {
-      setError("Email atau password salah.");
+      if (isEmailNotConfirmed(error)) {
+        setError(AUTH_MESSAGES.unconfirmed);
+        setUnconfirmed(true);
+      } else {
+        setError("Email atau password salah.");
+        setUnconfirmed(false);
+      }
+      setResendNote("");
       return;
     }
 
@@ -124,6 +148,19 @@ function LoginForm() {
           className="auth-alert text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
         >
           {error}
+          {unconfirmed && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={handleResendConfirm}
+                disabled={resending}
+                className="font-semibold underline disabled:opacity-60"
+              >
+                {resending ? "Mengirim..." : "Kirim ulang email konfirmasi"}
+              </button>
+              {resendNote && <p className="mt-1.5 text-slate-700">{resendNote}</p>}
+            </div>
+          )}
         </div>
       )}
 

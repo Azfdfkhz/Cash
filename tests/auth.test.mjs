@@ -60,3 +60,12 @@ test("hasUnverifiedOAuthEmail: hanya menolak bila eksplisit false pada identitas
   assert.equal(hasUnverifiedOAuthEmail({ identities: [{ provider: "google", identity_data: {} }] }), false);
   assert.equal(hasUnverifiedOAuthEmail({ identities: [{ provider: "google", identity_data: { email_verified: false } }] }), true);
 });
+
+test("login: email belum dikonfirmasi dikenali, password salah tidak", async () => {
+  const { isEmailNotConfirmed, mapResendError } = await import("../src/lib/authErrors.js");
+  assert.ok(isEmailNotConfirmed({ code: "email_not_confirmed" }));
+  assert.ok(isEmailNotConfirmed({ message: "Email not confirmed" }));
+  assert.ok(!isEmailNotConfirmed({ code: "invalid_credentials", message: "Invalid login credentials" }));
+  assert.match(mapResendError({ status: 429 }), /Tunggu/);
+  assert.equal(mapResendError({ status: 500 }), AUTH_MESSAGES.resendFailed);
+});

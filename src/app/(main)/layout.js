@@ -5,6 +5,7 @@ import OnboardingData from "./OnboardingData";
 import MobileTopBar from "@/components/MobileTopBar";
 import BrandMark from "@/components/BrandMark";
 import { BottomNavShell } from "@/components/BottomNav";
+import PageTransition from "@/components/PageTransition";
 
 // Layout ini sengaja TIDAK async / TIDAK await getUserProfile() langsung --
 // kalau iya, seluruh navigasi ke halaman mana pun di bawah (main) akan
@@ -43,7 +44,7 @@ export default function MainLayout({ children }) {
       <MobileTopBar />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-8 pt-5 sm:px-6 lg:mx-0 lg:max-w-[1440px] lg:px-9 lg:pb-12 lg:pt-9 2xl:px-12">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </main>
 
       <Suspense

@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.3.2
+### Pendaftaran dengan email
+- **Layar "Konfirmasi email" yang jelas.** Setelah menekan Lanjut, pengguna melihat 3 langkah (buka email,
+  klik tombol konfirmasi, kembali ke halaman ini) dan status "Menunggu konfirmasi".
+- **Lanjut otomatis.** Begitu email dikonfirmasi (di HP, tab lain, atau perangkat lain), halaman langsung
+  lanjut ke Langkah 2 tanpa perlu klik apa pun. Pemantauan jalan tiap 15 detik dan seketika saat pengguna
+  kembali ke tab. Ada tombol **Saya sudah konfirmasi** untuk cek manual.
+- **Kirim ulang email** (jeda 60 detik) dan **Ganti email** bila salah ketik. Tombol **Buka Gmail/Outlook/Yahoo**
+  muncul sesuai domain email.
+- **Halaman Masuk**: bila email belum dikonfirmasi, pesannya kini jelas (bukan "password salah") dan ada
+  tombol **Kirim ulang email konfirmasi**.
+- Kata sandi hanya dipegang di memori halaman untuk pemantauan, tidak disimpan ke storage.
+
+### Latar halaman buat akun
+- Gradient blur (bola cahaya) dan grid **dihapus** di halaman Buat Akun, Lengkapi Data, dan layar suksesnya.
+  Latar kembali polos navy; **kartu kaca melayang tetap ada** di panel kiri desktop. Halaman Masuk tidak berubah.
+
+### Animasi lain
+- Pindah menu: isi halaman naik pelan. Kartu pengajuan dan kartu ringkasan Beranda muncul berurutan dan
+  terangkat saat disorot. Badge status muncul memantul. Notifikasi (toast) naik dari bawah.
+- Semua tombol sedikit menekan saat ditekan; ikon menu samping bergeser halus saat disorot.
+- Semua animasi hanya `transform`/`opacity`/`scale` dan statis untuk pengguna "kurangi gerakan".
+
+
 ## 1.3.1
 ### Pengajuan Cash Advance
 - **Link RAB hanya disimpan jika valid.** Saat pengajuan dikirim, link yang tidak valid

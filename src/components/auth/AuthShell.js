@@ -4,16 +4,24 @@ import { Check, Receipt, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 // Latar bergerak (bola cahaya + grid). Dipakai di panel desktop, header mobile,
 // dan layar sukses. Dekoratif saja; diletakkan di belakang konten (-z-10) di
 // dalam elemen berstacking context (isolate).
-export function Backdrop({ chips = false }) {
+//
+// plain = tanpa bola cahaya (gradient blur) dan grid; kartu kaca (chips) tetap
+// tampil bila diminta. Dipakai di halaman buat akun supaya tidak membuat pusing.
+export function Backdrop({ chips = false, plain = false }) {
+  if (plain && !chips) return null;
   return (
     <div
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
-      <span className="auth-orb auth-orb-a" />
-      <span className="auth-orb auth-orb-b" />
-      <span className="auth-orb auth-orb-c" />
-      <span className="auth-grid" />
+      {!plain && (
+        <>
+          <span className="auth-orb auth-orb-a" />
+          <span className="auth-orb auth-orb-b" />
+          <span className="auth-orb auth-orb-c" />
+          <span className="auth-grid" />
+        </>
+      )}
       {chips && (
         <div className="hidden 2xl:contents">
           <span
@@ -190,6 +198,7 @@ export function SideSteps({ current }) {
 //   compact → step pages (smaller top padding on mobile)
 //   step    → { current, total, label } mobile progress bar
 //   side    → desktop left-panel content (headline, checklist/steps…)
+//   plainBackdrop → latar polos tanpa gradient blur (halaman buat akun)
 //   variant → "login" memakai proporsi frame Login Figma (panel 44%, form 440px);
 //             default = frame Daftar/Lengkapi data (panel 43%, form 576px)
 export default function AuthShell({
@@ -199,6 +208,7 @@ export default function AuthShell({
   subtitle,
   side,
   variant,
+  plainBackdrop = false,
   children,
 }) {
   const login = variant === "login";
@@ -214,7 +224,7 @@ export default function AuthShell({
           compact ? "pt-8" : "pt-12"
         } text-white lg:hidden`}
       >
-        <Backdrop />
+        <Backdrop plain={plainBackdrop} />
         <Brand />
 
         {step && (
@@ -260,7 +270,7 @@ export default function AuthShell({
           login ? "bg-[#0c1322] p-20" : "bg-[#0d1527] p-24"
         }`}
       >
-        <Backdrop chips />
+        <Backdrop chips plain={plainBackdrop} />
         <DesktopBrand />
         <div className="auth-side flex-1 flex flex-col justify-center py-12">{side}</div>
         <p

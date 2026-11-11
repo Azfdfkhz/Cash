@@ -22,7 +22,7 @@ export function StatCard({ label, value, caption, icon: Icon, dark = false, dot 
   return (
     <div
       data-tour={tour}
-      className={`rounded-2xl border p-5 xl:p-6 ${
+      className={`anim-rise card-lift rounded-2xl border p-5 xl:p-6 ${
         dark
           ? "border-slate-800 bg-slate-900 text-white"
           : "border-slate-200 bg-white text-slate-900"

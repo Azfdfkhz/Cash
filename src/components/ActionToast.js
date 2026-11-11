@@ -20,7 +20,7 @@ export default function ActionToast({ notice, onDismiss }) {
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[70] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
       <div
         role={ok ? "status" : "alert"}
-        className={`animate-scale-up pointer-events-auto flex max-w-md items-start gap-2 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${
+        className={`animate-toast-in pointer-events-auto flex max-w-md items-start gap-2 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${
           ok
             ? "border-emerald-300 bg-emerald-50 text-emerald-900"
             : "border-rose-300 bg-rose-50 text-rose-900"

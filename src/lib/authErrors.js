@@ -14,6 +14,9 @@ export const AUTH_MESSAGES = {
   rateLimited: "Terlalu sering mendaftar. Tunggu beberapa saat lalu coba lagi.",
   weakPassword: "Kata sandi terlalu lemah. Gunakan minimal 8 karakter dengan kombinasi yang lebih sulit ditebak.",
   generic: "Pendaftaran gagal. Periksa data Anda lalu coba lagi.",
+  unconfirmed:
+    "Email Anda belum dikonfirmasi. Buka email dari kami lalu klik tombol konfirmasi di dalamnya, setelah itu masuk lagi.",
+  resendFailed: "Gagal mengirim ulang email. Coba lagi sebentar lagi.",
   oauth: "Gagal masuk dengan Google. Coba lagi.",
 };
 
@@ -42,6 +45,22 @@ export function mapSignupError(error) {
   if (code === "weak_password") return AUTH_MESSAGES.weakPassword;
   if (isSignupRejection(error)) return AUTH_MESSAGES.domain;
   return AUTH_MESSAGES.generic;
+}
+
+// Kirim ulang email konfirmasi: pesan khusus untuk batas kirim.
+export function mapResendError(error) {
+  if (!error) return "";
+  const code = String(error.code ?? "").toLowerCase();
+  if (error.status === 429 || code === "over_email_send_rate_limit" || /rate limit/i.test(error.message ?? "")) {
+    return "Email baru saja dikirim. Tunggu satu menit sebelum meminta lagi.";
+  }
+  return AUTH_MESSAGES.resendFailed;
+}
+
+// Login ditolak karena email belum dikonfirmasi (bukan password salah).
+export function isEmailNotConfirmed(error) {
+  const code = String(error?.code ?? "").toLowerCase();
+  return code === "email_not_confirmed" || /email not confirmed/i.test(error?.message ?? "");
 }
 
 // Parameter ?error= pada halaman login (diisi /auth/callback).
