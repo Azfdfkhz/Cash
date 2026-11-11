@@ -56,12 +56,12 @@ export default function BottomNav({ role, pendingCounts, userId }) {
                 href={href}
                 data-tour={tour}
                 aria-current={active ? "page" : undefined}
-                className="relative flex flex-col items-center gap-1 px-2 py-1.5"
+                className="nav-tab relative flex flex-col items-center gap-1 px-2 py-1.5"
               >
                 {active && (
-                  <span className="absolute -top-2 left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-b-[4px] bg-[#0f172a]" />
+                  <span className="nav-indicator absolute -top-2 left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-b-[4px] bg-[#0f172a]" />
                 )}
-                <span className="relative">
+                <span className="nav-icon relative">
                   <Icon
                     size={20}
                     strokeWidth={1.75}

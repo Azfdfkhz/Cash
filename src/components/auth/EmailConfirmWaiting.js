@@ -275,7 +275,7 @@ export default function EmailConfirmWaiting({
         </div>
       )}
 
-      <PrimaryButton type="button" onClick={() => check({ manual: true })} disabled={checking}>
+      <PrimaryButton type="button" desktop="login" onClick={() => check({ manual: true })} disabled={checking}>
         {checking ? (
           <>
             <AuthSpinner /> Memeriksa...

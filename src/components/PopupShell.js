@@ -74,7 +74,7 @@ export default function PopupShell({
           <div
             role="status"
             aria-live="polite"
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/90 px-6 text-center backdrop-blur-[2px]"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/95 px-6 text-center"
           >
             <Loader2 size={28} className="animate-spin text-slate-900" />
             <p className="text-sm font-bold text-slate-900">{busy}</p>

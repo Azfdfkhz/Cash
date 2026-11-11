@@ -117,9 +117,9 @@ a, button, input, select, textarea {
 }
 
 button, [role="button"], a {
-  transition-property: color, background-color, border-color, box-shadow, opacity, scale;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
+  transition-property: color, background-color, border-color, box-shadow, opacity, scale, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input, select, textarea {
@@ -180,13 +180,13 @@ textarea {
   to   { opacity: 1; }
 }
 @keyframes scale-up {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
 }
-.animate-sheet-up { animation: sheet-up 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
-.animate-slide-in-right { animation: slide-in-right 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
-.animate-fade-in  { animation: fade-in 0.2s ease-out; }
-.animate-scale-up { animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-sheet-up { animation: sheet-up 0.38s cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-fade-in  { animation: fade-in 0.28s ease-out; }
+.animate-scale-up { animation: scale-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* Checkbox kustom (rounded, centang putih saat aktif) */
 .auth-checkbox {
@@ -248,18 +248,6 @@ textarea {
   0%   { opacity: 0; transform: scale(0.4); }
   60%  { opacity: 1; transform: scale(1.14); }
   100% { opacity: 1; transform: scale(1); }
-}
-@keyframes auth-orb-a {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50%      { transform: translate3d(44px, 36px, 0) scale(1.14); }
-}
-@keyframes auth-orb-b {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
-  50%      { transform: translate3d(-52px, -30px, 0) scale(0.92); }
-}
-@keyframes auth-orb-c {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); }
-  50%      { transform: translate3d(30px, -44px, 0) scale(1.12); }
 }
 @keyframes auth-float {
   0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
@@ -374,45 +362,6 @@ textarea {
   animation-delay: calc(900ms + var(--i, 0) * 130ms);
 }
 
-/* Latar bergerak: bola cahaya + grid tipis */
-.auth-orb {
-  position: absolute;
-  border-radius: 9999px;
-  will-change: transform;
-}
-.auth-orb-a {
-  width: 26rem; height: 26rem; top: -9rem; left: -8rem;
-  background: radial-gradient(closest-side, rgba(37, 99, 235, 0.55), rgba(37, 99, 235, 0));
-  animation: auth-orb-a 14s ease-in-out infinite;
-}
-.auth-orb-b {
-  width: 22rem; height: 22rem; bottom: -8rem; right: -7rem;
-  background: radial-gradient(closest-side, rgba(56, 189, 248, 0.38), rgba(56, 189, 248, 0));
-  animation: auth-orb-b 17s ease-in-out infinite;
-}
-.auth-orb-c {
-  width: 18rem; height: 18rem; top: 38%; right: 8%;
-  background: radial-gradient(closest-side, rgba(129, 140, 248, 0.34), rgba(129, 140, 248, 0));
-  animation: auth-orb-c 20s ease-in-out infinite;
-}
-.auth-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 44px 44px;
-  -webkit-mask-image: radial-gradient(ellipse at 30% 20%, #000 10%, transparent 75%);
-  mask-image: radial-gradient(ellipse at 30% 20%, #000 10%, transparent 75%);
-  animation: auth-fade-only 1.6s ease-out both;
-}
-/* Versi kecil untuk header mobile */
-@media (max-width: 1023px) {
-  .auth-orb-a { width: 15rem; height: 15rem; top: -6rem; left: -5rem; }
-  .auth-orb-b { width: 13rem; height: 13rem; bottom: -4rem; right: -4rem; }
-  .auth-orb-c { width: 10rem; height: 10rem; top: 20%; right: 20%; }
-}
-
 /* Kartu kaca melayang di panel desktop */
 .auth-chip-wrap {
   position: absolute;
@@ -524,7 +473,7 @@ textarea {
 .auth-pop { animation: auth-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-orb, .auth-chip, .auth-pulse, .auth-sheen, .auth-confetti,
+  .auth-chip, .auth-pulse, .auth-sheen, .auth-confetti,
   .auth-success-ring { animation: none !important; }
   .auth-confetti { display: none; }
   .auth-check path { stroke-dashoffset: 0; animation: none; }
@@ -539,7 +488,7 @@ textarea {
    sudah memangkas durasi semua animasi dan transisi).
    ============================================================ */
 @keyframes app-rise {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: none; }
 }
 @keyframes app-pop {
@@ -565,13 +514,20 @@ textarea {
   75%      { transform: rotate(10deg); }
 }
 
-/* Halaman: tiap pindah menu, isi naik pelan. */
-.page-enter { animation: app-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Halaman: isi memudar masuk. Berlaku pada elemen akar halaman, jadi juga
+   terputar saat skeleton (loading.js) berganti ke isi sebenarnya. Hanya
+   opacity (tanpa transform) agar pop up/drawer fixed di dalam halaman tidak
+   bergeser saat animasi berjalan. */
+@keyframes app-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-enter > * { animation: app-fade 0.35s ease-out both; }
 
 /* Kartu / baris daftar muncul berurutan (maks. 8 yang pertama diberi jeda). */
 .anim-rise {
   animation: app-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(var(--n, 0) * 55ms);
+  animation-delay: calc(var(--n, 0) * 45ms);
 }
 .anim-rise:nth-child(1) { --n: 0; }
 .anim-rise:nth-child(2) { --n: 1; }
@@ -605,6 +561,20 @@ button:not(:disabled):active,
 .nav-link > svg { transition: transform 0.2s ease; }
 .nav-link:hover > svg { transform: translateX(2px) scale(1.08); }
 
+/* Baris tabel & isian: perubahan warna/bayangan halus, bukan mendadak. */
+tbody tr { transition: background-color 0.18s ease; }
+input, select, textarea { transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease; }
+
+/* Tab bawah (mobile): garis aktif melebar, ikon sedikit naik. */
+@keyframes app-bar-in {
+  from { opacity: 0; transform: translateX(-50%) scaleX(0.3); }
+  to   { opacity: 1; transform: translateX(-50%) scaleX(1); }
+}
+.nav-indicator { animation: app-bar-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.nav-tab .nav-icon { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.nav-tab[aria-current="page"] .nav-icon { transform: translateY(-1px) scale(1.1); }
+.nav-tab:active, .nav-link:active { scale: 0.96; }
+
 /* Notifikasi (toast) naik dari bawah. */
 .animate-toast-in { animation: app-toast-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
@@ -628,8 +598,8 @@ button:not(:disabled):active,
 .anim-wiggle { animation: app-wiggle 0.6s ease-in-out 0.3s 1 both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-enter, .anim-rise, .anim-pop, .animate-toast-in, .auth-rise, .anim-wiggle { animation: none !important; }
-  .skeleton-shimmer::after, .auth-dot-pulse { animation: none !important; }
+  .page-enter > *, .anim-rise, .anim-pop, .animate-toast-in, .auth-rise, .anim-wiggle { animation: none !important; }
+  .nav-indicator, .skeleton-shimmer::after, .auth-dot-pulse { animation: none !important; }
   .card-lift:hover { transform: none; }
   button:not(:disabled):active { scale: 1; }
 }

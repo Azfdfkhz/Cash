@@ -198,7 +198,7 @@ export default function RegisterPage() {
               }
             />
 
-            <PrimaryButton type="submit" disabled={loading || success} className="mt-2">
+            <PrimaryButton type="submit" disabled={loading || success} desktop="login" className="mt-2">
               {loading || success ? (
                 <>
                   <AuthSpinner /> Memproses...

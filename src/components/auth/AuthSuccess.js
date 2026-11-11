@@ -43,7 +43,7 @@ export default function AuthSuccess({ show, title, subtitle, plain = false }) {
             style={{ "--tx": `${c.tx}px`, "--ty": `${c.ty}px`, background: c.color }}
           />
         ))}
-        <div className="auth-success-badge relative flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 shadow-[0_18px_50px_-10px_rgba(37,99,235,0.8)]">
+        <div className="auth-success-badge relative flex h-28 w-28 items-center justify-center rounded-full bg-blue-600">
           <svg
             viewBox="0 0 24 24"
             width="52"

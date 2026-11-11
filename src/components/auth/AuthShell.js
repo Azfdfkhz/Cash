@@ -5,23 +5,16 @@ import { Check, Receipt, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 // dan layar sukses. Dekoratif saja; diletakkan di belakang konten (-z-10) di
 // dalam elemen berstacking context (isolate).
 //
-// plain = tanpa bola cahaya (gradient blur) dan grid; kartu kaca (chips) tetap
-// tampil bila diminta. Dipakai di halaman buat akun supaya tidak membuat pusing.
-export function Backdrop({ chips = false, plain = false }) {
-  if (plain && !chips) return null;
+// Tanpa bola cahaya / gradient blur / grid (membuat pusing): latar polos.
+// Hanya kartu kaca melayang (chips) yang tersisa, di panel desktop layar lebar.
+// Prop `plain` dipertahankan agar pemanggil lama tetap valid.
+export function Backdrop({ chips = false }) {
+  if (!chips) return null;
   return (
     <div
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
-      {!plain && (
-        <>
-          <span className="auth-orb auth-orb-a" />
-          <span className="auth-orb auth-orb-b" />
-          <span className="auth-orb auth-orb-c" />
-          <span className="auth-grid" />
-        </>
-      )}
       {chips && (
         <div className="hidden 2xl:contents">
           <span

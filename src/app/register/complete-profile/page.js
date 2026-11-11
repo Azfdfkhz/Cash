@@ -281,6 +281,7 @@ export default function CompleteProfilePage() {
             Kembali
           </Link>
           <PrimaryButton
+            desktop="login"
             type="submit"
             disabled={saving || success || !profileId}
             className="lg:w-auto lg:flex-1"

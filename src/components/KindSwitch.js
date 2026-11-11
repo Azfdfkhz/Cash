@@ -48,7 +48,7 @@ export default function KindSwitch({ active }) {
                 selected ? "border-[#0f172a]" : "border-slate-300"
               }`}
             >
-              {selected && <span className="h-3 w-3 rounded-full bg-[#0f172a]" />}
+              {selected && <span className="anim-pop h-3 w-3 rounded-full bg-[#0f172a]" />}
             </span>
           </Link>
         );

@@ -239,7 +239,7 @@ function CashAdvanceReviewModalContent({
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="animate-fade-in fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-[2px]"
+      className="animate-fade-in fixed inset-0 z-50 flex justify-end bg-slate-900/50"
       aria-modal="true"
       role="dialog"
     >

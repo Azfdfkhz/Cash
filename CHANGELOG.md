@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.2 v2
+- Tombol **Lanjut** (Daftar), **Selesaikan pendaftaran**, dan **Saya sudah konfirmasi** kini setinggi tombol **Masuk**.
+- **Gradient blur dihapus total** di semua halaman auth (Masuk, Daftar, Lengkapi data, Lupa/Reset sandi, layar sukses).
+  Kartu kaca melayang tetap ada. Lingkaran centang di layar sukses kini warna solid tanpa cahaya.
+- **Animasi aplikasi dibuat lebih halus dan ringan**: isi halaman memudar masuk (juga saat skeleton berganti ke isi),
+  pop up & drawer memakai kurva yang lebih lembut, transisi hover/fokus 200 ms, garis tab bawah melebar, ikon tab aktif
+  naik sedikit, titik radio memantul. Blur latar pop up dihapus agar tidak berat di HP. Tetap hanya transform/opacity.
+
 ## 1.3.2
 ### Pendaftaran dengan email
 - **Layar "Konfirmasi email" yang jelas.** Setelah menekan Lanjut, pengguna melihat 3 langkah (buka email,
