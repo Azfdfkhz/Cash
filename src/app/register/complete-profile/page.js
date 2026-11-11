@@ -6,7 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell";
 import AuthField, { AuthLabel } from "@/components/auth/AuthField";
-import PrimaryButton from "@/components/auth/PrimaryButton";
+import PrimaryButton, { AuthSpinner } from "@/components/auth/PrimaryButton";
+import AuthSuccess, { waitForAuthAnimation } from "@/components/auth/AuthSuccess";
 import BankSelectModal from "@/components/BankSelectModal";
 import { Building2, CreditCard, Send, ChevronRight, Info, ExternalLink } from "lucide-react";
 import { openTelegramBot, USERINFO_BOT, NOTIFY_BOT } from "@/lib/telegramLinks";
@@ -20,6 +21,7 @@ export default function CompleteProfilePage() {
   const [telegramChatId, setTelegramChatId] = useState("");
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [profileId, setProfileId] = useState(null);
 
@@ -114,6 +116,8 @@ export default function CompleteProfilePage() {
     await supabase.auth.updateUser({ data: { onboarding_pending: false } });
     await supabase.auth.refreshSession();
 
+    setSuccess(true);
+    await waitForAuthAnimation();
     router.push("/dashboard");
     router.refresh();
   }
@@ -159,7 +163,7 @@ export default function CompleteProfilePage() {
       {error && (
         <div
           role="alert"
-          className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
+          className="auth-alert text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
         >
           {error}
         </div>
@@ -277,10 +281,16 @@ export default function CompleteProfilePage() {
           </Link>
           <PrimaryButton
             type="submit"
-            disabled={saving || !profileId}
+            disabled={saving || success || !profileId}
             className="lg:w-auto lg:flex-1"
           >
-            {saving ? "Menyimpan..." : "Selesaikan pendaftaran"}
+            {saving || success ? (
+              <>
+                <AuthSpinner /> Menyimpan...
+              </>
+            ) : (
+              "Selesaikan pendaftaran"
+            )}
           </PrimaryButton>
         </div>
       </form>
@@ -302,6 +312,12 @@ export default function CompleteProfilePage() {
             : ""
         }
         initialHolderName={bankHolderName}
+      />
+
+      <AuthSuccess
+        show={success}
+        title="Pendaftaran selesai"
+        subtitle="Selamat datang! Membuka beranda Anda..."
       />
     </AuthShell>
   );

@@ -9,7 +9,8 @@ import { loginErrorMessage } from "@/lib/authErrors";
 import AuthShell, { SideHeadline, SideChecklist } from "@/components/auth/AuthShell";
 import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
-import PrimaryButton from "@/components/auth/PrimaryButton";
+import PrimaryButton, { AuthSpinner } from "@/components/auth/PrimaryButton";
+import AuthSuccess, { waitForAuthAnimation } from "@/components/auth/AuthSuccess";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
@@ -29,6 +30,7 @@ function LoginForm() {
   const [error, setError] = useState(() => loginErrorMessage(searchParams.get("error")));
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -48,6 +50,8 @@ function LoginForm() {
       return;
     }
 
+    setSuccess(true);
+    await waitForAuthAnimation();
     router.push(safeNextPath(searchParams.get("next")));
     router.refresh();
   }
@@ -117,7 +121,7 @@ function LoginForm() {
       {error && (
         <div
           role="alert"
-          className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
+          className="auth-alert text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
         >
           {error}
         </div>
@@ -183,8 +187,14 @@ function LoginForm() {
           </Link>
         </div>
 
-        <PrimaryButton type="submit" disabled={loading} desktop="login">
-          {loading ? "Memproses..." : "Masuk"}
+        <PrimaryButton type="submit" disabled={loading || success} desktop="login">
+          {loading || success ? (
+            <>
+              <AuthSpinner /> Memproses...
+            </>
+          ) : (
+            "Masuk"
+          )}
         </PrimaryButton>
       </form>
 

@@ -8,8 +8,9 @@ import { mapSignupError } from "@/lib/authErrors";
 import AuthShell, { SideHeadline, SideSteps } from "@/components/auth/AuthShell";
 import AuthField from "@/components/auth/AuthField";
 import GoogleButton, { OrDivider } from "@/components/auth/GoogleButton";
-import PrimaryButton from "@/components/auth/PrimaryButton";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
+import PrimaryButton, { AuthSpinner } from "@/components/auth/PrimaryButton";
+import AuthSuccess, { waitForAuthAnimation } from "@/components/auth/AuthSuccess";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function RegisterPage() {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleGoogleLogin() {
     setError("");
@@ -67,6 +69,8 @@ export default function RegisterPage() {
     }
 
     if (data.session) {
+      setSuccess(true);
+      await waitForAuthAnimation();
       router.push("/register/complete-profile");
       router.refresh();
     } else {
@@ -113,9 +117,27 @@ export default function RegisterPage() {
       </div>
 
       {done ? (
-        <div className="rounded-3xl border border-slate-200 p-6 text-center space-y-3">
-          <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-2">
-            <Check size={24} strokeWidth={2.5} className="text-emerald-700" />
+        <div className="auth-pop rounded-3xl border border-slate-200 p-6 text-center space-y-3">
+          <div
+            className="auth-pop relative h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-2"
+            style={{ animationDelay: "150ms" }}
+          >
+            <span className="auth-success-ring !border-emerald-400/70" aria-hidden="true" />
+            <svg
+              viewBox="0 0 24 24"
+              width="28"
+              height="28"
+              fill="none"
+              stroke="#047857"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="auth-check"
+              style={{ "--len": 24 }}
+              aria-hidden="true"
+            >
+              <path d="M5 12.5l4.5 4.5L19 7" />
+            </svg>
           </div>
           <p className="text-base font-semibold text-slate-900">
             Cek email Anda
@@ -136,7 +158,7 @@ export default function RegisterPage() {
           {error && (
             <div
               role="alert"
-              className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
+              className="auth-alert text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-4"
             >
               {error}
             </div>
@@ -191,12 +213,14 @@ export default function RegisterPage() {
               }
             />
 
-            <PrimaryButton type="submit" disabled={loading} className="mt-2">
-              {loading ? (
-                "Memproses..."
+            <PrimaryButton type="submit" disabled={loading || success} className="mt-2">
+              {loading || success ? (
+                <>
+                  <AuthSpinner /> Memproses...
+                </>
               ) : (
                 <>
-                  Lanjut <ArrowRight size={18} strokeWidth={2} />
+                  Lanjut <ArrowRight size={18} strokeWidth={2} className="auth-arrow" />
                 </>
               )}
             </PrimaryButton>
@@ -210,6 +234,12 @@ export default function RegisterPage() {
           </p>
         </>
       )}
+
+      <AuthSuccess
+        show={success}
+        title="Akun berhasil dibuat"
+        subtitle="Selanjutnya, lengkapi data Anda."
+      />
     </AuthShell>
   );
 }

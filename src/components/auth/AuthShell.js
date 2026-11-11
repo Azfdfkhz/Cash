@@ -1,5 +1,67 @@
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { Check, Receipt, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
+
+// Latar bergerak (bola cahaya + grid). Dipakai di panel desktop, header mobile,
+// dan layar sukses. Dekoratif saja; diletakkan di belakang konten (-z-10) di
+// dalam elemen berstacking context (isolate).
+export function Backdrop({ chips = false }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+    >
+      <span className="auth-orb auth-orb-a" />
+      <span className="auth-orb auth-orb-b" />
+      <span className="auth-orb auth-orb-c" />
+      <span className="auth-grid" />
+      {chips && (
+        <div className="hidden 2xl:contents">
+          <span
+            className="auth-chip-wrap right-[9%] top-[9%]"
+            style={{ "--d": "1100ms" }}
+          >
+            <span className="auth-chip" style={{ "--r": "3deg", "--dur": "8s" }}>
+              <Wallet size={16} className="text-sky-300" /> Cash Advance
+            </span>
+          </span>
+          <span
+            className="auth-chip-wrap right-[4%] top-[30%]"
+            style={{ "--d": "1300ms" }}
+          >
+            <span
+              className="auth-chip"
+              style={{ "--r": "-2deg", "--dur": "9.5s", "--fd": "-3s" }}
+            >
+              <Receipt size={16} className="text-indigo-300" /> Kwitansi &amp; SPJ
+            </span>
+          </span>
+          <span
+            className="auth-chip-wrap bottom-[30%] right-[5%]"
+            style={{ "--d": "1500ms" }}
+          >
+            <span
+              className="auth-chip"
+              style={{ "--r": "2deg", "--dur": "7.5s", "--fd": "-5s" }}
+            >
+              <ShieldCheck size={16} className="text-emerald-300" /> Persetujuan berjenjang
+            </span>
+          </span>
+          <span
+            className="auth-chip-wrap bottom-[11%] right-[10%]"
+            style={{ "--d": "1700ms" }}
+          >
+            <span
+              className="auth-chip"
+              style={{ "--r": "-3deg", "--dur": "10s", "--fd": "-1s" }}
+            >
+              <TrendingUp size={16} className="text-blue-300" /> Terlacak real-time
+            </span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Logo Sharing Happiness tanpa kotak/latar. Wordmark aslinya biru, jadi di atas
 // panel navy dibuat putih lewat filter (brightness-0 + invert) supaya tetap
@@ -20,7 +82,7 @@ function Logo({ className = "" }) {
 // Header mobile: logo + nama aplikasi.
 function Brand() {
   return (
-    <div className="flex flex-col items-center gap-2 text-center">
+    <div className="auth-drop flex flex-col items-center gap-2 text-center">
       <Logo className="w-36" />
       <span className="text-sm font-medium leading-tight tracking-tight text-slate-200">
         Cash Advance &amp; Reimbursement
@@ -32,7 +94,7 @@ function Brand() {
 // Brand panel kiri desktop: logo + nama aplikasi, tanpa tile/latar.
 function DesktopBrand() {
   return (
-    <div className="flex flex-col items-start gap-3">
+    <div className="auth-drop flex flex-col items-start gap-3">
       <Logo className="w-48" />
       <span className="text-lg font-semibold tracking-[-0.2px] text-slate-200">
         Cash Advance &amp; Reimbursement
@@ -89,7 +151,7 @@ export function SideSteps({ current }) {
           <li key={n} className="relative flex gap-4 pb-[38px] last:pb-0">
             {i < steps.length - 1 && (
               <span
-                className={`absolute left-[17px] top-10 h-10 w-0.5 ${
+                className={`auth-line absolute left-[17px] top-10 h-10 w-0.5 ${
                   done ? "bg-[rgba(37,99,235,0.7)]" : "bg-slate-700"
                 }`}
               />
@@ -99,7 +161,7 @@ export function SideSteps({ current }) {
                 done
                   ? "bg-[#1a68ff] text-white shadow-md"
                   : active
-                    ? "border-2 border-white/60 bg-[#0d1527] text-white"
+                    ? "auth-pulse border-2 border-white/60 bg-[#0d1527] text-white"
                     : "border-2 border-slate-600 text-slate-400"
               }`}
             >
@@ -148,8 +210,11 @@ export default function AuthShell({
     >
       {/* ───── Mobile header ───── */}
       <header
-        className={`px-6 pb-14 ${compact ? "pt-8" : "pt-12"} text-white lg:hidden`}
+        className={`auth-stagger relative isolate overflow-hidden px-6 pb-14 [--base:60ms] ${
+          compact ? "pt-8" : "pt-12"
+        } text-white lg:hidden`}
       >
+        <Backdrop />
         <Brand />
 
         {step && (
@@ -161,10 +226,15 @@ export default function AuthShell({
               {Array.from({ length: step.total }).map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1 flex-1 rounded-full ${
-                    i < step.current ? "bg-brand" : "bg-slate-700"
-                  }`}
-                />
+                  className="h-1 flex-1 overflow-hidden rounded-full bg-slate-700"
+                >
+                  {i < step.current && (
+                    <div
+                      className="auth-bar h-full w-full rounded-full bg-brand"
+                      style={{ animationDelay: `${450 + i * 200}ms` }}
+                    />
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -186,12 +256,13 @@ export default function AuthShell({
 
       {/* ───── Desktop brand panel ───── */}
       <aside
-        className={`hidden lg:flex flex-col text-white ${
+        className={`relative isolate hidden overflow-hidden lg:flex flex-col text-white ${
           login ? "bg-[#0c1322] p-20" : "bg-[#0d1527] p-24"
         }`}
       >
+        <Backdrop chips />
         <DesktopBrand />
-        <div className="flex-1 flex flex-col justify-center py-12">{side}</div>
+        <div className="auth-side flex-1 flex flex-col justify-center py-12">{side}</div>
         <p
           className={
             login
@@ -204,11 +275,11 @@ export default function AuthShell({
       </aside>
 
       {/* ───── Form (white sheet on mobile / right column on desktop) ───── */}
-      <section className={`relative flex-1 -mt-6 rounded-t-[40px] bg-white px-6 pt-8 pb-10 lg:mt-0 lg:rounded-none lg:flex lg:items-center lg:justify-center lg:py-16 ${
+      <section className={`auth-sheet relative flex-1 -mt-6 rounded-t-[40px] bg-white px-6 pt-8 pb-10 lg:mt-0 lg:rounded-none lg:flex lg:items-center lg:justify-center lg:py-16 ${
           login ? "lg:px-12" : "lg:px-28"
         }`}>
         <div
-          className={`mx-auto w-full max-w-sm ${
+          className={`auth-stagger mx-auto w-full max-w-sm ${
             login ? "lg:max-w-[440px]" : "lg:max-w-[576px]"
           }`}
         >

@@ -11,6 +11,21 @@
   dianggap valid; mengosongkan kolom link tetap menghapus link lama.
 - Status verifikasi ikut tersimpan di draft.
 
+### Animasi Login & Daftar
+- **Latar bergerak**: bola cahaya biru yang melayang pelan + grid tipis di panel kiri desktop dan header mobile.
+  Di layar lebar (≥1536px) ada kartu kaca melayang (Cash Advance, Kwitansi & SPJ, Persetujuan berjenjang, Terlacak real-time).
+- **Animasi masuk berurutan**: logo turun, judul, tombol Google, lalu tiap kolom formulir muncul satu per satu.
+  Panel kiri desktop: headline, deskripsi, lalu daftar centang muncul bergantian dengan ikon centang "memantul".
+  Di mobile, lembar putih formulir naik dari bawah dan bilah langkah terisi dengan animasi.
+- **Langkah pendaftaran (desktop)**: garis penghubung memanjang, lingkaran langkah aktif berdenyut.
+- **Interaksi**: ikon kolom membesar & berwarna biru saat fokus, tombol terangkat dengan kilau melintas saat disentuh,
+  panah "Lanjut" bergeser, tombol Google terangkat.
+- **Memproses**: tombol menampilkan spinner dan kilau terus berjalan. Pesan galat masuk lalu bergetar sekali.
+- **Layar sukses** setelah masuk, daftar, dan lengkapi data: centang tergambar, cincin berdenyut, percikan warna,
+  bilah kemajuan (±1,3 detik) sebelum pindah halaman. Kartu "Cek email Anda" juga memakai centang beranimasi.
+- Murni CSS (tanpa library baru), hanya `transform`/`opacity` agar mulus di HP. Pengguna dengan pengaturan
+  "kurangi gerakan" mendapat tampilan statis dan jeda sukses hanya ±0,15 detik.
+
 ## 1.3.0
 ### Pendaftaran Akun & Onboarding
 - **Hapus kolom username** dari formulir "Langkah 2 — Lengkapi Data Anda".

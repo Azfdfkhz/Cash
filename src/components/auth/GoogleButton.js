@@ -15,7 +15,7 @@ export default function GoogleButton({ loading, onClick, children }) {
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="w-full h-13 lg:h-12 lg:border-[#cbd5e1] lg:text-[#1e293b] flex items-center justify-center gap-3 rounded-full border border-slate-300 bg-white text-[15px] font-semibold text-slate-900 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-60 transition-colors"
+      className="w-full h-13 lg:h-12 lg:border-[#cbd5e1] lg:text-[#1e293b] flex items-center justify-center gap-3 rounded-full border border-slate-300 bg-white text-[15px] font-semibold text-slate-900 hover:bg-slate-50 active:bg-slate-100 hover:-translate-y-px hover:shadow-md active:scale-[0.98] disabled:opacity-60 transition"
     >
       <GoogleIcon />
       {loading ? "Memproses..." : children}

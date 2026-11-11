@@ -35,12 +35,12 @@ export default function AuthField({
   return (
     <div>
       {label && <AuthLabel htmlFor={id}>{label}</AuthLabel>}
-      <div className="relative">
+      <div className="group relative">
         {Icon && (
           <Icon
             size={20}
             strokeWidth={1.75}
-            className="pointer-events-none absolute left-4.5 lg:left-4 top-1/2 -translate-y-1/2 text-slate-600"
+            className="pointer-events-none absolute left-4.5 lg:left-4 top-1/2 -translate-y-1/2 text-slate-600 transition-all duration-200 group-focus-within:scale-110 group-focus-within:text-brand"
           />
         )}
         <input
