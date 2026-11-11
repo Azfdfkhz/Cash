@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.2 v3
+- **Tombol "Lihat" kini selalu bisa diklik** di tabel Beranda Requester (sebelumnya hanya nama kegiatan yang
+  merespons). Seluruh baris juga bisa diklik; tombol "Lihat" dan nama kegiatan sama-sama membuka detail.
+- **Sidebar tidak lagi menutupi pop up detail.** Penyebab: animasi masuk halaman menahan nilai akhirnya sehingga
+  membuat stacking context permanen, dan pop up (z-50) terjebak di bawah sidebar (z-30). Semua animasi aplikasi
+  kini memakai fill-mode `backwards` sehingga tidak meninggalkan sisa stacking context. Berlaku untuk semua peran.
+
 ## 1.3.2 v2
 - Tombol **Lanjut** (Daftar), **Selesaikan pendaftaran**, dan **Saya sudah konfirmasi** kini setinggi tombol **Masuk**.
 - **Gradient blur dihapus total** di semua halaman auth (Masuk, Daftar, Lengkapi data, Lupa/Reset sandi, layar sukses).

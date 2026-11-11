@@ -255,13 +255,17 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
               {rows.map((ca, i) => (
                 <tr
                   key={ca.id}
-                  className="relative cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
+                  onClick={() => openView(ca.id)}
+                  className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
                 >
                   <td className="px-6 py-5 whitespace-nowrap text-sm font-semibold text-slate-900">
                     <button
                       type="button"
-                      onClick={() => openView(ca.id)}
-                      className="text-left after:absolute after:inset-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openView(ca.id);
+                      }}
+                      className="text-left"
                     >
                       <KindTag kind={ca.kind} demo={ca.__demo} />
                       {ca.purpose}
@@ -283,9 +287,17 @@ export default function RequesterDashboard({ name, stats, list, count, page, kin
 </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span data-tour={i === 0 ? "row-action" : undefined} className="inline-block rounded-lg bg-[#eef2f6] px-4 py-1.5 text-xs font-medium text-[#334155]">
+                    <button
+                      type="button"
+                      data-tour={i === 0 ? "row-action" : undefined}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openView(ca.id);
+                      }}
+                      className="inline-block rounded-lg bg-[#eef2f6] px-4 py-1.5 text-xs font-medium text-[#334155] hover:bg-slate-200"
+                    >
                       Lihat
-                    </span>
+                    </button>
                   </td>
                 </tr>
               ))}

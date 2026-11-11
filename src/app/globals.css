@@ -186,7 +186,7 @@ textarea {
 .animate-sheet-up { animation: sheet-up 0.38s cubic-bezier(0.22, 1, 0.36, 1); }
 .animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
 .animate-fade-in  { animation: fade-in 0.28s ease-out; }
-.animate-scale-up { animation: scale-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-scale-up { animation: scale-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 /* Checkbox kustom (rounded, centang putih saat aktif) */
 .auth-checkbox {
@@ -516,17 +516,20 @@ textarea {
 
 /* Halaman: isi memudar masuk. Berlaku pada elemen akar halaman, jadi juga
    terputar saat skeleton (loading.js) berganti ke isi sebenarnya. Hanya
-   opacity (tanpa transform) agar pop up/drawer fixed di dalam halaman tidak
-   bergeser saat animasi berjalan. */
+   opacity (tanpa transform) dan fill-mode "backwards" (BUKAN "both"/"forwards"):
+   animasi yang masih menahan nilai akhir membuat stacking context permanen,
+   sehingga pop up fixed z-50 di dalam halaman terjebak DI BAWAH sidebar (z-30).
+   Semua animasi di bagian ini memakai "backwards" supaya setelah selesai tidak
+   ada sisa stacking context. */
 @keyframes app-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-.page-enter > * { animation: app-fade 0.35s ease-out both; }
+.page-enter > * { animation: app-fade 0.3s ease-out backwards; }
 
 /* Kartu / baris daftar muncul berurutan (maks. 8 yang pertama diberi jeda). */
 .anim-rise {
-  animation: app-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: app-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   animation-delay: calc(var(--n, 0) * 45ms);
 }
 .anim-rise:nth-child(1) { --n: 0; }
@@ -539,7 +542,7 @@ textarea {
 .anim-rise:nth-child(8) { --n: 7; }
 
 /* Badge status muncul memantul. */
-.anim-pop { animation: app-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.anim-pop { animation: app-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
 
 /* Kartu terangkat saat disentuh. */
 .card-lift {
@@ -570,13 +573,13 @@ input, select, textarea { transition: border-color 0.2s ease, box-shadow 0.2s ea
   from { opacity: 0; transform: translateX(-50%) scaleX(0.3); }
   to   { opacity: 1; transform: translateX(-50%) scaleX(1); }
 }
-.nav-indicator { animation: app-bar-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.nav-indicator { animation: app-bar-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 .nav-tab .nav-icon { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .nav-tab[aria-current="page"] .nav-icon { transform: translateY(-1px) scale(1.1); }
 .nav-tab:active, .nav-link:active { scale: 0.96; }
 
 /* Notifikasi (toast) naik dari bawah. */
-.animate-toast-in { animation: app-toast-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-toast-in { animation: app-toast-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 /* Skeleton: kilau melintas menggantikan denyut. */
 .skeleton-shimmer { position: relative; overflow: hidden; }
@@ -592,7 +595,7 @@ input, select, textarea { transition: border-color 0.2s ease, box-shadow 0.2s ea
 .auth-dot-pulse { animation: app-dot 1.4s ease-in-out infinite; }
 
 /* Kartu konfirmasi email muncul naik. */
-.auth-rise { animation: app-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.auth-rise { animation: app-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 /* Lonceng / ikon perhatian bergoyang sekali. */
 .anim-wiggle { animation: app-wiggle 0.6s ease-in-out 0.3s 1 both; }
