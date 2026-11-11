@@ -27,6 +27,13 @@ export function rabTotal(items) {
 export const RAB_TEMPLATE_ID = "1Ghe2dhcUy4JdQyt7DoItTmayfceasG5FJnx957zrFrc";
 export const RAB_TEMPLATE_URL = `https://docs.google.com/spreadsheets/d/${RAB_TEMPLATE_ID}/copy`;
 
+// Link RAB hanya disimpan bila sudah terverifikasi (berhasil di-import sebagai
+// spreadsheet RAB). Link yang tidak valid / belum diverifikasi -> null.
+export function resolveRabUrl(url, verifiedUrl) {
+  const trimmed = String(url ?? "").trim();
+  return trimmed && trimmed === verifiedUrl ? trimmed : null;
+}
+
 // Ambil spreadsheet id + gid dari link Google Sheets.
 export function parseSheetUrl(url) {
   const match = String(url || "").match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);

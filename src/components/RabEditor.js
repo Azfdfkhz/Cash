@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileSpreadsheet, Loader2, Plus, Trash2, TriangleAlert } from "lucide-react";
+import {
+  CircleCheck,
+  Download,
+  FileSpreadsheet,
+  Loader2,
+  Plus,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import CurrencyInput from "@/components/CurrencyInput";
 import UnitSelect from "@/components/UnitSelect";
 import { formatCurrency, LARGE_AMOUNT_WARNING, terbilangRupiah } from "@/lib/utils";
@@ -51,10 +59,17 @@ export default function RabEditor({
   onItemsChange,
   sourceUrl,
   onSourceUrlChange,
+  verifiedUrl = "",
+  onVerifiedUrlChange,
   onImported,
 }) {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
+
+  const trimmedUrl = sourceUrl?.trim() ?? "";
+  // Link dianggap valid hanya bila sama persis dengan link yang sudah berhasil
+  // di-import sebagai spreadsheet RAB.
+  const urlVerified = Boolean(trimmedUrl) && trimmedUrl === verifiedUrl;
 
   function updateItem(key, patch) {
     onItemsChange(items.map((it) => (it._key === key ? { ...it, ...patch } : it)));
@@ -62,6 +77,7 @@ export default function RabEditor({
 
   async function handleImport() {
     setImportError("");
+    onVerifiedUrlChange?.("");
     if (!sourceUrl?.trim()) {
       setImportError("Masukkan link RAB.");
       return;
@@ -82,6 +98,7 @@ export default function RabEditor({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       onItemsChange(data.items.map((it) => newRabItem(it)));
+      onVerifiedUrlChange?.(sourceUrl.trim());
       onImported?.(data);
     } catch (err) {
       setImportError(err.message || "Gagal mengimpor RAB. Periksa link Anda.");
@@ -121,6 +138,16 @@ export default function RabEditor({
         </div>
         {importError && (
           <p className="text-xs text-rose-600 mt-1">{importError}</p>
+        )}
+        {!importError && urlVerified && (
+          <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-700">
+            <CircleCheck size={14} aria-hidden="true" /> Link valid: spreadsheet RAB
+          </p>
+        )}
+        {!importError && trimmedUrl && !urlVerified && !importing && (
+          <p className="mt-1 text-xs text-slate-600">
+            Klik Import untuk memeriksa link. Link yang tidak valid tidak akan disimpan.
+          </p>
         )}
 
         <div className="mt-4">

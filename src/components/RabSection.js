@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import RabEditor, { newRabItem, toRabRows } from "@/components/RabEditor";
 import RabComparison from "@/components/RabComparison";
 import { formatCurrency } from "@/lib/utils";
-import { compareRab } from "@/lib/rab";
+import { compareRab, resolveRabUrl } from "@/lib/rab";
 
 function formatQty(value) {
   return Number(value).toLocaleString("id-ID", { maximumFractionDigits: 2 });
@@ -29,6 +29,7 @@ export default function RabSection({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState([]);
   const [draftUrl, setDraftUrl] = useState("");
+  const [verifiedUrl, setVerifiedUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,6 +40,7 @@ export default function RabSection({
   function startEditing() {
     setDraft(items.map((it) => newRabItem(it)));
     setDraftUrl(rabUrl ?? "");
+    setVerifiedUrl(rabUrl ?? ""); // link yang sudah tersimpan dianggap valid
     setError("");
     setEditing(true);
   }
@@ -74,10 +76,13 @@ export default function RabSection({
         const { error } = await supabase.from("rab_items").upsert(rows);
         if (error) throw error;
       }
-      if ((draftUrl.trim() || null) !== (rabUrl ?? null)) {
+      // Link yang belum terverifikasi sebagai spreadsheet RAB tidak disimpan.
+      // Mengosongkan kolom link tetap menghapus link lama.
+      const nextUrl = resolveRabUrl(draftUrl, verifiedUrl);
+      if (nextUrl !== (rabUrl ?? null)) {
         const { error } = await supabase
           .from("cash_advances")
-          .update({ rab_url: draftUrl.trim() || null })
+          .update({ rab_url: nextUrl })
           .eq("id", cashAdvanceId);
         if (error) throw error;
       }
@@ -166,6 +171,8 @@ export default function RabSection({
             onItemsChange={setDraft}
             sourceUrl={draftUrl}
             onSourceUrlChange={setDraftUrl}
+            verifiedUrl={verifiedUrl}
+            onVerifiedUrlChange={setVerifiedUrl}
           />
           <p className="text-xs text-slate-600">
             Nominal diajukan akan mengikuti total RAB.

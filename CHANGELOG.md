@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1
+### Pengajuan Cash Advance
+- **Link RAB hanya disimpan jika valid.** Saat pengajuan dikirim, link yang tidak valid
+  (belum diimport atau gagal diimport sebagai spreadsheet RAB) tidak ikut dimasukkan ke
+  pengajuan (`rab_url` = kosong). Hanya link yang sudah berhasil diimport yang tersimpan.
+- Di bawah kolom link kini tampil keterangan **"Link valid: spreadsheet RAB"** bila link
+  lolos pemeriksaan, atau petunjuk untuk menekan **Import** bila belum diperiksa.
+- Berlaku juga saat mengedit RAB di detail pengajuan. Link yang sudah tersimpan tetap
+  dianggap valid; mengosongkan kolom link tetap menghapus link lama.
+- Status verifikasi ikut tersimpan di draft.
+
 ## 1.3.0
 ### Pendaftaran Akun & Onboarding
 - **Hapus kolom username** dari formulir "Langkah 2 — Lengkapi Data Anda".

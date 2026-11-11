@@ -24,7 +24,7 @@ import { clearDraft, loadDraft } from "@/lib/draft";
 import { useAutoDraft } from "@/lib/useAutoDraft";
 import { useLeaveGuard } from "@/lib/useLeaveGuard";
 import { formatCurrency, formatDateNumeric } from "@/lib/utils";
-import { rabTotal } from "@/lib/rab";
+import { rabTotal, resolveRabUrl } from "@/lib/rab";
 
 const FORM_ID = "new-cash-advance-form";
 const DRAFT_KIND = "cash_advance";
@@ -37,6 +37,8 @@ export default function NewCashAdvancePage() {
   const [programRef, setProgramRef] = useState("");
   const [objective, setObjective] = useState("");
   const [rabUrl, setRabUrl] = useState("");
+  // Link yang sudah berhasil di-import sebagai spreadsheet RAB; hanya ini yang disimpan.
+  const [rabVerifiedUrl, setRabVerifiedUrl] = useState("");
   const [rabItems, setRabItems] = useState(() => [newRabItem()]);
   const [bankName, setBankName] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
@@ -83,6 +85,7 @@ export default function NewCashAdvancePage() {
     setProgramRef(draft.programRef ?? "");
     setObjective(draft.objective ?? "");
     setRabUrl(draft.rabUrl ?? "");
+    setRabVerifiedUrl(draft.rabVerifiedUrl ?? "");
     if (draft.rabItems?.length) setRabItems(draft.rabItems.map((it) => newRabItem(it)));
     setBankName((prev) => draft.bankName || prev);
     setBankAccountNumber((prev) => draft.bankAccountNumber || prev);
@@ -136,6 +139,7 @@ export default function NewCashAdvancePage() {
     programRef,
     objective,
     rabUrl,
+    rabVerifiedUrl,
     rabItems: rabItems.map(({ _key, ...rest }) => rest),
     bankName,
     bankAccountNumber,
@@ -232,7 +236,7 @@ export default function NewCashAdvancePage() {
           funding_source: fundingSource,
           program_ref: fundingSource === "program" ? programRef.trim() : null,
           objective,
-          rab_url: rabUrl.trim() || null,
+          rab_url: resolveRabUrl(rabUrl, rabVerifiedUrl),
           bank_name: bankName,
           bank_account_number: bankAccountNumber,
           bank_account_holder: bankAccountHolder.trim(),
@@ -442,6 +446,8 @@ export default function NewCashAdvancePage() {
             onItemsChange={setRabItems}
             sourceUrl={rabUrl}
             onSourceUrlChange={setRabUrl}
+            verifiedUrl={rabVerifiedUrl}
+            onVerifiedUrlChange={setRabVerifiedUrl}
             onImported={({ title }) => setPurpose((prev) => prev || title)}
           />
         </section>
